@@ -1,0 +1,8 @@
+name: kakuki
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - -r requirements.txt

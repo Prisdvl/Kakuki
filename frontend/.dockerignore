@@ -1,0 +1,6 @@
+# 构建上下文忽略项（frontend）
+node_modules/
+dist/
+*.log
+.env.local
+.env.*.local

@@ -1,0 +1,306 @@
+import { create } from 'zustand';
+import request from '../api/request';
+
+// audio 实例作为模块级单例，不放入 React state，避免触发无意义重渲染
+let audioInstance = null;
+let audioListenersBound = false;
+
+const getAudio = () => {
+  if (!audioInstance) {
+    audioInstance = new Audio();
+    audioInstance.preload = 'metadata';
+    bindAudioListeners(audioInstance);
+  }
+  return audioInstance;
+};
+
+// 兼容旧版：外部传入 audio 元素时同样绑定事件（新的单例会覆盖，但保留导出避免破坏引用方）
+export const registerAudio = (audio) => {
+  if (audio && audio !== audioInstance) {
+    audioInstance = audio;
+    audioInstance.preload = 'metadata';
+    bindAudioListeners(audioInstance);
+  }
+};
+
+export const getAudioInstance = getAudio;
+
+function bindAudioListeners(audio) {
+  if (audioListenersBound || !audio) return;
+  audioListenersBound = true;
+
+  const onTimeUpdate = () => {
+    const time = audio.currentTime || 0;
+    const state = useMusicStore.getState();
+    let newIdx = -1;
+    const lyrics = state.currentLyrics;
+    for (let i = 0; i < lyrics.length; i++) {
+      if (time >= lyrics[i].time) newIdx = i;
+      else break;
+    }
+    const next = { currentTime: time };
+    if (newIdx !== state.currentLyricIndex) next.currentLyricIndex = newIdx;
+    useMusicStore.setState(next);
+  };
+
+  const onLoadedMetadata = () => {
+    useMusicStore.setState({ duration: audio.duration || 0 });
+  };
+
+  const onEnded = () => {
+    useMusicStore.getState().nextTrack();
+  };
+
+  const onPlay = () => {
+    useMusicStore.setState({ isPlaying: true });
+  };
+
+  const onPause = () => {
+    useMusicStore.setState({ isPlaying: false });
+  };
+
+  audio.addEventListener('timeupdate', onTimeUpdate);
+  audio.addEventListener('loadedmetadata', onLoadedMetadata);
+  audio.addEventListener('ended', onEnded);
+  audio.addEventListener('play', onPlay);
+  audio.addEventListener('pause', onPause);
+}
+
+const parseLyric = (lrcData) => {
+  if (!lrcData || !lrcData.lyric) return [];
+  const lines = lrcData.lyric.split('\n');
+  const result = [];
+  lines.forEach((line) => {
+    const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
+    if (match) {
+      const minutes = parseInt(match[1], 10);
+      const seconds = parseInt(match[2], 10);
+      const ms = parseInt(match[3], 10);
+      const time = minutes * 60 + seconds + ms / 1000;
+      const text = match[4].trim();
+      if (text) {
+        result.push({ time, text });
+      }
+    }
+  });
+  return result;
+};
+
+const useMusicStore = create((set, get) => ({
+  user: null,
+  playlists: [],
+  playlistList: [],
+  currentPlaylist: null,
+  currentTrack: null,
+  currentLyrics: [],
+  currentLyricIndex: -1,
+  isPlaying: false,
+  currentTime: 0,
+  duration: 0,
+
+  fetchPlaylists: async () => {
+    try {
+      const res = await request.get('/netease/playlists/', { timeout: 15000 });
+      const list = res?.playlists || [];
+      set({ playlistList: list });
+      return { success: true, playlists: list };
+    } catch (err) {
+      console.error('Fetch playlists error:', err);
+      return { success: false, error: '获取歌单列表失败' };
+    }
+  },
+
+  fetchPlaylistById: async (playlistId) => {
+    try {
+      const res = await request.get('/netease/bootstrap/', {
+        params: { playlist_id: playlistId },
+        timeout: 30000,
+      });
+      if (res && res.playlist && res.playlist.tracks) {
+        const allTracks = res.playlist.tracks || [];
+        const urlMap = {};
+        (res.song_urls || []).forEach((u) => { if (u && u.id) urlMap[u.id] = u.url; });
+
+        const tracks = allTracks.map((t) => ({
+          id: t.id,
+          name: t.name,
+          artists: (t.ar || []).map((a) => ({ name: a.name })),
+          album: (t.al || {}).name || '',
+          cover: (t.al || {}).picUrl || '',
+          url: urlMap[t.id] || `https://music.163.com/song/media/outer/url?id=${t.id}.mp3`,
+          duration: t.duration || 0,
+        }));
+
+        const playlist = {
+          id: res.playlist.id,
+          name: res.playlist.name,
+          coverImgUrl: res.playlist.coverImgUrl || '',
+          trackCount: tracks.length,
+          tracks,
+        };
+
+        set({ currentPlaylist: playlist, currentTrack: null, currentLyrics: [], currentLyricIndex: -1 });
+
+        if (tracks.length > 0) {
+          get().playTrack(tracks[0]);
+        }
+
+        return { success: true, playlist };
+      }
+      return { success: false, error: '未找到歌单数据' };
+    } catch (err) {
+      console.error('Fetch playlist error:', err);
+      const serverMsg = err?.response?.data?.error;
+      return { success: false, error: serverMsg || '获取歌单失败' };
+    }
+  },
+
+  fetchBootstrapPlaylist: async () => {
+    try {
+      const res = await request.get('/netease/bootstrap/', { timeout: 30000 });
+      if (res && res.playlist && res.playlist.tracks) {
+        const allTracks = res.playlist.tracks || [];
+        const urls = res.song_urls || [];
+        const urlMap = {};
+        urls.forEach((u) => { if (u && u.id) urlMap[u.id] = u.url; });
+
+        const tracks = allTracks.map((t) => ({
+          id: t.id,
+          name: t.name,
+          artists: (t.ar || []).map((a) => ({ name: a.name })),
+          album: (t.al || {}).name || '',
+          cover: (t.al || {}).picUrl || '',
+          url: urlMap[t.id] || null,
+          duration: t.duration || 0,
+        })).filter((t) => t.url);
+
+        const playlist = {
+          id: res.playlist.id,
+          name: res.playlist.name || 'Prisdvl 的喜欢音乐',
+          coverImgUrl: res.playlist.coverImgUrl || '',
+          trackCount: tracks.length,
+          tracks,
+        };
+
+        set({
+          user: { nickname: 'Prisdvl', avatarUrl: playlist.coverImgUrl || '' },
+          playlists: [playlist],
+          currentPlaylist: playlist,
+        });
+
+        if (tracks.length > 0) {
+          const firstTrack = tracks[0];
+          try {
+            const lyricsRes = await request.get(`/netease/song/${firstTrack.id}/lyric/`);
+            const lyrics = parseLyric(lyricsRes.lrc);
+            set({
+              currentTrack: firstTrack,
+              currentLyrics: lyrics,
+              currentLyricIndex: -1,
+            });
+          } catch {
+            set({ currentTrack: firstTrack, currentLyrics: [], currentLyricIndex: -1 });
+          }
+
+          const audio = getAudio();
+          if (audio) {
+            audio.src = firstTrack.url;
+            // 不自动播放，等待用户点击播放按钮
+          }
+        }
+
+        return { success: true, playlist, tracks };
+      } else {
+        return { success: false, error: '未找到歌单数据' };
+      }
+    } catch (err) {
+      console.error('Fetch bootstrap error:', err);
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.error;
+      let msg;
+      if (status === 429) msg = serverMsg || 'API 请求过于频繁，请稍后再试';
+      else if (status === 502) msg = serverMsg || '无法连接到网易云 API';
+      else if (err?.code === 'ECONNABORTED') msg = '请求超时，请检查网络连接';
+      else msg = serverMsg || err?.message || '获取歌单失败';
+      return { success: false, error: msg };
+    }
+  },
+
+  playTrack: async (track) => {
+    try {
+      const url = `https://music.163.com/song/media/outer/url?id=${track.id}.mp3`;
+
+      // 后台非阻塞加载歌词
+      request.get(`/netease/song/${track.id}/lyric/`).then((lyricsRes) => {
+        const lyrics = parseLyric(lyricsRes?.lrc);
+        set({ currentLyrics: lyrics, currentLyricIndex: -1 });
+      }).catch(() => {
+        set({ currentLyrics: [], currentLyricIndex: -1 });
+      });
+
+      set({
+        currentTrack: { ...track, url },
+        currentLyricIndex: -1,
+      });
+
+      const audio = getAudio();
+      if (audio) {
+        audio.src = url;
+        audio.play().catch(() => {});
+      }
+      return true;
+    } catch (err) {
+      console.error('Play track error:', err);
+      return false;
+    }
+  },
+
+  nextTrack: () => {
+    const { currentPlaylist, currentTrack } = get();
+    if (!currentPlaylist?.tracks || !currentTrack) return;
+    const idx = currentPlaylist.tracks.findIndex((t) => t.id === currentTrack.id);
+    if (idx >= 0 && idx < currentPlaylist.tracks.length - 1) {
+      get().playTrack(currentPlaylist.tracks[idx + 1]);
+    }
+  },
+
+  prevTrack: () => {
+    const { currentPlaylist, currentTrack } = get();
+    if (!currentPlaylist?.tracks || !currentTrack) return;
+    const idx = currentPlaylist.tracks.findIndex((t) => t.id === currentTrack.id);
+    if (idx > 0) {
+      get().playTrack(currentPlaylist.tracks[idx - 1]);
+    }
+  },
+
+  togglePlay: () => {
+    const { isPlaying } = get();
+    const audio = getAudio();
+    if (!audio || !audio.src) return;
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+  },
+
+  seekTo: (time) => {
+    const audio = getAudio();
+    if (!audio || !isFinite(time)) return;
+    const clamped = Math.max(0, Math.min(time, audio.duration || time));
+    audio.currentTime = clamped;
+    // 立即同步一次状态与歌词索引，避免等待 timeupdate
+    const state = get();
+    let newIdx = -1;
+    const lyrics = state.currentLyrics;
+    for (let i = 0; i < lyrics.length; i++) {
+      if (clamped >= lyrics[i].time) newIdx = i;
+      else break;
+    }
+    const next = { currentTime: clamped };
+    if (newIdx !== state.currentLyricIndex) next.currentLyricIndex = newIdx;
+    set(next);
+  },
+}));
+
+export default useMusicStore;

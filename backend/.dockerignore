@@ -1,0 +1,10 @@
+# 构建上下文忽略项（backend）
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+db.sqlite3
+media/
+static/
+*.log

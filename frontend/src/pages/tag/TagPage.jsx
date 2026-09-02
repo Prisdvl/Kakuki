@@ -34,6 +34,7 @@ export default function TagPage() {
       <div className="tag-cloud-container">
         <button
           className={`tag-chip ${!activeTag ? "active" : ""}`}
+          style={{ fontSize: "13px" }}
           onClick={() => setActiveTag(null)}
         >
           全部
@@ -66,8 +67,8 @@ export default function TagPage() {
 
       {loading ? null : articles.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {articles.map((a) => (
-            <Link key={a.id} to={`/article/${a.id}`} className="article-card" style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}>
+          {articles.map((a, i) => (
+            <Link key={a.id} to={`/article/${a.id}`} className="article-card reveal" style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem", '--reveal-i': i }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 className="article-card-title" style={{ fontSize: "1rem", marginBottom: "0.25rem" }}>{a.title}</h3>
                 {a.summary && <p className="article-card-summary" style={{ fontSize: "0.85rem" }}>{a.summary}</p>}

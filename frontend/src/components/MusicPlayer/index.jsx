@@ -85,7 +85,11 @@ function TrackList({ onPlay, currentTrack, onBack }) {
                 <span className="mp-track-index">{idx + 1}</span>
                 <div className="mp-row-body">
                   <div className={`mp-row-title ${isActive ? 'active' : ''}`}>
-                    {activePlaying && <span className="playing-indicator">♪</span>}
+                    {activePlaying && (
+                      <span className="eq" aria-hidden="true" style={{ marginRight: '0.35rem', verticalAlign: 'middle' }}>
+                        <span /><span /><span /><span /><span />
+                      </span>
+                    )}
                     {track.name}
                   </div>
                   <div className="mp-row-meta">
@@ -93,9 +97,13 @@ function TrackList({ onPlay, currentTrack, onBack }) {
                   </div>
                 </div>
                 {isActive && (
-                  <span className="playing-indicator" aria-hidden="true">
-                    {isPlaying ? '♪' : '❚❚'}
-                  </span>
+                  isPlaying ? (
+                    <span className="eq" aria-hidden="true">
+                      <span /><span /><span /><span /><span />
+                    </span>
+                  ) : (
+                    <span className="playing-indicator" aria-hidden="true">❚❚</span>
+                  )
                 )}
               </button>
             );

@@ -116,7 +116,7 @@ function PlayerBar() {
   const displayPct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="glass player-bar mouse-glow" style={{
+    <div className="glass player-bar mouse-glow reveal" style={{
       marginBottom: '1.5rem', overflow: 'hidden',
     }}>
       {/* Left: Cover + Title */}
@@ -216,7 +216,12 @@ function PlayerBar() {
       </div>
 
       {/* Right: Controls */}
-      <div className="music-controls" style={{ flexShrink: 0, gap: '0.35rem' }}>
+      <div className="music-controls" style={{ flexShrink: 0, gap: '0.35rem', alignItems: 'center' }}>
+        {isPlaying && (
+          <div className="eq" aria-hidden="true" style={{ marginRight: '0.15rem' }}>
+            <span /><span /><span /><span /><span />
+          </div>
+        )}
         <button
           className="music-ctrl-btn"
           onClick={() => prevTrack()}
@@ -469,7 +474,7 @@ function LeetCodeCard() {
   };
 
   return (
-    <div className="glass mouse-glow" style={{ borderRadius: 20, padding: '1.25rem' }}>
+    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <Code2 size={18} style={{ color: 'var(--accent)' }} /> LeetCode
@@ -593,7 +598,7 @@ function TalksCard() {
   }, []);
 
   return (
-    <div className="glass mouse-glow" style={{ borderRadius: 20, padding: '1.25rem' }}>
+    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <MessageSquare size={18} style={{ color: 'var(--accent)' }} /> 最新杂谈
@@ -727,7 +732,8 @@ export default function HomePage() {
                 <Link
                   key={article.id}
                   to={isReal ? `/article/${article.id}` : '/admin/articles/new'}
-                  className={`hero-article-card ${isFeatured ? 'featured' : ''}`}
+                  className={`hero-article-card reveal ${isFeatured ? 'featured' : ''}`}
+                  style={{ '--reveal-i': idx }}
                 >
                   <div className="hero-article-card-cover">
                     <img src={imgUrl} alt={article.title} loading="lazy" decoding="async" />

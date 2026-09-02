@@ -5505,3 +5505,81 @@ a, button, .article-card, .contact-card, .social-links a,
   font-size: 0.72rem;
   color: var(--text-tertiary);
 }
+
+
+/* ==================== UI / 动画增强 ==================== */
+
+/* 音乐播放均衡器（纯 CSS 动画，不依赖 requestAnimationFrame） */
+.eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.eq span {
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  animation: eqBounce 1s ease-in-out infinite;
+}
+.eq span:nth-child(1) { animation-delay: 0s; }
+.eq span:nth-child(2) { animation-delay: 0.22s; }
+.eq span:nth-child(3) { animation-delay: 0.44s; }
+.eq span:nth-child(4) { animation-delay: 0.11s; }
+.eq span:nth-child(5) { animation-delay: 0.33s; }
+@keyframes eqBounce {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+.eq.paused span {
+  animation-play-state: paused;
+  height: 4px;
+}
+
+/* 搜索框聚焦光效 */
+.search-center {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.search-center:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 0 0 4px var(--accent-soft), var(--glass-shadow);
+  transform: translateY(-1px);
+}
+
+/* 滚动入场动画方向变体（配合 AppLayout 的 IntersectionObserver） */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-26px);
+  transition: opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 首页文章卡进场节奏：行 1 快速、行 2 依次延迟 */
+.hero-articles .hero-article-card.reveal { transition-delay: calc(var(--reveal-i, 0) * 0.08s); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-left, .reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* 通用入场延迟：配合内联 --reveal-i（nth-child 的 .stagger 规则优先级更高，不受影响） */
+.reveal {
+  transition-delay: calc(var(--reveal-i, 0) * 0.06s);
+}

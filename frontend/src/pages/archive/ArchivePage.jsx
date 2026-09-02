@@ -25,7 +25,12 @@ export default function ArchivePage() {
 
   // 归档：无搜索词时加载
   useEffect(() => {
-    if (q) return;
+    if (q) {
+      // 搜索模式下不需要加载归档列表，确保 loading 尽快置 false，
+      // 否则首次直接访问 /archive?q=... 会永远停在加载分支
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     getArchives()
       .then((res) => setData(extractList(res)))
@@ -121,12 +126,12 @@ export default function ArchivePage() {
               </Empty>
             ) : (
               <>
-                {results.map((article) => (
+                {results.map((article, ri) => (
                   <Link
                     key={article.id}
                     to={`/article/${article.id}`}
-                    className="article-card"
-                    style={{ padding: "0.9rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}
+                    className="article-card reveal"
+                    style={{ padding: "0.9rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem", '--reveal-i': ri }}
                   >
                     <FileSearch size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
                     <span style={{ color: "var(--text-primary)", fontSize: "0.95rem", flex: 1, minWidth: 0 }}>
@@ -157,8 +162,8 @@ export default function ArchivePage() {
         ) : data.length === 0 ? (
           <Empty description="还没有文章" style={{ padding: "3rem 0" }} />
         ) : (
-          data.map((yearGroup) => (
-            <div key={yearGroup.year} className="mb-8">
+          data.map((yearGroup, gi) => (
+            <div key={yearGroup.year} className="mb-8 reveal" style={{ '--reveal-i': gi }}>
               <h3 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--accent)", marginBottom: "1rem" }}>
                 {yearGroup.year}
               </h3>

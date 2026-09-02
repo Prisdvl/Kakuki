@@ -192,7 +192,7 @@ export default function AboutPage() {
           </div>
         )}
 
-        <div className="glass" style={{ borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem" }}>
+        <div className="glass reveal" style={{ borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem" }}>
           <h4 style={{ fontWeight: 600, marginBottom: "1rem", color: "var(--text-primary)" }}>技术栈</h4>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
             {TECH_STACK.map((t) => (
@@ -203,7 +203,7 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-        <div className="glass" style={{ borderRadius: 20, padding: "1.5rem" }}>
+        <div className="glass reveal" style={{ borderRadius: 20, padding: "1.5rem" }}>
           <h4 style={{ fontWeight: 600, marginBottom: "1rem", color: "var(--text-primary)" }}>快速导航</h4>
           <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.75rem", padding: 0 }}>
             <li><Link to="/" style={{ color: "var(--text-secondary)" }}>&larr; 返回首页</Link></li>

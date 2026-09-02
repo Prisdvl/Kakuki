@@ -59,10 +59,10 @@ export default function CategoryPage() {
 
       {loading ? null : articles.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {articles.map((article) => (
+          {articles.map((article, i) => (
             <Link key={article.id} to={`/article/${article.id}`}
-              className="article-card"
-              style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}
+              className="article-card reveal"
+              style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem", '--reveal-i': i }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 className="article-card-title" style={{ fontSize: "1rem", marginBottom: "0.25rem" }}>{article.title}</h3>

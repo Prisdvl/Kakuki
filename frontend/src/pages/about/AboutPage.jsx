@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Row, Col, Progress } from "antd";
 import { GithubOutlined, MailOutlined, CodeOutlined } from "@ant-design/icons";
-import { BookOpen, FolderTree, Tags, MessageSquare, Eye, Flame, Trophy, Zap } from "lucide-react";
+import { BookOpen, FolderTree, MessageSquare, Eye, Flame, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getSiteStats } from "../../api/article";
 import leetcodeApi from "../../api/leetcode";
@@ -91,7 +91,7 @@ export default function AboutPage() {
                 width: "100%", height: "100%",
                 background: "linear-gradient(135deg, var(--accent), var(--accent-secondary))",
                 alignItems: "center", justifyContent: "center",
-                fontSize: "3rem", color: "#fff", fontWeight: 700,
+                fontSize: "3rem", color: "var(--on-accent)", fontWeight: 700,
               }}>P</div>
             </div>
             <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)" }}>Prisdvl</h2>
@@ -105,7 +105,6 @@ export default function AboutPage() {
             <div className="about-stats-grid">
               <StatItem icon={BookOpen} value={stats.article_count} label="文章" />
               <StatItem icon={FolderTree} value={stats.category_count} label="分类" />
-              <StatItem icon={Tags} value={stats.tag_count} label="标签" />
               <StatItem icon={MessageSquare} value={stats.comment_count} label="评论" />
               <StatItem icon={Eye} value={stats.total_views} label="总阅读" />
               <StatItem icon={Flame} value={stats.running_days} label="运行天数" />

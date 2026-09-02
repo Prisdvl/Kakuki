@@ -1,5 +1,5 @@
 ﻿from rest_framework import serializers
-from .models import Category, Tag, Article, Comment, Talk, Project, TalkLike
+from .models import Category, Article, Comment, Talk, Project, TalkLike
 from .utils import client_ip
 
 
@@ -11,17 +11,8 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'description', 'article_count')
 
 
-class TagSerializer(serializers.ModelSerializer):
-    article_count = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = Tag
-        fields = ('id', 'name', 'article_count')
-
-
 class ArticleListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
     author_name = serializers.CharField(source='author.nickname', read_only=True)
     comment_count = serializers.IntegerField(read_only=True)
     like_count = serializers.IntegerField(read_only=True)
@@ -29,7 +20,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = (
-            'id', 'title', 'summary', 'cover_image', 'category', 'tags',
+            'id', 'title', 'summary', 'cover_image', 'category',
             'author_name', 'views', 'is_top', 'comment_count', 'like_count',
             'created_at', 'updated_at'
         )
@@ -37,7 +28,6 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
 class ArticleDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
     author_name = serializers.CharField(source='author.nickname', read_only=True)
     author_id = serializers.IntegerField(source='author.id', read_only=True)
     comment_count = serializers.IntegerField(read_only=True)
@@ -47,7 +37,7 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
         model = Article
         fields = (
             'id', 'title', 'content', 'summary', 'cover_image',
-            'category', 'tags', 'author_name', 'author_id',
+            'category', 'author_name', 'author_id',
             'views', 'is_top', 'comment_count', 'like_count', 'created_at', 'updated_at'
         )
 
@@ -55,7 +45,7 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
 class ArticleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ('title', 'content', 'summary', 'cover_image', 'category', 'tags', 'is_top')
+        fields = ('title', 'content', 'summary', 'cover_image', 'category', 'is_top')
 
 
 class CommentSerializer(serializers.ModelSerializer):

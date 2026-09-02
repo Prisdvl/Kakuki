@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu, Button } from 'antd';
 import {
   DashboardOutlined, FileTextOutlined, FolderOutlined,
-  TagsOutlined, CommentOutlined, ArrowLeftOutlined,
+  CommentOutlined, ArrowLeftOutlined,
   SunOutlined, MoonOutlined,
 } from '@ant-design/icons';
 import useThemeStore from '../../store/themeStore';
@@ -30,7 +30,6 @@ export default function AdminLayout() {
     { key: '/admin', icon: <DashboardOutlined />, label: <Link to='/admin'>仪表盘</Link> },
     { key: '/admin/articles', icon: <FileTextOutlined />, label: <Link to='/admin/articles'>文章管理</Link> },
     { key: '/admin/categories', icon: <FolderOutlined />, label: <Link to='/admin/categories'>分类管理</Link> },
-    { key: '/admin/tags', icon: <TagsOutlined />, label: <Link to='/admin/tags'>标签管理</Link> },
     { key: '/admin/comments', icon: <CommentOutlined />, label: <Link to='/admin/comments'>评论管理</Link> },
   ];
 

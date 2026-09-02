@@ -1,5 +1,5 @@
-from django.contrib import admin
-from .models import Category, Tag, Article, Comment, Talk, Project
+﻿from django.contrib import admin
+from .models import Category, Article, Comment, Talk, Project
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -10,10 +10,6 @@ class CategoryAdmin(admin.ModelAdmin):
         return obj.articles.count()
     article_count.short_description = '文章数量'
 
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'article_count')
-    search_fields = ('name',)
 
     def article_count(self, obj):
         return obj.articles.count()
@@ -22,9 +18,8 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'category', 'author', 'views', 'is_top', 'created_at')
-    list_filter = ('category', 'tags', 'is_top', 'created_at')
+    list_filter = ('category', 'is_top', 'created_at')
     search_fields = ('title', 'content')
-    filter_horizontal = ('tags',)
     date_hierarchy = 'created_at'
 
 @admin.register(Comment)

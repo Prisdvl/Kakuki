@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from users.models import User
 
 
@@ -15,16 +15,6 @@ class Category(models.Model):
         return self.name
 
 
-class Tag(models.Model):
-    name = models.CharField(max_length=50, unique=True, verbose_name='标签名称')
-
-    class Meta:
-        verbose_name = '标签'
-        verbose_name_plural = '标签'
-
-    def __str__(self):
-        return self.name
-
 
 class Article(models.Model):
     title = models.CharField(max_length=200, verbose_name='标题')
@@ -36,7 +26,6 @@ class Article(models.Model):
         null=True, blank=True, related_name='articles',
         verbose_name='分类'
     )
-    tags = models.ManyToManyField(Tag, blank=True, related_name='articles', verbose_name='标签')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles', verbose_name='作者')
     views = models.IntegerField(default=0, verbose_name='阅读量')
     is_top = models.BooleanField(default=False, verbose_name='置顶')

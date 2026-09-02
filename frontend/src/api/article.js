@@ -7,6 +7,5 @@ export const updateArticle = (id, data) => request.put(`/articles/${id}/edit/`, 
 export const deleteArticle = (id) => request.delete(`/articles/${id}/delete/`);
 export const likeArticle = (id) => request.post(`/articles/${id}/like/`);
 export const getCategories = () => request.get('/categories/');
-export const getTags = () => request.get('/tags/');
 export const getArchives = () => request.get('/archives/');
 export const getSiteStats = () => request.get('/stats/');

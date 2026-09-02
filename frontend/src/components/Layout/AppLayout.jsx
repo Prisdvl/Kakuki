@@ -9,7 +9,6 @@ const NAV_ITEMS = [
   { label: '首页', path: '/' },
   { label: '归档', path: '/archive' },
   { label: '分类', path: '/category' },
-  { label: '标签', path: '/tag' },
   { label: '杂谈', path: '/talks' },
   { label: '项目', path: '/projects' },
   { label: '音乐', path: '/music' },

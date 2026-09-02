@@ -6,9 +6,11 @@ import {
   Calendar, ExternalLink, Music,
   BarChart3, Flame, TrendingUp,
   Play, Pause, SkipBack, SkipForward, Heart,
+  Rocket, FolderTree, Quote, ThumbsUp, Shuffle, ArrowRight,
 } from "lucide-react";
-import { getArticles, getCategories, getTags } from "../../api/article";
-import { getTalks } from "../../api/talk";
+import { getArticles, getCategories } from "../../api/article";
+import { getTalks, likeTalk } from "../../api/talk";
+import { getProjects } from "../../api/project";
 import { extractList } from "../../api/request";
 import MusicPlayer from "../../components/MusicPlayer";
 import useMusicStore from '../../store/musicStore';
@@ -49,7 +51,6 @@ function ProfileCard({ stats }) {
           <a href="mailto:kakuki@example.com" title="Email"><Mail size={16} /></a>
           <a href="/archive" title="文章"><BookOpen size={16} /></a>
           <a href="/category" title="分类"><Code2 size={16} /></a>
-          <a href="/tag" title="标签"><MessageSquare size={16} /></a>
           <a href="/about" title="关于"><Sparkles size={16} /></a>
         </div>
       </div>
@@ -137,7 +138,7 @@ function PlayerBar() {
             background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            <Music size={22} style={{ color: '#fff' }} />
+            <Music size={22} style={{ color: 'var(--on-accent)' }} />
           </div>
         )}
         <div style={{ minWidth: 0, overflow: 'hidden' }}>
@@ -241,7 +242,7 @@ function PlayerBar() {
           style={{
             border: 'none', cursor: 'pointer',
             background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))',
-            color: '#fff', width: 40, height: 40, borderRadius: '50%',
+            color: 'var(--on-accent)', width: 40, height: 40, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)',
           }}
@@ -588,6 +589,194 @@ function LeetCodeCard() {
   );
 }
 
+const QUOTES = [
+  { text: '代码是写给未来的情书，也是写给过去的自己的一封回信。', author: 'Kakuki' },
+  { text: '把复杂留给自己，把简单留给用户。', author: 'Kakuki' },
+  { text: '学习不是填满水桶，而是点燃火焰。', author: 'William Butler Yeats' },
+  { text: '最好的投资，是投资自己。', author: 'Benjamin Franklin' },
+  { text: '细节决定成败，但方向决定命运。', author: 'Kakuki' },
+  { text: '编程三分靠写，七分靠改。', author: '民间智慧' },
+  { text: '愿你眼里有光，心中有火，脚下有路。', author: 'Kakuki' },
+  { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+];
+
+function QuoteCard() {
+  const [index, setIndex] = useState(() => {
+    const saved = parseInt(localStorage.getItem('kakuki-quote-idx'), 10);
+    if (!Number.isNaN(saved) && saved >= 0) return saved % QUOTES.length;
+    return Math.floor(Math.random() * QUOTES.length);
+  });
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIndex((i) => {
+          const ni = (i + 1) % QUOTES.length;
+          localStorage.setItem('kakuki-quote-idx', String(ni));
+          return ni;
+        });
+        setVisible(true);
+      }, 400);
+    }, 8000);
+    return () => clearInterval(t);
+  }, []);
+
+  const shuffle = () => {
+    setVisible(false);
+    setTimeout(() => {
+      setIndex((i) => {
+        let ni = i;
+        while (ni === i) ni = Math.floor(Math.random() * QUOTES.length);
+        localStorage.setItem('kakuki-quote-idx', String(ni));
+        return ni;
+      });
+      setVisible(true);
+    }, 400);
+  };
+
+  const q = QUOTES[index];
+
+  return (
+    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem 1.25rem 1rem', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Quote size={18} style={{ color: 'var(--accent)' }} /> 每日一言
+        </h3>
+        <button
+          onClick={shuffle}
+          aria-label="换一句"
+          title="换一句"
+          className="quote-shuffle"
+          style={{
+            border: '1px solid var(--border)', background: 'var(--glass-bg-strong)', color: 'var(--text-secondary)',
+            width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'rotate(180deg)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'rotate(0deg)'; }}
+        >
+          <Shuffle size={14} />
+        </button>
+      </div>
+      <div className={`quote-fade ${visible ? 'quote-show' : 'quote-hide'}`} style={{ flex: 1 }}>
+        <p style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--text-primary)' }}>“{q.text}”</p>
+      </div>
+      <div style={{ marginTop: '0.5rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+        —— {q.author}
+      </div>
+    </div>
+  );
+}
+
+function ProjectsCard() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getProjects().then((res) => {
+      const list = extractList(res);
+      const sorted = [...list].sort((a, b) => ((b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0)) || ((a.order ?? 0) - (b.order ?? 0)));
+      setProjects(sorted.slice(0, 3));
+    }).catch(() => setProjects([])).finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Rocket size={18} style={{ color: 'var(--accent)' }} /> 项目精选
+        </h3>
+        <Link to="/projects" style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+          更多 <ExternalLink size={12} />
+        </Link>
+      </div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '1.25rem 0', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>加载项目...</div>
+      ) : projects.length === 0 ? (
+        <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', padding: '1rem 0', fontSize: '0.85rem' }}>还没有项目内容</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          {projects.map((p) => (
+            <div key={p.id} className="project-mini" style={{
+              display: 'flex', flexDirection: 'column', gap: '0.35rem', padding: '0.75rem 0.85rem',
+              borderRadius: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+              transition: 'all 0.2s', textDecoration: 'none', color: 'inherit',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                <a href={p.url || p.repo_url || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
+                  {p.name}
+                </a>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  {p.repo_url && (
+                    <a href={p.repo_url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 仓库`} title="GitHub 仓库"
+                      style={{ color: 'var(--text-tertiary)', display: 'flex', transition: 'color 0.2s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                      <Code2 size={14} />
+                    </a>
+                  )}
+                  {p.url && (
+                    <a href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 在线访问`} title="在线访问"
+                      style={{ color: 'var(--text-tertiary)', display: 'flex', transition: 'color 0.2s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                </div>
+              </div>
+              {p.description && (
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {p.description}
+                </p>
+              )}
+              {p.tech_list?.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                  {p.tech_list.slice(0, 4).map((t) => (
+                    <span key={t} style={{ fontSize: '0.65rem', padding: '0.1rem 0.5rem', borderRadius: 8, background: 'var(--accent-soft)', color: 'var(--accent)' }}>{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CategoriesCard({ categories }) {
+  return (
+    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <FolderTree size={18} style={{ color: 'var(--accent)' }} /> 分类速览
+        </h3>
+        <Link to="/category" style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+          全部 <ArrowRight size={12} />
+        </Link>
+      </div>
+      <div className="category-chip-container" style={{ marginBottom: 0, padding: 0, background: 'transparent', border: 'none', boxShadow: 'none' }}>
+        {categories.length === 0 ? (
+          <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', padding: '0.5rem 0' }}>暂无分类</p>
+        ) : (
+          categories.map((c) => (
+            <Link key={c.id} to={`/category/${c.id}`} className="category-chip">
+              {c.name}
+              <span className="category-chip-count">{c.article_count ?? 0}</span>
+            </Link>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TalksCard() {
   const [talks, setTalks] = useState([]);
 
@@ -596,6 +785,17 @@ function TalksCard() {
       .then((res) => setTalks(extractList(res)))
       .catch(() => setTalks([]));
   }, []);
+
+  const handleLike = async (item) => {
+    try {
+      const res = await likeTalk(item.id);
+      const liked = res?.data?.liked;
+      const count = res?.data?.like_count;
+      setTalks((prev) => prev.map((t) => (t.id === item.id ? { ...t, liked, like_count: count } : t)));
+    } catch {
+      // 静默失败，保持原状态
+    }
+  };
 
   return (
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
@@ -614,16 +814,32 @@ function TalksCard() {
           </p>
         ) : (
           talks.map((item) => (
-            <Link key={item.id} to="/talks" style={{ padding: '0.65rem 0.8rem', borderRadius: 10, background: 'var(--bg-tertiary)', textDecoration: 'none', color: 'inherit', display: 'block', transition: 'background 0.2s' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-soft)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
+            <div key={item.id} style={{ padding: '0.65rem 0.8rem', borderRadius: 10, background: 'var(--bg-tertiary)', border: '1px solid var(--border)', display: 'block', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-soft)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
             >
               <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.25rem', lineHeight: 1.4 }}>{item.content}</p>
-              <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-tertiary)', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}><Calendar size={11} /> {item.created_at?.slice(5, 10)}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}><Heart size={11} /> {item.like_count || 0}</span>
+                <button
+                  onClick={() => handleLike(item)}
+                  aria-pressed={!!item.liked}
+                  aria-label="点赞"
+                  className={`talk-like-btn ${item.liked ? 'liked' : ''}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.2rem', border: 'none', background: 'transparent',
+                    color: item.liked ? 'var(--accent)' : 'var(--text-tertiary)', cursor: 'pointer',
+                    padding: '0.1rem 0.2rem', fontSize: '0.72rem', transition: 'all 0.2s', fontFamily: 'inherit',
+                  }}
+                >
+                  <Heart size={11} fill={item.liked ? 'currentColor' : 'none'} />
+                  {item.like_count || 0}
+                </button>
+                <Link to="/talks" style={{ color: 'var(--text-tertiary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.15rem', marginLeft: 'auto' }}>
+                  去互动 <ArrowRight size={11} />
+                </Link>
               </div>
-            </Link>
+            </div>
           ))
         )}
       </div>
@@ -637,23 +853,21 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [totalArticles, setTotalArticles] = useState(0);
   const [totalCategories, setTotalCategories] = useState(0);
-  const [totalTags, setTotalTags] = useState(0);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     Promise.all([
       getArticles({ page_size: 3 }),
       getArticles({ page_size: 1 }),
       getCategories(),
-      getTags(),
-    ]).then(([articlesRes, countRes, catsRes, tagsRes]) => {
+    ]).then(([articlesRes, countRes, catsRes]) => {
       const list = extractList(articlesRes);
       setArticles(list);
       const total = countRes?.data?.count ?? countRes?.count ?? (Array.isArray(countRes) ? countRes.length : 0);
       setTotalArticles(total);
       const cats = extractList(catsRes);
+      setCategories(cats);
       setTotalCategories(Array.isArray(cats) ? cats.length : 0);
-      const tags = extractList(tagsRes);
-      setTotalTags(Array.isArray(tags) ? tags.length : 0);
     }).catch((err) => {
       console.warn('API failed, using fallback data:', err.message);
     }).finally(() => setLoading(false));
@@ -662,7 +876,6 @@ export default function HomePage() {
   const stats = [
     { label: "文章", value: totalArticles, icon: BookOpen },
     { label: "分类", value: totalCategories, icon: Code2 },
-    { label: "标签", value: totalTags, icon: MessageSquare },
   ];
 
   const onSearch = (e) => {
@@ -696,7 +909,7 @@ export default function HomePage() {
         {/* Search Bar */}
         <div className="glass search-center">
           <Search size={18} />
-          <input type="text" placeholder="搜索文章、分类、标签..." onKeyDown={onSearch} />
+          <input type="text" placeholder="搜索文章、分类..." onKeyDown={onSearch} />
         </div>
 
         {/* Hero Row: Profile + Music */}
@@ -760,9 +973,16 @@ export default function HomePage() {
         </div>
 
         {/* Bottom Row: LeetCode + Talks */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+        <div className="home-duo-grid">
           <LeetCodeCard />
           <TalksCard />
+        </div>
+
+        {/* Interactive Row: Projects + Categories + Quote */}
+        <div className="home-trio-grid">
+          <ProjectsCard />
+          <CategoriesCard categories={categories} />
+          <QuoteCard />
         </div>
       </div>
     </section>

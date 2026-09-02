@@ -87,6 +87,16 @@ function getContrastText(hex) {
   return brightness > 128 ? '#1e1b4b' : '#ffffff';
 }
 
+/**
+ * 计算“位于强调色背景之上”的前景文字色。
+ * 以 WCAG 4.5:1 为门槛：白色可用则用白，否则退回深色，保证任意自定义强调色下文字都清晰。
+ */
+function pickOnAccentText(accentHex) {
+  const lum = getRelativeLuminance(accentHex);
+  const whiteRatio = 1.05 / (lum + 0.05);
+  return whiteRatio >= 4.5 ? '#ffffff' : '#1e1b4b';
+}
+
 function getRelativeLuminance(hex) {
   const [r, g, b] = hexToRgb(hex);
   const [rs, gs, bs] = [r, g, b].map((c) => {
@@ -415,8 +425,12 @@ function buildThemeVars(palette, isDark) {
   const accentSecondary = ensureContrast(accentSecondaryRaw, bgPrimary, 3, isDark);
   const muted = ensureContrast(mutedRaw, bgPrimary, 3, isDark);
 
+  // 强调色背景之上的文字色：按强调色亮度自动取白/深，保证 4.5:1
+  const onAccent = pickOnAccentText(accent);
+
   return {
     accent,
+    onAccent,
     accentSoft: rgba(accent, 0.12),
     accentGlow: rgba(accent, 0.25),
     accentSecondary,
@@ -475,6 +489,7 @@ function buildThemeVars(palette, isDark) {
 function applyThemeVars(vars) {
   const root = document.documentElement;
   root.style.setProperty('--accent', vars.accent);
+  root.style.setProperty('--on-accent', vars.onAccent);
   root.style.setProperty('--accent-soft', vars.accentSoft);
   root.style.setProperty('--accent-glow', vars.accentGlow);
   root.style.setProperty('--accent-secondary', vars.accentSecondary);

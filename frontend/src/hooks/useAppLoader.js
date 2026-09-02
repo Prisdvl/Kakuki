@@ -100,7 +100,6 @@ export function useAppLoader(initialLoading = false) {
 export function preloadPages(onProgress) {
   const pages = [
     { name: '首页', import: () => import('../pages/home/HomePage') },
-    { name: '标签', import: () => import('../pages/tag/TagPage') },
     { name: '分类', import: () => import('../pages/category/CategoryPage') },
     { name: '归档', import: () => import('../pages/archive/ArchivePage') },
     { name: '文章详情', import: () => import('../pages/article/ArticleDetailPage') },

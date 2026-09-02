@@ -1,23 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, Tag } from "antd";
-import { getCategories, getTags, getArticles } from "../../api/article";
+import { Card } from "antd";
+import { getCategories, getArticles } from "../../api/article";
 import { extractList } from "../../api/request";
 
 export default function Sidebar() {
   const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
   const [hotArticles, setHotArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       getCategories(),
-      getTags(),
       getArticles({ ordering: "-views", page_size: 5 }),
-    ]).then(([catRes, tagRes, artRes]) => {
+    ]).then(([catRes, artRes]) => {
       setCategories(extractList(catRes));
-      setTags(extractList(tagRes));
       setHotArticles(extractList(artRes));
     }).finally(() => setLoading(false));
   }, []);
@@ -54,24 +51,6 @@ export default function Sidebar() {
             </li>
           ))}
         </ul>
-      </Card>
-      <Card
-        title="标签云"
-        size="small"
-        className="border border-[var(--border)] bg-[var(--card-bg)] rounded-2xl"
-      >
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
-            <Link key={tag.id} to={`/tag/${tag.id}`}>
-              <Tag
-                className="cursor-pointer rounded-lg border-[var(--border)] bg-[var(--glass-bg-strong)] text-[var(--text-primary)] hover:text-[var(--accent)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all duration-200 font-semibold shadow-sm"
-                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
-              >
-                {tag.name}
-              </Tag>
-            </Link>
-          ))}
-        </div>
       </Card>
       <Card
         title="热门文章"

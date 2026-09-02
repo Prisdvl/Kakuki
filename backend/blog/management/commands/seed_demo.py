@@ -1,4 +1,4 @@
-"""
+﻿"""
 演示数据种子命令：python manage.py seed_demo
 一键创建演示账号、分类、标签、文章（Markdown）、评论、杂谈、项目。
 幂等：已存在同名数据时跳过；加 --flush 可先清除演示数据。
@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from blog.models import (
-    Category, Tag, Article, Comment, Talk, Project,
+    Category, Article, Comment, Talk, Project,
 )
 
 User = get_user_model()
@@ -32,15 +32,13 @@ class Command(BaseCommand):
             Talk.objects.all().delete()
             Project.objects.all().delete()
             Category.objects.all().delete()
-            Tag.objects.all().delete()
             self.stdout.write(self.style.WARNING('已清除全部博客数据'))
 
         admin = self._ensure_user(DEMO_ADMIN, is_staff=True, is_superuser=True)
         demo = self._ensure_user(DEMO_USER)
 
         categories = self._seed_categories()
-        tags = self._seed_tags()
-        articles = self._seed_articles(admin, categories, tags)
+        articles = self._seed_articles(admin, categories)
         self._seed_comments(articles, admin, demo)
         self._seed_talks(admin)
         self._seed_projects()
@@ -74,16 +72,13 @@ class Command(BaseCommand):
             cats.append(cat)
         return cats
 
-    def _seed_tags(self):
-        names = ['React', 'Django', 'DRF', 'TypeScript', 'Python', '性能优化', 'Vite', 'MySQL']
-        return [Tag.objects.get_or_create(name=n)[0] for n in names]
 
-    def _seed_articles(self, author, categories, tags):
+    def _seed_articles(self, author, categories):
         now = timezone.now()
         articles_md = [
             {
                 'title': '用 React 18 + Vite 打造玻璃拟态博客首页',
-                'category': categories[0], 'tags': [tags[0], tags[6]],
+                'category': categories[0],
                 'is_top': True,
                 'summary': '从零搭建玻璃拟态风格首页：毛玻璃卡片、鼠标跟随光效、主题色提取，一次前端视觉架构的完整实践。',
                 'content': """# 前言
@@ -138,7 +133,7 @@ const onMouseMove = (e) => {
             },
             {
                 'title': 'DRF 统一响应格式与全局异常处理设计',
-                'category': categories[1], 'tags': [tags[1], tags[2], tags[7]],
+                'category': categories[1],
                 'summary': '前后端分离项目里，统一 {code, message, data} 响应结构与全局异常处理器是工程化的第一步。',
                 'content': """# 为什么要统一响应格式？
 
@@ -180,7 +175,7 @@ if not created:
             },
             {
                 'title': 'LeetCode 刷题半年复盘：从暴力到最优解的思维跃迁',
-                'category': categories[2], 'tags': [tags[4]],
+                'category': categories[2],
                 'summary': '坚持刷题 180 天的复盘：双指针、滑动窗口、动态规划的解题模板，以及如何用热力图可视化坚持的力量。',
                 'content': """# 半年刷题复盘
 
@@ -225,7 +220,7 @@ def length_of_longest_substring(s: str) -> int:
             },
             {
                 'title': 'MySQL 索引优化实战：把查询从 800ms 降到 12ms',
-                'category': categories[1], 'tags': [tags[7], tags[5]],
+                'category': categories[1],
                 'summary': '一次真实的慢查询治理：复合索引设计、覆盖索引、EXPLAIN 分析，查询耗时从 800ms 降到 12ms。',
                 'content': """# 慢查询治理实录
 
@@ -270,7 +265,7 @@ class Meta:
             },
             {
                 'title': 'Vite 5 迁移踩坑记：从 40s 到 1.2s 的构建提速',
-                'category': categories[3], 'tags': [tags[6], tags[3], tags[5]],
+                'category': categories[3],
                 'summary': '把老项目从 Webpack 迁到 Vite 5 的完整记录：依赖预构建、代理配置、分包策略，构建时间从 40s 降到 1.2s。',
                 'content': """# 从 Webpack 到 Vite 5
 
@@ -315,7 +310,7 @@ const ArticleDetail = lazy(() => import('./pages/article/ArticleDetailPage'));
             },
             {
                 'title': '用 Zustand + Web Audio 打造丝滑的在线音乐播放器',
-                'category': categories[0], 'tags': [tags[0], tags[4]],
+                'category': categories[0],
                 'summary': '音乐播放器是博客最亮眼的模块：网易云 API 代理、歌词滚动同步、全局状态管理，技术细节全部拆解。',
                 'content': """# 在线音乐播放器设计
 
@@ -383,7 +378,6 @@ const useMusicStore = create((set) => ({
                     'created_at': now - timedelta(days=6 - i),
                 },
             )
-            article.tags.set(item['tags'])
             created.append(article)
         return created
 

@@ -4,9 +4,9 @@ from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
-from .models import Category, Tag, Article, Comment, Talk, Project, ArticleLike, TalkLike
+from .models import Category, Article, Comment, Talk, Project, ArticleLike, TalkLike
 from .serializers import (
-    CategorySerializer, TagSerializer,
+    CategorySerializer,
     ArticleListSerializer, ArticleDetailSerializer, ArticleWriteSerializer,
     CommentSerializer, CommentCreateSerializer,
     TalkSerializer, TalkCreateSerializer, ProjectSerializer
@@ -45,33 +45,12 @@ class CategoryManageView(StandardResponseMixin, generics.ListCreateAPIView, gene
         return self.list(request, *args, **kwargs)
 
 
-# --- Tag ---
-class TagListView(StandardResponseMixin, generics.ListAPIView):
-    queryset = Tag.objects.annotate(article_count=Count('articles')).order_by('-article_count')
-    serializer_class = TagSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
-
-
-class TagManageView(StandardResponseMixin, generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    pagination_class = None
-
-    def get(self, request, *args, **kwargs):
-        if kwargs.get('pk'):
-            return self.retrieve(request, *args, **kwargs)
-        self.queryset = Tag.objects.annotate(article_count=Count('articles'))
-        return self.list(request, *args, **kwargs)
-
-
 # --- Article ---
 class ArticleListView(StandardResponseMixin, generics.ListAPIView):
     queryset = Article.objects.annotate(
         comment_count=Count('comments', distinct=True),
         like_count=Count('likes', distinct=True),
-    ).select_related('category', 'author').prefetch_related('tags').all()
+    ).select_related('category', 'author').all()
     serializer_class = ArticleListSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -82,13 +61,10 @@ class ArticleListView(StandardResponseMixin, generics.ListAPIView):
     def get_queryset(self):
         qs = super().get_queryset()
         category_id = self.request.query_params.get('category')
-        tag_id = self.request.query_params.get('tag')
         year = self.request.query_params.get('year')
         month = self.request.query_params.get('month')
         if category_id:
             qs = qs.filter(category_id=category_id)
-        if tag_id:
-            qs = qs.filter(tags__id=tag_id)
         if year:
             qs = qs.filter(created_at__year=year)
             if month:
@@ -100,7 +76,7 @@ class ArticleDetailView(generics.RetrieveAPIView):
     queryset = Article.objects.annotate(
         comment_count=Count('comments', distinct=True),
         like_count=Count('likes', distinct=True),
-    ).select_related('category', 'author').prefetch_related('tags')
+    ).select_related('category', 'author')
     serializer_class = ArticleDetailSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -361,7 +337,6 @@ class SiteStatsView(APIView):
         data = {
             'article_count': Article.objects.count(),
             'category_count': Category.objects.count(),
-            'tag_count': Tag.objects.count(),
             'comment_count': Comment.objects.count(),
             'talk_count': Talk.objects.count(),
             'project_count': Project.objects.count(),

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, Row, Col, Statistic, Progress, Tag, Empty, Spin } from "antd";
 import {
-  FileTextOutlined, FolderOutlined, TagsOutlined, MessageOutlined,
+  FileTextOutlined, FolderOutlined, MessageOutlined,
   EyeOutlined, ThunderboltOutlined, HeartOutlined, TeamOutlined,
   CodeOutlined, FireOutlined, TrophyOutlined, CheckCircleOutlined,
 } from "@ant-design/icons";
@@ -37,7 +37,6 @@ export default function Dashboard() {
   const items = [
     { title: "文章总数", value: stats?.article_count, icon: <FileTextOutlined />, color: "var(--accent)" },
     { title: "分类数量", value: stats?.category_count, icon: <FolderOutlined />, color: "#8884d8" },
-    { title: "标签数量", value: stats?.tag_count, icon: <TagsOutlined />, color: "#82ca9d" },
     { title: "评论数量", value: stats?.comment_count, icon: <MessageOutlined />, color: "#ffc658" },
     { title: "总阅读量", value: stats?.total_views, icon: <EyeOutlined />, color: "#ff7300" },
     { title: "运行天数", value: stats?.running_days, icon: <ThunderboltOutlined />, color: "#413ca0" },

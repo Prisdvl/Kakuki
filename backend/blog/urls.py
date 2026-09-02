@@ -1,4 +1,4 @@
-from django.urls import path
+﻿from django.urls import path
 from . import views
 from . import leetcode_views
 from . import netease_views
@@ -8,10 +8,6 @@ urlpatterns = [
     path('categories/', views.CategoryListView.as_view(), name='category-list'),
     path('categories/manage/', views.CategoryManageView.as_view(), name='category-manage'),
     path('categories/manage/<int:pk>/', views.CategoryManageView.as_view(), name='category-manage-detail'),
-    # Tags
-    path('tags/', views.TagListView.as_view(), name='tag-list'),
-    path('tags/manage/', views.TagManageView.as_view(), name='tag-manage'),
-    path('tags/manage/<int:pk>/', views.TagManageView.as_view(), name='tag-manage-detail'),
     # Articles
     path('articles/', views.ArticleListView.as_view(), name='article-list'),
     path('articles/create/', views.ArticleCreateView.as_view(), name='article-create'),

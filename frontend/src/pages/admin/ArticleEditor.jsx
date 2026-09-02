@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Form, Input, Button, Select, Switch, Upload, message } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { getArticleDetail, createArticle, updateArticle, getCategories, getTags } from "../../api/article";
+import { getArticleDetail, createArticle, updateArticle, getCategories } from "../../api/article";
 import { extractList } from "../../api/request";
 
 export default function ArticleEditor() {
@@ -11,12 +11,10 @@ export default function ArticleEditor() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
   const [coverFile, setCoverFile] = useState(null);
 
   useEffect(() => {
     getCategories().then((res) => setCategories(extractList(res)));
-    getTags().then((res) => setTags(extractList(res)));
   }, []);
 
   useEffect(() => {
@@ -26,7 +24,7 @@ export default function ArticleEditor() {
         const article = res.data;
         form.setFieldsValue({
           title: article.title, content: article.content, summary: article.summary,
-          category: article.category?.id, tags: article.tags?.map((t) => t.id), is_top: article.is_top,
+          category: article.category?.id, is_top: article.is_top,
         });
       }).finally(() => setLoading(false));
     }
@@ -36,8 +34,7 @@ export default function ArticleEditor() {
     setLoading(true);
     const formData = new FormData();
     Object.entries(values).forEach(([k, v]) => {
-      if (k === "tags") { v?.forEach((t) => formData.append("tags", t)); }
-      else { formData.append(k, v); }
+      formData.append(k, v);
     });
     if (coverFile) formData.append("cover_image", coverFile);
     try {
@@ -64,10 +61,6 @@ export default function ArticleEditor() {
             <Form.Item name="category" label="分类">
               <Select placeholder="选择分类" allowClear style={{ width: 200 }}
                 options={categories.map((c) => ({ label: c.name, value: c.id }))} />
-            </Form.Item>
-            <Form.Item name="tags" label="标签">
-              <Select mode="multiple" placeholder="选择标签" allowClear style={{ width: 300 }}
-                options={tags.map((t) => ({ label: t.name, value: t.id }))} />
             </Form.Item>
             <Form.Item name="is_top" label="置顶" valuePropName="checked">
               <Switch />

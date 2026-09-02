@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+﻿import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ConfigProvider, theme as antdTheme } from 'antd';
 import { useEffect, Suspense, lazy, useRef, useState } from 'react';
 import AppLayout from './components/Layout/AppLayout';
@@ -11,7 +11,6 @@ const HomePage = lazy(() => import('./pages/home/HomePage'));
 const ArticleDetailPage = lazy(() => import('./pages/article/ArticleDetailPage'));
 const ArchivePage = lazy(() => import('./pages/archive/ArchivePage'));
 const CategoryPage = lazy(() => import('./pages/category/CategoryPage'));
-const TagPage = lazy(() => import('./pages/tag/TagPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
 const MusicPage = lazy(() => import('./pages/music/MusicPage'));
 const TalksPage = lazy(() => import('./pages/talks/TalksPage'));
@@ -24,7 +23,6 @@ const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ArticleManage = lazy(() => import('./pages/admin/ArticleManage'));
 const ArticleEditor = lazy(() => import('./pages/admin/ArticleEditor'));
 const CategoryManage = lazy(() => import('./pages/admin/CategoryManage'));
-const TagManage = lazy(() => import('./pages/admin/TagManage'));
 const CommentManage = lazy(() => import('./pages/admin/CommentManage'));
 
 function PageFallback() {
@@ -192,8 +190,6 @@ export default function App() {
                   <Route path="archive" element={<ArchivePage />} />
                   <Route path="category" element={<CategoryPage />} />
                   <Route path="category/:id" element={<CategoryPage />} />
-                  <Route path="tag" element={<TagPage />} />
-                  <Route path="tag/:id" element={<TagPage />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="music" element={<MusicPage />} />
                   <Route path="talks" element={<TalksPage />} />
@@ -208,7 +204,6 @@ export default function App() {
                   <Route path="articles/new" element={<ArticleEditor />} />
                   <Route path="articles/:id/edit" element={<ArticleEditor />} />
                   <Route path="categories" element={<CategoryManage />} />
-                  <Route path="tags" element={<TagManage />} />
                   <Route path="comments" element={<CommentManage />} />
                 </Route>
               </Routes>

@@ -204,10 +204,12 @@ body {
   inset: 0;
   z-index: 0;
   background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--accent) 15%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 15%, transparent) 1px, transparent 1px);
   background-size: 60px 60px;
-  opacity: 0.4;
+  -webkit-mask-image: radial-gradient(ellipse 95% 85% at 50% 32%, black 20%, transparent 96%);
+  mask-image: radial-gradient(ellipse 95% 85% at 50% 32%, black 20%, transparent 96%);
+  opacity: 0.55;
 }
 
 /* Brighter grid lines that follow cursor via CSS mask */

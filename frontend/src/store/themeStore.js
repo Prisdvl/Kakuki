@@ -348,6 +348,20 @@ function hslToHex(h, s, l) {
   return rgbToHex(r, g, b);
 }
 
+/**
+ * 生成“比主题色淡”的页面底色：保留主题色色相，显著降低饱和度并拉高/压低亮度。
+ * 亮色模式 → 近白淡彩（96% 亮度）；暗色模式 → 近黑淡彩（6% 亮度）。
+ * 这样任意主题色下背景都柔和、带有主题色氛围，且文字辨识度由 ensureContrast 兜底。
+ */
+function getTintedBackground(accentHex, isDark) {
+  const [r, g, b] = hexToRgb(accentHex);
+  const [h, s] = rgbToHsl(r, g, b);
+  if (isDark) {
+    return hslToHex(h, clamp(s * 0.22, 10, 28), 6);
+  }
+  return hslToHex(h, clamp(s * 0.28, 12, 34), 96);
+}
+
 function extractDominantColorFallback(imageSrc) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -408,8 +422,8 @@ function buildThemeVars(palette, isDark) {
   const errorColor = isDark ? '#f87171' : '#ef4444';
   const infoColor = isDark ? '#60a5fa' : '#3b82f6';
 
-  const bgBase = isDark ? DarkMuted : LightMuted;
-  const bgPrimary = bgBase;
+  // 页面底色跟随主题色、但比主题色淡（保留色相、压低饱和与明暗差）
+  const bgPrimary = getTintedBackground(Vibrant, isDark);
 
   const textPrimaryRaw = isDark ? LightVibrant : DarkVibrant;
   const textSecondaryRaw = isDark ? Vibrant : Muted;
@@ -451,7 +465,7 @@ function buildThemeVars(palette, isDark) {
       : `0 16px 48px ${rgba(accent, 0.12)}`,
 
     bgPrimary,
-    bgSecondary: isDark ? rgba(DarkVibrant, 0.6) : rgba(LightVibrant, 0.5),
+    bgSecondary: isDark ? rgba(DarkVibrant, 0.45) : rgba(LightVibrant, 0.3),
     bgTertiary: rgba(accent, isDark ? 0.05 : 0.06),
 
     textPrimary,

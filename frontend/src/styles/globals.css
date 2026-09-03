@@ -3737,6 +3737,12 @@ input:autofill {
   position: fixed;
   inset: 0;
   z-index: 100;
+  animation: featureBackdropIn 0.25s ease;
+}
+
+@keyframes featureBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .feature-menu-dropdown {
@@ -3744,8 +3750,6 @@ input:autofill {
   top: calc(100% + 12px);
   right: 0;
   width: 320px;
-  max-height: 80vh;
-  overflow-y: auto;
   background: var(--glass-bg-strong);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -3753,17 +3757,26 @@ input:autofill {
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--accent-glow);
   z-index: 200;
-  animation: featureMenuIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top right;
+  animation: featureMenuIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes featureMenuIn {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.98);
+    transform: translateY(-14px) scale(0.7) rotate(-1.2deg);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* 极端矮屏才回退滚动；正常屏幕面板自适应高度、无滚动条 */
+@media (max-height: 680px) {
+  .feature-menu-dropdown {
+    max-height: calc(100vh - 88px);
+    overflow-y: auto;
   }
 }
 

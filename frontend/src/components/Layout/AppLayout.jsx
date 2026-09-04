@@ -271,7 +271,9 @@ export default function AppLayout() {
               aria-label={isDark ? '切换到浅色模式' : '切换到深色模式'}
               title={isDark ? '当前深色模式 · 点击切换为浅色' : '当前浅色模式 · 点击切换为深色'}
             >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              <span key={isDark ? 'sun' : 'moon'} className="theme-icon-swap">
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              </span>
             </button>
             <FeatureMenu />
             {isLoggedIn ? (
@@ -289,7 +291,9 @@ export default function AppLayout() {
               </Link>
             )}
             <button className="theme-toggle md:hidden" onClick={() => setMobileMenu(!mobileMenu)} aria-label="菜单">
-              {mobileMenu ? <X size={18} /> : <Menu size={18} />}
+              <span key={mobileMenu ? 'x' : 'menu'} className="theme-icon-swap">
+                {mobileMenu ? <X size={18} /> : <Menu size={18} />}
+              </span>
             </button>
           </div>
         </div>

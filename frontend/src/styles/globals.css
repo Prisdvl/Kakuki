@@ -5749,3 +5749,20 @@ a, button, .article-card, .contact-card, .social-links a,
   .talk-like-btn.liked { animation: none; }
   .project-mini { transition: none; }
 }
+
+
+/* ===== Theme / menu icon swap animation ===== */
+.theme-icon-swap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: themeIconSwap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes themeIconSwap {
+  0% { transform: rotate(-180deg) scale(0.4); opacity: 0; }
+  60% { transform: rotate(18deg) scale(1.18); opacity: 1; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-icon-swap { animation: none; }
+}

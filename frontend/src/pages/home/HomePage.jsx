@@ -49,17 +49,54 @@ function AnimatedStatValue({ value }) {
   return <>{animated}</>;
 }
 
+const GITHUB_USERNAME = 'Prisdvl';
+const GH_CACHE_KEY = 'kakuki-github-profile';
+const GH_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+// 从 GitHub API 同步头像与个人介绍（缓存 24h，失败回退本地）
+function useGithubProfile() {
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    try {
+      const raw = localStorage.getItem(GH_CACHE_KEY);
+      if (raw) {
+        const cached = JSON.parse(raw);
+        if (Date.now() - cached.ts < GH_CACHE_TTL) {
+          setProfile(cached.data);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+    fetch(`https://api.github.com/users/${GITHUB_USERNAME}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setProfile(data);
+        try {
+          localStorage.setItem(GH_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: { avatar_url: data.avatar_url, bio: data.bio } }));
+        } catch { /* ignore */ }
+      })
+      .catch(() => { /* 静默回退本地头像/简介 */ });
+    return () => { cancelled = true; };
+  }, []);
+  return profile;
+}
+
 export function ProfileCard({ stats }) {
+  const gh = useGithubProfile();
+  const avatarUrl = gh?.avatar_url || '/avatar.jpg';
+  const bio = gh?.bio || '全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。';
   return (
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">
-        <img src="/avatar.jpg" alt="Prisdvl" style={{
+        <img src={avatarUrl} alt="Prisdvl" style={{
           width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
-        }} onError={(e) => { e.target.style.display = 'none'; }} />
+        }} onError={(e) => { if (e.target.src !== '/avatar.jpg') e.target.src = '/avatar.jpg'; }} />
       </div>
       <div className="profile-info">
         <div className="profile-name">Prisdvl</div>
-        <div className="profile-bio">全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。</div>
+        <div className="profile-bio">{bio}</div>
         <div className="profile-stats">
           {stats.map((s) => (
             <div key={s.label} className="profile-stat">
@@ -463,6 +500,19 @@ export function LeetCodeCard() {
     startDate.setDate(startDate.getDate() - (HEATMAP_WEEKS * DAYS - 1));
     startDate.setDate(startDate.getDate() - startDate.getDay());
     const calendar = lcData?.calendar || {};
+    // 日历为空时，用最近提交记录按日期聚合出真实瓷砖（而非随机占位）
+    const calFromSubs = {};
+    if (Object.keys(calendar).length === 0 && recentSubs.length > 0) {
+      recentSubs.forEach((s) => {
+        if (!s.timestamp) return;
+        const d = new Date(parseInt(s.timestamp) * 1000);
+        if (Number.isNaN(d.getTime())) return;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        calFromSubs[key] = (calFromSubs[key] || 0) + 1;
+      });
+    }
+    const activeCal = Object.keys(calendar).length > 0 ? calendar : calFromSubs;
+    const hasRealData = Object.keys(activeCal).length > 0;
     const data = [];
     for (let w = 0; w < HEATMAP_WEEKS; w++) {
       const week = [];
@@ -472,9 +522,9 @@ export function LeetCodeCard() {
         const isFuture = date > today;
         if (isFuture) {
           week.push({ date, count: -1 });
-        } else if (Object.keys(calendar).length > 0) {
+        } else if (hasRealData) {
           const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-          const count = calendar[dateStr] || 0;
+          const count = activeCal[dateStr] || 0;
           const level = count === 0 ? 0 : Math.min(Math.ceil(count / 3), 4);
           week.push({ date, count: level });
         } else {
@@ -491,7 +541,7 @@ export function LeetCodeCard() {
       data.push(week);
     }
     return data;
-  }, [lcData]);
+  }, [lcData, recentSubs]);
 
   const cellColor = (count) => {
     if (count < 0) return 'transparent';

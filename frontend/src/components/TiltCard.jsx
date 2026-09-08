@@ -5,7 +5,7 @@ import { useRef, useCallback } from 'react';
  * 鼠标进入时卡片随光标位置产生 rotateX / rotateY 倾斜 + 轻微放大，
  * 带光滑回弹；遵循 prefers-reduced-motion。
  */
-export default function TiltCard({ children, max = 10, scale = 1.015, className = '', style = {}, glare = true }) {
+export default function TiltCard({ children, max = 8, scale = 1.01, className = '', style = {}, glare = true }) {
   const ref = useRef(null);
 
   const handleMove = useCallback((e) => {

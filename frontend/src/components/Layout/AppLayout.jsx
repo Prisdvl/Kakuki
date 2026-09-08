@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Sun, Moon, Menu, X, ArrowUp } from 'lucide-react';
+import { Sun, Moon, Menu, X, ArrowUp, Timer, Activity } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 import useUserStore from '../../store/userStore';
 import FeatureMenu from '../FeatureMenu';
@@ -35,6 +35,90 @@ const StatusTime = memo(function StatusTime() {
   };
 
   return <span className="status-time">{formatTime(currentTime)}</span>;
+});
+
+// 翻页数字单元：值变化时 3D 翻转入场（翻页钟风格）
+const FlipDigit = memo(function FlipDigit({ digit }) {
+  return (
+    <span key={digit} className="flip-digit">{digit}</span>
+  );
+});
+
+const FlipUnit = memo(function FlipUnit({ value, label }) {
+  const str = String(value).padStart(value >= 100 ? 3 : 2, '0');
+  return (
+    <span className="flip-group">
+      {label && <span className="flip-label">{label}</span>}
+      <span className="flip-unit">
+        {str.split('').map((d, i) => <FlipDigit key={`${d}-${i}`} digit={d} />)}
+      </span>
+    </span>
+  );
+});
+
+// 站点运行时长：以 GitHub Pages 上线时刻为基准累计（翻页天数/小时风格）
+const StatusUptime = memo(function StatusUptime() {
+  // 部署基准：2026-09-08 19:15 (UTC+8) = GitHub Pages 上线时刻
+  const DEPLOY_TS = new Date('2026-09-08T11:15:00Z').getTime();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const diff = Math.max(0, now - DEPLOY_TS);
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor(diff / 3600000) % 24;
+  const minutes = Math.floor(diff / 60000) % 60;
+  const seconds = Math.floor(diff / 1000) % 60;
+
+  return (
+    <span className="status-item status-uptime" title="自 GitHub Pages 上线起的运行时长">
+      <Activity size={11} />
+      <FlipUnit value={days} label="天" />
+      <FlipUnit value={hours} label="时" />
+      <FlipUnit value={minutes} label="分" />
+      <FlipUnit value={seconds} label="秒" />
+    </span>
+  );
+});
+
+// 今日专注时长统计（跨组件监听番茄钟记录）
+const StatusFocus = memo(function StatusFocus() {
+  const [minutes, setMinutes] = useState(0);
+
+  const refresh = useCallback(() => {
+    const today = new Date().toDateString();
+    try {
+      const raw = localStorage.getItem('kakuki-focus-records');
+      const arr = raw ? JSON.parse(raw) : [];
+      const sum = (Array.isArray(arr) ? arr : [])
+        .filter((r) => r && new Date(r.ts).toDateString() === today)
+        .reduce((s, r) => s + (r.minutes || 0), 0);
+      setMinutes(sum);
+    } catch { setMinutes(0); }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    window.addEventListener('kakuki:focus-updated', refresh);
+    window.addEventListener('storage', refresh);
+    const t = setInterval(refresh, 30000);
+    return () => {
+      window.removeEventListener('kakuki:focus-updated', refresh);
+      window.removeEventListener('storage', refresh);
+      clearInterval(t);
+    };
+  }, [refresh]);
+
+  if (minutes === 0) return null;
+  return (
+    <span className="status-item status-focus" title="今日专注累计时长">
+      <Timer size={11} />
+      今日专注 {minutes} 分钟
+    </span>
+  );
 });
 
 export default function AppLayout() {
@@ -309,6 +393,8 @@ export default function AppLayout() {
             <span className="status-page-icon" />
             <span>正在浏览：{NAV_ITEMS.find(n => location.pathname === n.path)?.label || '首页'}</span>
           </div>
+          <StatusUptime />
+          <StatusFocus />
           <div className="status-item status-stack">
             <span className="status-tech-badge">React</span>
             <span className="status-tech-badge">Django</span>

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
  * design-tokens.css — 统一设计令牌（Design Tokens）
  *
  * 职责：集中定义颜色、磨砂玻璃、阴影、圆角、间距、动画时长、
@@ -49,8 +49,8 @@
    *   --glass-edge    边缘高光（伪元素 ::before 实现）
    *   --glass-shadow / --glass-shadow-hover 投影层级
    * ============================================================ */
-  --glass-bg: rgba(255, 255, 255, 0.68);
-  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-bg: rgba(255, 255, 255, 0.40);
+  --glass-bg-strong: rgba(255, 255, 255, 0.58);
   --glass-border: rgba(255, 255, 255, 0.85);
   --glass-blur: 28px;
   --glass-blur-strong: 36px;
@@ -58,10 +58,10 @@
   --glass-tint: rgba(255, 255, 255, 0.4);
   --glass-specular: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.55) 0%,
     transparent 35%,
     transparent 65%,
-    rgba(255, 255, 255, 0.3) 100%
+    rgba(255, 255, 255, 0.18) 100%
   );
   --glass-edge: linear-gradient(
     135deg,
@@ -188,8 +188,8 @@
   --error: #ff453a;   --error-soft: rgba(255, 69, 58, 0.15);
   --info: #0a84ff;    --info-soft: rgba(10, 132, 255, 0.15);
 
-  --glass-bg: rgba(28, 28, 30, 0.55);
-  --glass-bg-strong: rgba(28, 28, 30, 0.78);
+  --glass-bg: rgba(28, 28, 30, 0.32);
+  --glass-bg-strong: rgba(28, 28, 30, 0.48);
   --glass-border: rgba(255, 255, 255, 0.14);
   --glass-blur: 32px;
   --glass-saturate: 220%;

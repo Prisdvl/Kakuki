@@ -1,38 +1,19 @@
 import { create } from 'zustand';
 import request from '../api/request';
+import { STATIC_MUSIC } from '../data/musicStatic';
 
-// 水墨风 SVG 封面（墨色渐变 + 山峦 + 朱砂印），避免外部随机图破坏氛围
-const inkCover = (seed) => {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><defs><linearGradient id='g${seed}' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#555b64'/><stop offset='1' stop-color='#1d2025'/></linearGradient></defs><rect width='300' height='300' fill='url(#g${seed})'/><path d='M0,205 C60,165 115,198 165,168 C215,138 260,190 300,158 L300,300 L0,300 Z' fill='#00000026'/><path d='M0,248 C85,216 150,240 225,214 C260,206 280,214 300,204 L300,300 L0,300 Z' fill='#00000038'/><circle cx='232' cy='82' r='24' fill='#c9a86a' opacity='0.88'/></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-};
+// 线上静态部署（无后端）时使用的真实歌单静态快照（来自本地后端接口，构建时生成）
+const STATIC_LIST = [{ id: STATIC_MUSIC.id, name: STATIC_MUSIC.name, coverImgUrl: STATIC_MUSIC.coverImgUrl, trackCount: STATIC_MUSIC.trackCount }];
 
-// 线上静态部署（无后端）时使用的演示歌单：真实可播放的公开示例音频
-const DEMO_PLAYLIST = {
-  id: 'demo',
-  name: 'Prisdvl 的喜欢音乐',
-  coverImgUrl: '',
-  trackCount: 8,
-  tracks: [
-    { id: 'demo-1', name: 'Song of the Green Whale', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.1', cover: inkCover(1), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-    { id: 'demo-2', name: 'Whispering Mountains', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.1', cover: inkCover(2), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-    { id: 'demo-3', name: 'Ink Drift', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.2', cover: inkCover(3), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
-    { id: 'demo-4', name: 'Paper Moon', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.2', cover: inkCover(4), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
-    { id: 'demo-5', name: 'Misty River', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.3', cover: inkCover(5), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
-    { id: 'demo-6', name: 'Brushstroke', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.3', cover: inkCover(6), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
-    { id: 'demo-7', name: 'Night Ink', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.4', cover: inkCover(7), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
-    { id: 'demo-8', name: 'Pale Whisper', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.4', cover: inkCover(8), url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
-  ],
-};
-
-const DEMO_LIST = [{ id: 'demo', name: 'Prisdvl 的喜欢音乐', coverImgUrl: '', trackCount: 8 }];
-
-const applyDemoPlaylist = (set, get) => {
-  const playlist = { ...DEMO_PLAYLIST, tracks: DEMO_PLAYLIST.tracks.map((t) => ({ ...t })) };
+const applyStaticPlaylist = (set, get) => {
+  const playlist = {
+    ...STATIC_MUSIC,
+    tracks: STATIC_MUSIC.tracks.map((t) => ({ ...t })),
+  };
   set({
-    user: { nickname: 'Prisdvl', avatarUrl: '' },
+    user: { nickname: 'Prisdvl', avatarUrl: STATIC_MUSIC.coverImgUrl || '' },
     playlists: [playlist],
-    playlistList: DEMO_LIST,
+    playlistList: STATIC_LIST,
     currentPlaylist: playlist,
     currentTrack: null,
     currentLyrics: [],
@@ -152,9 +133,9 @@ const useMusicStore = create((set, get) => ({
       set({ playlistList: list });
       return { success: true, playlists: list };
     } catch (err) {
-      console.error('Fetch playlists error, use demo:', err);
-      set({ playlistList: DEMO_LIST });
-      return { success: true, playlists: DEMO_LIST, demo: true };
+      console.error('Fetch playlists error, use static:', err);
+      set({ playlistList: STATIC_LIST });
+      return { success: true, playlists: STATIC_LIST, demo: true };
     }
   },
 
@@ -197,8 +178,8 @@ const useMusicStore = create((set, get) => ({
       }
       return { success: false, error: '未找到歌单数据' };
     } catch (err) {
-      console.error('Fetch playlist error, use demo:', err);
-      return applyDemoPlaylist(set, get);
+      console.error('Fetch playlist error, use static:', err);
+      return applyStaticPlaylist(set, get);
     }
   },
 
@@ -261,8 +242,8 @@ const useMusicStore = create((set, get) => ({
         return { success: false, error: '未找到歌单数据' };
       }
     } catch (err) {
-      console.error('Fetch bootstrap error, use demo:', err);
-      return applyDemoPlaylist(set, get);
+      console.error('Fetch bootstrap error, use static:', err);
+      return applyStaticPlaylist(set, get);
     }
   },
 

@@ -85,18 +85,19 @@ function useGithubProfile() {
 
 export function ProfileCard({ stats }) {
   const gh = useGithubProfile();
-  const [avatarBroken, setAvatarBroken] = useState(false);
-  const avatarUrl = (gh?.avatar_url || 'https://github.com/Prisdvl.png') + (avatarBroken ? '' : '');
+  // 头像：GitHub 官方 → 本地快照（unavatar 下载，与 GitHub 一致）→ 首字母徽章
+  const [avatarLevel, setAvatarLevel] = useState(0);
+  const avatarSources = [gh?.avatar_url || 'https://github.com/Prisdvl.png', '/github-avatar.png'];
   const bio = gh?.bio || '全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。';
   return (
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">
-        {avatarBroken ? (
+        {avatarLevel >= 2 ? (
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1.4rem' }}>P</div>
         ) : (
-          <img src={avatarUrl} alt="Prisdvl" style={{
+          <img src={avatarSources[avatarLevel]} alt="Prisdvl" style={{
             width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
-          }} onError={() => setAvatarBroken(true)} />
+          }} onError={() => setAvatarLevel((l) => l + 1)} />
         )}
       </div>
       <div className="profile-info">

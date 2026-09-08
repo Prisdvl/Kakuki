@@ -449,7 +449,7 @@ function buildThemeVars(palette, isDark) {
   return {
     accent,
     onAccent,
-    accentSoft: rgba(accent, 0.12),
+    accentSoft: rgba(accent, isDark ? 0.16 : 0.15),
     accentGlow: rgba(accent, 0.25),
     accentSecondary,
     accentDark: ensureContrast(DarkVibrant, bgPrimary, 3, isDark),
@@ -460,7 +460,7 @@ function buildThemeVars(palette, isDark) {
 
     glassBg: isDark ? rgba(DarkMuted, 0.42) : rgba(LightMuted, 0.4),
     glassBgStrong: isDark ? rgba(DarkMuted, 0.72) : rgba(LightMuted, 0.7),
-    glassBorder: isDark ? rgba(accent, 0.32) : rgba(accent, 0.28),
+    glassBorder: isDark ? rgba(accent, 0.36) : rgba(accent, 0.32),
     glassShadow: isDark
       ? `0 8px 32px ${rgba(DarkVibrant, 0.4)}`
       : `0 8px 32px ${rgba(accent, 0.08)}`,
@@ -470,12 +470,12 @@ function buildThemeVars(palette, isDark) {
 
     bgPrimary,
     bgSecondary: isDark ? rgba(DarkVibrant, 0.45) : rgba(LightVibrant, 0.3),
-    bgTertiary: rgba(accent, isDark ? 0.05 : 0.06),
+    bgTertiary: rgba(accent, isDark ? 0.08 : 0.09),
 
     textPrimary,
     textSecondary,
-    textTertiary: ensureAlphaContrast(rgba(accent, isDark ? 0.7 : 0.5), bgPrimary, 3, isDark),
-    border: rgba(accent, isDark ? 0.12 : 0.18),
+    textTertiary: ensureAlphaContrast(rgba(accent, isDark ? 0.85 : 0.66), bgPrimary, 3, isDark),
+    border: rgba(accent, isDark ? 0.22 : 0.28),
 
     heroOverlay: isDark ? rgba(DarkMuted, 0.6) : rgba(LightMuted, 0.6),
     cardBg: isDark ? rgba(DarkVibrant, 0.45) : rgba(LightVibrant, 0.5),

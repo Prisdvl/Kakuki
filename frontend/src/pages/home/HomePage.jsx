@@ -25,6 +25,7 @@ import { useHomeLayout } from "../../store/homeLayoutStore";
 import useMusicStore from '../../store/musicStore';
 import leetcodeApi from "../../api/leetcode";
 import useCountUp from "../../hooks/useCountUp";
+import useMagnetic from "../../hooks/useMagnetic";
 
 // ===== 可自由布局的组件注册表 =====
 const COMPONENT_META = {
@@ -949,7 +950,10 @@ export default function HomePage() {
   const enterEdit = () => {
     setEditing(true);
   };
-  // 完成编辑：从光标位置泛起涟漪扩散至整个页面
+  // 磁吸按钮：光标靠近时吸附跟随
+  const magneticRef = useMagnetic(0.22);
+  const magneticRefSolid = useMagnetic(0.22);
+  // 完成编辑：从光标位置泛起涟漪扩散至整个页面，组件随之波浪起伏
   const lastMouse = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   useEffect(() => {
     const onMove = (e) => { lastMouse.current = { x: e.clientX, y: e.clientY }; };
@@ -960,7 +964,7 @@ export default function HomePage() {
   const finishEdit = () => {
     setEditing(false);
     setRipple({ key: Date.now(), ...lastMouse.current });
-    setTimeout(() => setRipple(null), 1500);
+    setTimeout(() => setRipple(null), 1600);
   };
 
   const onSearch = (e) => {
@@ -1000,15 +1004,15 @@ export default function HomePage() {
         {/* Layout Toolbar */}
         <div className="home-layout-toolbar">
           {!editing ? (
-            <button className="glass-button" onClick={enterEdit} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+            <button className="glass-button" ref={magneticRef} onClick={enterEdit} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
               <LayoutGrid size={15} /> 自定义布局
             </button>
           ) : (
             <>
-              <button className="glass-button-solid" onClick={finishEdit} style={{ padding: '0.5rem 1.1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+              <button className="glass-button-solid" ref={magneticRefSolid} onClick={finishEdit} style={{ padding: '0.5rem 1.1rem', fontSize: '0.82rem', borderRadius: 12 }}>
                 <Check size={15} /> 完成编辑
               </button>
-              <button className="glass-button" onClick={resetLayout} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+              <button className="glass-button" ref={magneticRef} onClick={resetLayout} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
                 <RotateCcw size={15} /> 恢复默认
               </button>
             </>
@@ -1043,30 +1047,35 @@ export default function HomePage() {
                   onDragEnd={handleDragEnd}
                   style={editing && overId === item.id ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : undefined}
                 >
-                  {editing && (
-                    <div className="home-layout-controls">
-                      <span className="home-drag-handle" title="拖动排序">
-                        <GripVertical size={15} />
-                      </span>
-                      <span className="home-ctrl-name">
-                        {Icon && <Icon size={13} />} {meta?.name}
-                      </span>
-                      <div className="home-ctrl-actions">
-                        <button onClick={() => move(item.id, -1)} aria-label="上移" title="上移"><ArrowUp size={13} /></button>
-                        <button onClick={() => move(item.id, 1)} aria-label="下移" title="下移"><ArrowDown size={13} /></button>
-                        <button
-                          onClick={() => setWidth(item.id, item.width === 'wide' ? 'half' : 'wide')}
-                          aria-label={item.width === 'wide' ? '改为半宽' : '改为全宽'}
-                          title={item.width === 'wide' ? '改为半宽' : '改为全宽'}
-                        >
-                          {item.width === 'wide' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                        </button>
-                        <button onClick={() => toggleVisible(item.id)} aria-label="隐藏" title="隐藏"><EyeOff size={13} /></button>
-                        <button onClick={() => removeComponent(item.id)} aria-label="移除" title="移除" className="danger"><X size={13} /></button>
+                  <div
+                    className={`home-ripple-target ${ripple ? 'bobbing' : ''}`}
+                    style={{ '--ripple-i': visibleItems.indexOf(item) }}
+                  >
+                    {editing && (
+                      <div className="home-layout-controls">
+                        <span className="home-drag-handle" title="拖动排序">
+                          <GripVertical size={15} />
+                        </span>
+                        <span className="home-ctrl-name">
+                          {Icon && <Icon size={13} />} {meta?.name}
+                        </span>
+                        <div className="home-ctrl-actions">
+                          <button onClick={() => move(item.id, -1)} aria-label="上移" title="上移"><ArrowUp size={13} /></button>
+                          <button onClick={() => move(item.id, 1)} aria-label="下移" title="下移"><ArrowDown size={13} /></button>
+                          <button
+                            onClick={() => setWidth(item.id, item.width === 'wide' ? 'half' : 'wide')}
+                            aria-label={item.width === 'wide' ? '改为半宽' : '改为全宽'}
+                            title={item.width === 'wide' ? '改为半宽' : '改为全宽'}
+                          >
+                            {item.width === 'wide' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                          </button>
+                          <button onClick={() => toggleVisible(item.id)} aria-label="隐藏" title="隐藏"><EyeOff size={13} /></button>
+                          <button onClick={() => removeComponent(item.id)} aria-label="移除" title="移除" className="danger"><X size={13} /></button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <TiltCard>{renderComponent(item.id)}</TiltCard>
+                    )}
+                    <TiltCard>{renderComponent(item.id)}</TiltCard>
+                  </div>
                 </motion.div>
               );
             })}

@@ -33,10 +33,10 @@ const reactEcosystem = new Set([
   'loose-envify',
 ])
 
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
   plugins: [react(), await analyzePlugin()].filter(Boolean),
-  // GitHub Pages 子路径部署（本地 dev / build 不受影响）
-  base: '/Kakuki/',
+  // 仅构建（GitHub Pages 子路径）时使用 /Kakuki/，本地开发保持根路径
+  base: command === 'build' ? '/Kakuki/' : '/',
   optimizeDeps: {
     include: ['framer-motion', 'canvas-confetti'],
   },

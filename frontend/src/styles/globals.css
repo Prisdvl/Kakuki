@@ -6041,3 +6041,61 @@ a, button, .article-card, .contact-card, .social-links a,
 .ant-input::placeholder { color: var(--text-tertiary) !important; }
 .ant-input:hover,
 .ant-input-affix-wrapper:hover { border-color: var(--accent) !important; }
+
+/* ===== 涟漪组件波动（涟漪扩散时组件随之起伏） ===== */
+.home-ripple-target {
+  position: relative;
+  will-change: transform;
+}
+.home-ripple-target.bobbing {
+  animation: rippleBob 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--ripple-i, 0) * 0.05s);
+}
+@keyframes rippleBob {
+  0%   { transform: translateY(0) scale(1); }
+  16%  { transform: translateY(-9px) scale(1.012); }
+  36%  { transform: translateY(3px) scale(1.006); }
+  56%  { transform: translateY(-3px) scale(1.003); }
+  78%  { transform: translateY(1px) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ===== Cursor Glow 光标光晕（GitHub 热门 spotlight 效果） ===== */
+.cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 62%);
+  filter: blur(6px);
+  will-change: transform;
+}
+
+/* ===== Tilt 卡片 hover 扫光（GitHub 热门 shine 效果） ===== */
+.tilt-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(105deg, transparent 40%, color-mix(in srgb, var(--accent) 9%, transparent) 50%, transparent 60%);
+  background-size: 250% 100%;
+  background-position: 130% 0;
+  transition: background-position 0.9s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.tilt-card:hover::after {
+  background-position: -30% 0;
+}
+
+/* ===== 动画 reduced-motion 降级 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .cursor-glow { display: none; }
+  .home-ripple-target.bobbing { animation: none; }
+  .tilt-card::after { display: none; }
+}

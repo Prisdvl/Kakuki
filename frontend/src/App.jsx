@@ -208,7 +208,7 @@ export default function App() {
       }}
     >
       <ThemeWrapper>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <Routes>

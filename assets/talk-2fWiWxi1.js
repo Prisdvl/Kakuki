@@ -1,1 +1,0 @@
-import{r as t}from"./index-CUcJrQfM.js";const a=e=>t.get("/talks/",{params:e}),l=e=>t.post("/talks/create/",e),k=e=>t.delete(`/talks/${e}/delete/`),o=e=>t.post(`/talks/${e}/like/`);export{l as c,k as d,a as g,o as l};

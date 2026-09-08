@@ -4,6 +4,7 @@ import { Sun, Moon, Menu, X, ArrowUp } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 import useUserStore from '../../store/userStore';
 import FeatureMenu from '../FeatureMenu';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const NAV_ITEMS = [
   { label: '首页', path: '/' },
@@ -58,60 +59,8 @@ export default function AppLayout() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location.pathname]);
 
-  // 滚动入场动画：观察 .reveal 元素，进入视口后添加 .visible
-  useEffect(() => {
-    let io;
-    const setupObserver = () => {
-      if (io) io.disconnect();
-      io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.06 });
-
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      document.querySelectorAll('.reveal:not(.visible)').forEach((el) => {
-        io.observe(el);
-        // 兜底：IO 在后台标签页/无头/省电模式下可能不触发回调，
-        // 对已进入视口的元素直接标记可见（过渡动画仍会播放）。
-        const rect = el.getBoundingClientRect();
-        if (rect.top < vh && rect.bottom > 0) {
-          el.classList.add('visible');
-          io.unobserve(el);
-        }
-      });
-    };
-
-    // 首次扫描（路由切换后 DOM 已就绪的部分）
-    setupObserver();
-
-    // 异步数据加载完成后新挂载的 .reveal 元素也需要被观察，
-    // 否则它们会一直保持 opacity:0 不可见（如文章卡/杂谈卡等按需渲染的内容）
-    const mo = new MutationObserver((mutations) => {
-      let hasNewReveal = false;
-      for (const m of mutations) {
-        if (m.type !== 'childList') continue;
-        for (const node of m.addedNodes) {
-          if (node.nodeType !== 1) continue;
-          if (node.matches?.('.reveal:not(.visible)') || node.querySelector?.('.reveal:not(.visible)')) {
-            hasNewReveal = true;
-            break;
-          }
-        }
-        if (hasNewReveal) break;
-      }
-      if (hasNewReveal) setupObserver();
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      if (io) io.disconnect();
-      mo.disconnect();
-    };
-  }, [location.pathname]);
+  // 滚动入场动画：复用统一 Hook，监听 .reveal 元素进入视口后添加 .visible
+  useScrollReveal({ deps: [location.pathname] });
 
   useEffect(() => {
     const el = document.querySelector('.bg-image-layer');
@@ -129,6 +78,7 @@ export default function AppLayout() {
     }
   }, [bgImage]);
 
+  // 鼠标光标跟随：使用 rAF 节流 + passive 监听，零强制重排
   useEffect(() => {
     let ticking = false;
     let pendingX = 50, pendingY = 50;
@@ -140,7 +90,10 @@ export default function AppLayout() {
     const onMouseMove = (e) => {
       pendingX = ((e.clientX / window.innerWidth) * 100).toFixed(1);
       pendingY = ((e.clientY / window.innerHeight) * 100).toFixed(1);
-      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
     };
     const onVisibilityChange = () => {
       if (document.hidden) {

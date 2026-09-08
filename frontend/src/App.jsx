@@ -128,6 +128,8 @@ export default function App() {
     ? (colorPalette?.Vibrant || '#c4b5fd')
     : (colorPalette?.Muted || '#4c1d95');
 
+  // ⏱️ 主题切换使用统一缓动：var(--motion-base) / var(--ease-standard)
+  // 避免散写 cubic-bezier，所有过渡由 CSS 变量统一调度
   return (
     <ConfigProvider
       theme={{
@@ -138,43 +140,69 @@ export default function App() {
           colorSuccess: '#22c55e',
           colorWarning: '#f59e0b',
           colorError: '#ef4444',
+          // 与 design-tokens --radius-md 对齐（12px）
           borderRadius: 12,
+          borderRadiusSM: 8,
+          borderRadiusLG: 16,
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
           colorBgContainer: bgContainer,
           colorBgElevated: bgElevated,
           colorText: textPrimary,
           colorTextSecondary: textSecondary,
           colorBorder: isDark ? accentGlow.replace('40', '26') : accentGlow.replace('40', '1f'),
-          controlHeight: 44,
-          controlOutline: accentGlow,
+          controlHeight: 40,
+          controlHeightSM: 32,
+          controlHeightLG: 48,
+          motionDurationFast: '0.18s',
+          motionDurationMid: '0.24s',
+          motionDurationSlow: '0.36s',
+          motionEaseIn: 'cubic-bezier(0.3, 0, 1, 1)',
+          motionEaseOut: 'cubic-bezier(0, 0, 0, 1)',
+          motionEaseInOut: 'cubic-bezier(0.2, 0, 0, 1)',
         },
         components: {
           Button: {
             colorPrimary: accent,
             algorithm: true,
             borderRadius: 12,
-            controlHeight: 44,
+            controlHeight: 40,
+            fontWeight: 500,
+            primaryShadow: '0 4px 16px var(--accent-glow)',
           },
           Input: {
             colorPrimary: accent,
             algorithm: true,
             borderRadius: 12,
-            controlHeight: 44,
+            controlHeight: 40,
             activeBorderColor: accent,
             hoverBorderColor: accent,
-          },
-          Form: {
-            labelColor: textSecondary,
+            activeShadow: '0 0 0 3px var(--accent-glow)',
           },
           Card: {
             headerBg: isDark ? bgContainer : '#ffffff',
             colorBorderSecondary: isDark ? accentGlow.replace('40', '26') : accentGlow.replace('40', '1f'),
+            borderRadiusLG: 16,
           },
           Tag: {
             colorPrimary: accent,
+            borderRadiusSM: 8,
           },
           Menu: {
-            itemSelectedBg: isDark ? accentSoft : accentSoft,
+            itemSelectedBg: accentSoft,
+            itemBorderRadius: 8,
+            motionDurationMid: '0.24s',
+          },
+          Modal: {
+            borderRadiusLG: 20,
+            motionDurationMid: '0.24s',
+          },
+          Drawer: {
+            motionDurationMid: '0.36s',
+          },
+          Tabs: {
+            itemSelectedColor: accent,
+            inkBarColor: accent,
+            motionDurationMid: '0.24s',
           },
         },
       }}

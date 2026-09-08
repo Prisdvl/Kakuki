@@ -1,0 +1,214 @@
+/* ============================================================
+ * motion.css — 动画与过渡库（Motion Kit）
+ *
+ * 集中所有 keyframes + 入场/出场动画类，规避散落定义。
+ * 优化点：
+ *   1. 仅使用 transform/opacity/filter 触发动画，零 layout 成本
+ *   2. 全部使用 design-tokens 中的 --motion-* 与 --ease-*
+ *   3. prefers-reduced-motion 全局覆盖为 0.01ms
+ *   4. 入场动画支持 delay 自定义属性（--delay: 0.2s）
+ *
+ * 类名约定：
+ *   .fade-in         纯淡入
+ *   .fade-up         淡入 + 上滑
+ *   .fade-down       淡入 + 下滑
+ *   .scale-in        缩放进入
+ *   .slide-left      从右滑入
+ *   .slide-right     从左滑入
+ *   .blur-in         从模糊到清晰（GPU 友好）
+ *   .reveal          滚动入场（默认结合 IntersectionObserver）
+ * ============================================================ */
+
+/* ============ 入场动画 ============ */
+
+/* 淡入 + 上滑（最常用） */
+.fade-up {
+  animation: fadeUp var(--motion-slow) var(--ease-decelerate) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.fade-down {
+  animation: fadeDown var(--motion-slow) var(--ease-decelerate) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.fade-in {
+  animation: fadeIn var(--motion-base) var(--ease-standard) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.scale-in {
+  animation: scaleIn var(--motion-base) var(--ease-spring) both;
+  animation-delay: var(--delay, 0s);
+  transform-origin: center;
+}
+
+.slide-left {
+  animation: slideLeft var(--motion-slow) var(--ease-decelerate) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.slide-right {
+  animation: slideRight var(--motion-slow) var(--ease-decelerate) both;
+  animation-delay: var(--delay, 0s);
+}
+
+/* 模糊进入（适用于 hero 文本大块） */
+.blur-in {
+  animation: blurIn var(--motion-slower) var(--ease-decelerate) both;
+  animation-delay: var(--delay, 0s);
+}
+
+/* ============ 滚动入场（IntersectionObserver 配合）============ */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition:
+    opacity var(--motion-slow) var(--ease-decelerate),
+    transform var(--motion-slow) var(--ease-decelerate);
+  transition-delay: var(--delay, 0s);
+  will-change: transform, opacity;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ============ Stagger 子项（nth-child 自动递增延迟）============ */
+.stagger > * {
+  --delay: calc(var(--stagger-step, 80ms) * var(--i, 0));
+}
+
+/* 当 reveal 同时带 .stagger 容器 */
+.stagger > .reveal:nth-child(1) { --i: 0; }
+.stagger > .reveal:nth-child(2) { --i: 1; }
+.stagger > .reveal:nth-child(3) { --i: 2; }
+.stagger > .reveal:nth-child(4) { --i: 3; }
+.stagger > .reveal:nth-child(5) { --i: 4; }
+.stagger > .reveal:nth-child(6) { --i: 5; }
+.stagger > .reveal:nth-child(7) { --i: 6; }
+.stagger > .reveal:nth-child(8) { --i: 7; }
+
+/* ============ 页面切换 ============ */
+.page-enter {
+  animation: pageEnter var(--motion-slow) var(--ease-decelerate) both;
+}
+
+/* ============ 持续动效（Hero / 背景）============ */
+@keyframes float-y {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -10px, 0); }
+}
+
+@keyframes float-x {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(10px, 0, 0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============ 主题切换涟漪 ============ */
+.theme-ripple {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-overlay);
+  clip-path: circle(0 at var(--rx, 50%) var(--ry, 50%));
+  transition: clip-path var(--motion-slow) var(--ease-decelerate);
+}
+
+.theme-ripple.active {
+  clip-path: circle(150vmax at var(--rx, 50%) var(--ry, 50%));
+}
+
+/* ============ 关键帧定义 ============ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate3d(0, 24px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translate3d(0, -16px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideLeft {
+  from { opacity: 0; transform: translate3d(32px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translate3d(-32px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes blurIn {
+  from { opacity: 0; filter: blur(12px); transform: translate3d(0, 16px, 0); }
+  to   { opacity: 1; filter: blur(0);    transform: translate3d(0, 0, 0); }
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* ============ 微交互：图标 / 按钮 ============ */
+.icon-spin-hover {
+  transition: transform var(--motion-slow) var(--ease-spring);
+}
+.icon-spin-hover:hover { transform: rotate(180deg); }
+
+.lift-on-hover {
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
+}
+.lift-on-hover:hover { transform: translate3d(0, -4px, 0); }
+.lift-on-hover:active { transform: translate3d(0, -1px, 0) scale(0.99); transition-duration: var(--motion-fast); }
+
+/* ============ 减少动效偏好 ============ */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .fade-up,
+  .fade-down,
+  .fade-in,
+  .scale-in,
+  .slide-left,
+  .slide-right,
+  .blur-in,
+  .page-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .theme-ripple { transition: none !important; }
+
+  .icon-spin-hover:hover,
+  .lift-on-hover:hover,
+  .lift-on-hover:active { transform: none !important; }
+}

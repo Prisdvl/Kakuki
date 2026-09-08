@@ -1,0 +1,431 @@
+/* ============================================================
+ * glass.css — 磨砂液态玻璃组件库（Frosted Liquid Glass Kit）
+ *
+ * 6 个玻璃变体 + 3 种交互态 + 2 种方向感光，统一升级旧版散落的
+ * glass / glass-card / btn-glass 等样式。所有变体都：
+ *   - 仅过渡 transform/opacity（合成层，零 layout 成本）
+ *   - 复用 design-tokens.css 的 --motion-* 与 --ease-*
+ *   - 携带 prefers-reduced-motion 兼容
+ *   - 携带 ::before 镜面高光 + ::after 折射边缘
+ *
+ * 类名约定：
+ *   .glass            基础玻璃面板（中性，可承载任意内容）
+ *   .glass-elevated   浮起玻璃（z3 阴影 + 强模糊）
+ *   .glass-floating   悬浮玻璃（带反光动画，毛玻璃感最强）
+ *   .glass-card       内容卡片（标题+正文+元信息）
+ *   .glass-pill       胶囊玻璃（徽章 / 标签 / 状态）
+ *   .glass-button     按钮玻璃（带按压反馈）
+ * ============================================================ */
+
+/* ============ 基础玻璃 ============ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  isolation: isolate;          /* 防止混合模式影响外部 */
+}
+
+/* 顶部镜面高光：单层 ::before，避免双伪元素堆叠 */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glass-specular);
+  opacity: 0.45;
+  pointer-events: none;
+  mix-blend: overlay;
+  z-index: 0;
+}
+
+/* 子内容浮于高光之上 */
+.glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============ 浮起玻璃（hover 增强）============ */
+.glass-elevated {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-xl);
+  position: relative;
+  isolation: isolate;
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard);
+  will-change: transform;
+  contain: layout style;
+}
+
+.glass-elevated::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glass-specular);
+  opacity: 0.55;
+  pointer-events: none;
+  mix-blend: overlay;
+  z-index: 0;
+}
+
+.glass-elevated::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--refraction-x, 50%) var(--refraction-y, 50%),
+    color-mix(in srgb, var(--accent) 10%, transparent) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-base) var(--ease-standard);
+  z-index: 0;
+}
+
+.glass-elevated:hover {
+  transform: translateY(-6px);
+  border-color: transparent;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
+    var(--glass-shadow-hover),
+    0 8px 30px color-mix(in srgb, var(--accent) 10%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass-elevated:hover::after { opacity: 1; }
+
+.glass-elevated:active {
+  transform: translateY(-3px) scale(0.995);
+  transition-duration: var(--motion-fast);
+}
+
+/* ============ 悬浮玻璃（液态动效）============ */
+.glass-floating {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: glassLiquid 12s var(--ease-standard) infinite;
+  will-change: transform, border-radius;
+}
+
+/* 动态边缘高光：跟随呼吸节奏 */
+.glass-floating::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--glass-edge);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 2;
+  animation: glassEdgeShift 8s ease-in-out infinite;
+}
+
+.glass-floating::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    var(--glass-tint) 0%,
+    transparent 40%
+  );
+  opacity: 0.5;
+  pointer-events: none;
+  animation: glassRefraction 16s linear infinite;
+  z-index: 0;
+}
+
+/* ============ 内容卡片玻璃 ============ */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard);
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glass-specular);
+  opacity: 0.5;
+  pointer-events: none;
+  mix-blend: overlay;
+  z-index: 0;
+}
+
+.glass-card > * { position: relative; z-index: 1; }
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ============ 胶囊玻璃（徽章/标签）============ */
+.glass-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-z1);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition:
+    transform var(--motion-fast) var(--ease-spring),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.glass-pill:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-accent);
+}
+
+/* ============ 按钮玻璃 ============ */
+.glass-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-z2);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard),
+    color var(--motion-base) var(--ease-standard);
+  will-change: transform;
+}
+
+.glass-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-soft);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-standard);
+  pointer-events: none;
+}
+
+.glass-button:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.glass-button:hover::after { opacity: 1; }
+
+.glass-button:active {
+  transform: translateY(-1px) scale(0.98);
+  transition-duration: var(--motion-fast);
+}
+
+.glass-button svg {
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+.glass-button:hover svg { transform: translateX(3px); }
+
+/* 主色实心按钮（替代旧 .btn-glass-solid） */
+.glass-button-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: linear-gradient(
+    135deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 75%, var(--accent-secondary))
+  );
+  border: none;
+  box-shadow: var(--shadow-accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    filter var(--motion-fast) var(--ease-standard);
+  will-change: transform;
+}
+
+.glass-button-solid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  transition: left var(--motion-slow) var(--ease-standard);
+  pointer-events: none;
+}
+
+.glass-button-solid:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px var(--accent-glow);
+  filter: brightness(1.05);
+}
+
+.glass-button-solid:hover::before { left: 100%; }
+
+.glass-button-solid:active {
+  transform: translateY(-1px) scale(0.98);
+  transition-duration: var(--motion-fast);
+}
+
+/* ============ 玻璃关键帧（液态呼吸 + 折射流动）============ */
+@keyframes glassLiquid {
+  0%, 100% { border-radius: var(--radius-2xl); }
+  50%      { border-radius: calc(var(--radius-2xl) + 4px); }
+}
+
+@keyframes glassEdgeShift {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 0.9; }
+}
+
+@keyframes glassRefraction {
+  0%   { transform: translate(0, 0)     rotate(0deg); }
+  100% { transform: translate(20%, 20%) rotate(360deg); }
+}
+
+/* ============ 兼容性补丁：旧类名复用新样式 ============ */
+.btn-glass { /* 旧别名 */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-z2);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--t-default);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.btn-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-soft);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-standard);
+  pointer-events: none;
+}
+
+.btn-glass:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.btn-glass:hover::after { opacity: 1; }
+.btn-glass:active { transform: translateY(-1px) scale(0.98); transition-duration: var(--motion-fast); }
+
+.btn-glass-solid {
+  /* 旧别名，复用 .glass-button-solid 规则集 */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #fff));
+  border: none;
+  box-shadow: var(--shadow-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: var(--t-default), filter var(--motion-fast) var(--ease-standard);
+  text-decoration: none;
+  will-change: transform;
+}
+
+.btn-glass-solid:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px var(--accent-glow);
+  filter: brightness(1.05);
+}
+
+.btn-glass-solid:active { transform: translateY(-1px) scale(0.98); transition-duration: var(--motion-fast); }

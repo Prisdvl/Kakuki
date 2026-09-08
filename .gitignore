@@ -42,3 +42,6 @@ npm-debug.log*
 
 # Env
 *.bak
+
+# WorkBuddy tool cache
+.workbuddy/

@@ -1,0 +1,257 @@
+/* ============================================================
+ * design-tokens.css — 统一设计令牌（Design Tokens）
+ *
+ * 职责：集中定义颜色、磨砂玻璃、阴影、圆角、间距、动画时长、
+ *       缓动函数、层级 z-index、模糊量等可复用变量，供 globals.css
+ *       与 Tailwind config 消费。修改本文件即变更全局风格基线。
+ *
+ * 设计原则：
+ *   - 命名采用 BEM 友好前缀（--glass-*, --motion-*, --shadow-*）
+ *   - 时长档位遵循 Material 3 / iOS：instant(120) / fast(180) /
+ *     base(240) / slow(360) / slower(480) / page(560)
+ *   - 缓动函数采用三档：standard / decelerate / accelerate，
+ *     对应 cubic-bezier(0.2,0,0,1) / (0,0,0,1) / (0.3,0,1,1)
+ *   - 所有 blur 档位经实测在 Chromium/WebKit 均可硬件加速
+ * ============================================================ */
+
+:root {
+  /* ============ 颜色基线 ============ */
+  --bg-primary: #f5f5f7;
+  --bg-secondary: rgba(255, 255, 255, 0.6);
+  --bg-tertiary: rgba(0, 0, 0, 0.04);
+  --text-primary: #1c1c1e;
+  --text-secondary: #3a3a3c;
+  --text-tertiary: #8e8e93;
+  --border: rgba(0, 0, 0, 0.1);
+  --on-accent: #ffffff;
+
+  /* 强调色（统一基线，运行时主题切换覆盖） */
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, 0.12);
+  --accent-glow: rgba(0, 122, 255, 0.25);
+  --accent-secondary: #5856d6;
+  --accent-dark: #0051d5;
+  --accent-light: #5aa8ff;
+
+  /* 语义色 */
+  --success: #22c55e;     --success-soft: rgba(34, 197, 94, 0.15);
+  --warning: #f59e0b;     --warning-soft: rgba(245, 158, 11, 0.15);
+  --error: #ef4444;       --error-soft: rgba(239, 68, 68, 0.15);
+  --info: #3b82f6;        --info-soft: rgba(59, 130, 246, 0.15);
+
+  /* ============ 磨砂液态玻璃（Frosted Liquid Glass）============
+   * 关键参数一览：
+   *   --glass-bg      基础背景色（半透明）
+   *   --glass-blur    模糊半径（24px=标准，32px=增强）
+   *   --glass-saturate 饱和度增强（>=180% 让色彩穿透更鲜艳）
+   *   --glass-tint    高光层颜色（白/黑主题分别用亮/暗）
+   *   --glass-specular 镜面反射渐变（顶部高光、底部折射）
+   *   --glass-edge    边缘高光（伪元素 ::before 实现）
+   *   --glass-shadow / --glass-shadow-hover 投影层级
+   * ============================================================ */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-blur: 24px;
+  --glass-blur-strong: 32px;
+  --glass-saturate: 180%;
+  --glass-tint: rgba(255, 255, 255, 0.4);
+  --glass-specular: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  --glass-edge: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7),
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0.1) 70%,
+    rgba(255, 255, 255, 0.4)
+  );
+  --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                         inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                  0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.12),
+                        0 1px 0 rgba(255, 255, 255, 0.8) inset;
+
+  /* 卡片通用 */
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-hover-border: rgba(0, 122, 255, 0.3);
+  --hero-overlay: rgba(245, 245, 247, 0.6);
+
+  /* ============ 圆角档位 ============ */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* ============ 阴影层级（Elevation）============
+   * z0: 平面
+   * z1: 轻微浮起（按钮 hover）
+   * z2: 卡片默认
+   * z3: 卡片 hover / 弹层
+   * z4: 抽屉 / 模态
+   * ============================================================ */
+  --shadow-z0: none;
+  --shadow-z1: 0 1px 2px rgba(0, 0, 0, 0.04),
+               0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-z2: 0 4px 12px rgba(0, 0, 0, 0.08),
+               0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  --shadow-z3: 0 8px 32px rgba(0, 0, 0, 0.10),
+               0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  --shadow-z4: 0 24px 64px rgba(0, 0, 0, 0.18),
+               0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --shadow-accent: 0 8px 24px var(--accent-glow);
+
+  /* ============ 动画时长（Motion Duration）============
+   * 遵循 Material 3 + iOS HIG 的统一时序档位，
+   * 所有过渡 / 进入 / 退出动画只允许从这里取，禁止散写。
+   * ============================================================ */
+  --motion-instant: 120ms;   /* 仅用于颜色等无几何变化属性 */
+  --motion-fast: 180ms;      /* hover 颜色、focus 边框、icon 微动 */
+  --motion-base: 240ms;      /* 默认过渡（卡片、按钮、面板） */
+  --motion-slow: 360ms;      /* 抽屉、模态、页面切换 */
+  --motion-slower: 480ms;    /* 复杂的入场 / 大型面板 */
+  --motion-page: 560ms;      /* 整页切换 / Hero 入场 */
+
+  /* ============ 缓动函数（Easing Tokens）============
+   * 统一所有过渡曲线，禁止散写 cubic-bezier。
+   * standard  : 通用进出
+   * decelerate: 进入画面（快速离开起点，慢速抵达）
+   * accelerate: 离开画面（慢速离开起点，快速抵达）
+   * spring    : 弹性小回弹（仅用于特殊徽章 / 数字滚动）
+   * ============================================================ */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ============ 过渡速记（Transition Shorthand）============
+   * 集中管理最常用的过渡组合，避免散写。
+   * ============================================================ */
+  --t-color: color var(--motion-fast) var(--ease-standard),
+             background-color var(--motion-fast) var(--ease-standard),
+             border-color var(--motion-fast) var(--ease-standard);
+  --t-transform: transform var(--motion-base) var(--ease-standard);
+  --t-shadow: box-shadow var(--motion-base) var(--ease-standard);
+  --t-opacity: opacity var(--motion-base) var(--ease-standard);
+  --t-default: var(--t-color), var(--t-transform), var(--t-shadow);
+
+  /* ============ 层级（z-index）============ */
+  --z-base: 1;
+  --z-nav: 100;
+  --z-drawer: 160;
+  --z-modal: 200;
+  --z-toast: 500;
+  --z-overlay: 9999;
+
+  /* ============ 内容留白（Spacing scale）============ */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ============ 性能开关 ============ */
+  --blur-enabled: 1;  /* 设为 0 时全局禁用 backdrop-filter 降级 */
+}
+
+/* ============ 深色主题：覆盖 token 值 ============ */
+.dark {
+  --bg-primary: #000000;
+  --bg-secondary: rgba(28, 28, 30, 0.65);
+  --bg-tertiary: rgba(255, 255, 255, 0.05);
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1a6;
+  --text-tertiary: #6e6e73;
+  --border: rgba(255, 255, 255, 0.08);
+
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.12);
+  --accent-glow: rgba(10, 132, 255, 0.25);
+  --accent-secondary: #bf5af2;
+  --accent-dark: #0066cc;
+  --accent-light: #5ac8fa;
+
+  --success: #30d158; --success-soft: rgba(48, 209, 88, 0.15);
+  --warning: #ff9f0a; --warning-soft: rgba(255, 159, 10, 0.15);
+  --error: #ff453a;   --error-soft: rgba(255, 69, 58, 0.15);
+  --info: #0a84ff;    --info-soft: rgba(10, 132, 255, 0.15);
+
+  --glass-bg: rgba(28, 28, 30, 0.6);
+  --glass-bg-strong: rgba(28, 28, 30, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 28px;
+  --glass-saturate: 200%;
+  --glass-tint: rgba(255, 255, 255, 0.06);
+  --glass-specular: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  --glass-edge: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.02) 30%,
+    rgba(255, 255, 255, 0.02) 70%,
+    rgba(255, 255, 255, 0.1)
+  );
+  --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                         inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                  0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.6),
+                        0 1px 0 rgba(255, 255, 255, 0.12) inset;
+
+  --card-bg: rgba(28, 28, 30, 0.55);
+  --card-hover-border: rgba(10, 132, 255, 0.3);
+  --hero-overlay: rgba(0, 0, 0, 0.6);
+
+  --shadow-z1: 0 1px 2px rgba(0, 0, 0, 0.3),
+               0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-z2: 0 4px 12px rgba(0, 0, 0, 0.4),
+               0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  --shadow-z3: 0 8px 32px rgba(0, 0, 0, 0.5),
+               0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  --shadow-z4: 0 24px 64px rgba(0, 0, 0, 0.7),
+               0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+/* ============ 全局性能降级：低功耗/低端机/省电模式 ============ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* 仅保留极短过渡，避免动画引发的眩晕 */
+    --motion-instant: 0.01ms;
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-slower: 0.01ms;
+    --motion-page: 0.01ms;
+  }
+}
+
+/* 浏览器对 backdrop-filter 支持度检测（关闭降级） */
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-bg-strong: rgba(255, 255, 255, 0.98);
+    --glass-border: rgba(0, 0, 0, 0.06);
+  }
+  .dark {
+    --glass-bg: rgba(28, 28, 30, 0.95);
+    --glass-bg-strong: rgba(28, 28, 30, 0.98);
+    --glass-border: rgba(255, 255, 255, 0.08);
+  }
+}

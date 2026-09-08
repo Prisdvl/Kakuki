@@ -35,6 +35,9 @@ const reactEcosystem = new Set([
 
 export default defineConfig(async () => ({
   plugins: [react(), await analyzePlugin()].filter(Boolean),
+  optimizeDeps: {
+    include: ['framer-motion', 'canvas-confetti'],
+  },
   server: {
     port: 3000,
     proxy: {

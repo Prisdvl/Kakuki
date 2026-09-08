@@ -5969,3 +5969,75 @@ a, button, .article-card, .contact-card, .social-links a,
   .tilt-card { transform: none !important; }
   .tilt-glare { display: none; }
 }
+
+
+/* ===== 完成编辑涟漪动画（光标处扩散全页） ===== */
+.ripple-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ripple-wave {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0.75;
+  animation: rippleSpread 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.ripple-wave.ripple-fill {
+  border: none;
+  background: radial-gradient(circle, var(--accent-soft) 0%, color-mix(in srgb, var(--accent) 12%, transparent) 55%, transparent 72%);
+  opacity: 0.6;
+  animation-name: rippleFill;
+}
+@keyframes rippleSpread {
+  0%   { width: 0; height: 0; opacity: 0.75; }
+  100% { width: 260vmax; height: 260vmax; opacity: 0; }
+}
+@keyframes rippleFill {
+  0%   { width: 0; height: 0; opacity: 0.6; }
+  100% { width: 260vmax; height: 260vmax; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ripple-overlay { display: none; }
+}
+
+/* ===== antd 组件矩形玻璃化（消除实心矩形突兀感） ===== */
+/* 归档/搜索页 Input.Search 按钮 */
+.ant-input-search .ant-input-search-button {
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 78%, #000 22%)) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px var(--accent-glow) !important;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0 !important;
+  transition: filter var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard) !important;
+}
+.ant-input-search .ant-input-search-button:hover {
+  filter: brightness(1.08) !important;
+  transform: translateY(-1px);
+}
+/* 全局 antd 主色按钮渐变 + 玻璃投影 */
+.ant-btn-primary {
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 78%, #000 22%)) !important;
+  box-shadow: 0 4px 16px var(--accent-glow) !important;
+  border: none !important;
+  transition: filter var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard) !important;
+}
+.ant-btn-primary:hover {
+  filter: brightness(1.08) !important;
+  transform: translateY(-1px);
+}
+/* 深色下 antd 输入框背景贴合玻璃 */
+.ant-input,
+.ant-input-affix-wrapper {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+  transition: border-color var(--motion-fast) var(--ease-standard) !important;
+}
+.ant-input::placeholder { color: var(--text-tertiary) !important; }
+.ant-input:hover,
+.ant-input-affix-wrapper:hover { border-color: var(--accent) !important; }

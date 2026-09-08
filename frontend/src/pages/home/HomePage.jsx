@@ -1,7 +1,6 @@
 ﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
 import {
   Search, Mail, Code2,
   MessageSquare, BookOpen, Sparkles,
@@ -950,14 +949,18 @@ export default function HomePage() {
   const enterEdit = () => {
     setEditing(true);
   };
+  // 完成编辑：从光标位置泛起涟漪扩散至整个页面
+  const lastMouse = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  useEffect(() => {
+    const onMove = (e) => { lastMouse.current = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+  const [ripple, setRipple] = useState(null);
   const finishEdit = () => {
     setEditing(false);
-    confetti({
-      particleCount: 90,
-      spread: 75,
-      origin: { y: 0.6 },
-      colors: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#22c55e'],
-    });
+    setRipple({ key: Date.now(), ...lastMouse.current });
+    setTimeout(() => setRipple(null), 1500);
   };
 
   const onSearch = (e) => {
@@ -1099,6 +1102,28 @@ export default function HomePage() {
 
         {/* Player Bar - full width */}
         <PlayerBar />
+
+        {/* 完成编辑涟漪动画（光标处扩散至全页） */}
+        {ripple && (
+          <div key={ripple.key} className="ripple-overlay" aria-hidden="true">
+            <span
+              className="ripple-wave ripple-fill"
+              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)' }}
+            />
+            <span
+              className="ripple-wave"
+              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)', animationDelay: '0.06s' }}
+            />
+            <span
+              className="ripple-wave"
+              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)', animationDelay: '0.14s' }}
+            />
+            <span
+              className="ripple-wave"
+              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)', animationDelay: '0.22s' }}
+            />
+          </div>
+        )}
 
         {/* Article Grid */}
         <div className="hero-articles">

@@ -80,5 +80,9 @@ export const useHomeLayout = create((set) => ({
     persist(arr);
     return { layout: arr };
   }),
-  resetLayout: () => set({ layout: DEFAULT_LAYOUT.map((x) => ({ ...x })) }),
+  resetLayout: () => set(() => {
+    const arr = DEFAULT_LAYOUT.map((x) => ({ ...x }));
+    persist(arr);
+    return { layout: arr };
+  }),
 }));

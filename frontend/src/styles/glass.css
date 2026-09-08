@@ -23,9 +23,14 @@
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow), var(--glass-inner-shadow);
   position: relative;
   isolation: isolate;          /* 防止混合模式影响外部 */
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard);
+  will-change: transform;
 }
 
 /* 顶部镜面高光：单层 ::before，避免双伪元素堆叠 */
@@ -35,7 +40,7 @@
   inset: 0;
   border-radius: inherit;
   background: var(--glass-specular);
-  opacity: 0.45;
+  opacity: 0.55;
   pointer-events: none;
   mix-blend: overlay;
   z-index: 0;

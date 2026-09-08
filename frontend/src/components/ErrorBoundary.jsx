@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { AlertCircle } from 'lucide-react';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -39,7 +40,7 @@ export default class ErrorBoundary extends Component {
             border: '1px solid var(--glass-border)',
             backdropFilter: 'blur(16px)',
           }}>
-            <div style={{ fontSize: 48, marginBottom: '1rem' }}>🤔</div>
+            <AlertCircle size={48} style={{ color: 'var(--error)', margin: '0 auto 1rem' }} />
             <h2 style={{ marginBottom: '0.5rem', fontSize: '1.2rem' }}>页面出错了</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
               {this.state.error?.message || '发生了一个意外错误'}

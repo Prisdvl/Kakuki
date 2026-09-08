@@ -121,8 +121,8 @@
   -webkit-clip-path: circle(250vmax at var(--rx, 50%) var(--ry, 50%));
   opacity: 0;
   transition: opacity 0s,
-              clip-path 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-              -webkit-clip-path 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+              clip-path 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+              -webkit-clip-path 0.6s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .theme-overlay.ready {
@@ -134,6 +134,23 @@
   clip-path: circle(0 at var(--rx, 50%) var(--ry, 50%));
   -webkit-clip-path: circle(0 at var(--rx, 50%) var(--ry, 50%));
   opacity: 1;
+}
+
+/* ===== 主题切换全局颜色过渡：明暗切换丝滑渐变，杜绝突兀跳变 ===== */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.55s var(--ease-standard),
+    background 0.55s var(--ease-standard),
+    color 0.45s var(--ease-standard),
+    border-color 0.5s var(--ease-standard),
+    box-shadow 0.5s var(--ease-standard),
+    fill 0.45s var(--ease-standard),
+    stroke 0.45s var(--ease-standard),
+    opacity 0.45s var(--ease-standard) !important;
+  transition-delay: 0s !important;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -5765,4 +5782,26 @@ a, button, .article-card, .contact-card, .social-links a,
 }
 @media (prefers-reduced-motion: reduce) {
   .theme-icon-swap { animation: none; }
+}
+
+
+/* ===== Home Tools Grid (工具箱) ===== */
+.home-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.home-tool-grid > * {
+  min-width: 0;
+}
+@media (max-width: 1180px) {
+  .home-tool-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .home-tool-grid {
+    grid-template-columns: 1fr;
+  }
 }

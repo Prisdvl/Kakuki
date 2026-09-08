@@ -13,6 +13,10 @@ import { getTalks, likeTalk } from "../../api/talk";
 import { getProjects } from "../../api/project";
 import { extractList } from "../../api/request";
 import MusicPlayer from "../../components/MusicPlayer";
+import TodoCard from "../../components/Tools/TodoCard";
+import PomodoroCard from "../../components/Tools/PomodoroCard";
+import PaletteCard from "../../components/Tools/PaletteCard";
+import CountdownCard from "../../components/Tools/CountdownCard";
 import useMusicStore from '../../store/musicStore';
 import leetcodeApi from "../../api/leetcode";
 import useCountUp from "../../hooks/useCountUp";
@@ -50,7 +54,7 @@ function ProfileCard({ stats }) {
           <a href="https://github.com/Prisdvl" target="_blank" rel="noopener noreferrer" title="GitHub"><Code2 size={16} /></a>
           <a href="mailto:kakuki@example.com" title="Email"><Mail size={16} /></a>
           <a href="/archive" title="文章"><BookOpen size={16} /></a>
-          <a href="/category" title="分类"><Code2 size={16} /></a>
+          <a href="/category" title="分类"><FolderTree size={16} /></a>
           <a href="/about" title="关于"><Sparkles size={16} /></a>
         </div>
       </div>
@@ -983,6 +987,14 @@ export default function HomePage() {
           <ProjectsCard />
           <CategoriesCard categories={categories} />
           <QuoteCard />
+        </div>
+
+        {/* Tools Row: 轻量工具箱 */}
+        <div className="home-tool-grid">
+          <TodoCard />
+          <PomodoroCard />
+          <PaletteCard />
+          <CountdownCard />
         </div>
       </div>
     </section>

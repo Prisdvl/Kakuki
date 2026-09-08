@@ -144,18 +144,26 @@ export default function AppLayout() {
 
   const handleToggleTheme = useCallback(() => {
     const btn = themeBtnRef.current;
-    if (!btn) { toggleTheme(); return; }
-    const rect = btn.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    const computed = getComputedStyle(document.documentElement);
-    const oldBg = computed.getPropertyValue('--bg-primary').trim() || '#ede9fe';
-    setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px', background: oldBg });
-    setRevealState('ready');
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => { toggleTheme(); setRevealState('active'); });
-    });
-    setTimeout(() => setRevealState('idle'), 500);
+    const root = document.documentElement;
+    // 全局颜色过渡：切换期间所有元素颜色平滑渐变，避免突兀跳变
+    root.classList.add('theme-transition');
+    if (!btn) { toggleTheme(); }
+    else {
+      const rect = btn.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const computed = getComputedStyle(document.documentElement);
+      const oldBg = computed.getPropertyValue('--bg-primary').trim() || '#ede9fe';
+      setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px', background: oldBg });
+      setRevealState('ready');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { toggleTheme(); setRevealState('active'); });
+      });
+    }
+    setTimeout(() => {
+      root.classList.remove('theme-transition');
+      setRevealState('idle');
+    }, 700);
   }, [toggleTheme]);
 
   return (
@@ -304,8 +312,9 @@ export default function AppLayout() {
           <div className="status-item">
             <span>Prisdvl © 2026</span>
           </div>
-          <div className="status-item">
-            <span>{isDark ? '🌙 深色' : '☀️ 浅色'}模式</span>
+          <div className="status-item" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            {isDark ? <Moon size={12} /> : <Sun size={12} />}
+            <span>{isDark ? '深色' : '浅色'}模式</span>
           </div>
           <div className="status-item">
             <span>v1.0.0</span>

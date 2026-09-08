@@ -1,5 +1,7 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import {
   Search, Mail, Code2,
   MessageSquare, BookOpen, Sparkles,
@@ -7,6 +9,8 @@ import {
   BarChart3, Flame, TrendingUp,
   Play, Pause, SkipBack, SkipForward, Heart,
   Rocket, FolderTree, Quote, ThumbsUp, Shuffle, ArrowRight,
+  LayoutGrid, GripVertical, ArrowUp, ArrowDown, Maximize2, Minimize2,
+  EyeOff, Plus, RotateCcw, Check, X, Timer,
 } from "lucide-react";
 import { getArticles, getCategories } from "../../api/article";
 import { getTalks, likeTalk } from "../../api/talk";
@@ -17,9 +21,26 @@ import TodoCard from "../../components/Tools/TodoCard";
 import PomodoroCard from "../../components/Tools/PomodoroCard";
 import PaletteCard from "../../components/Tools/PaletteCard";
 import CountdownCard from "../../components/Tools/CountdownCard";
+import TiltCard from "../../components/TiltCard";
+import { useHomeLayout } from "../../store/homeLayoutStore";
 import useMusicStore from '../../store/musicStore';
 import leetcodeApi from "../../api/leetcode";
 import useCountUp from "../../hooks/useCountUp";
+
+// ===== 可自由布局的组件注册表 =====
+const COMPONENT_META = {
+  profile:   { name: "博主卡片",  icon: Sparkles },
+  music:     { name: "音乐播放",  icon: Music },
+  leetcode:  { name: "LeetCode",  icon: BarChart3 },
+  talks:     { name: "最新杂谈",  icon: MessageSquare },
+  projects:  { name: "项目精选",  icon: Rocket },
+  categories:{ name: "分类速览",  icon: FolderTree },
+  quote:     { name: "每日一言",  icon: Quote },
+  todo:      { name: "待办清单",  icon: Check },
+  pomodoro:  { name: "番茄钟",    icon: Timer },
+  palette:   { name: "色板生成",  icon: LayoutGrid },
+  countdown: { name: "纪念日",    icon: Calendar },
+};
 
 const LEETCODE_USERNAME = 'Likey-e';
 
@@ -28,7 +49,7 @@ function AnimatedStatValue({ value }) {
   return <>{animated}</>;
 }
 
-function ProfileCard({ stats }) {
+export function ProfileCard({ stats }) {
   return (
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">
@@ -62,7 +83,7 @@ function ProfileCard({ stats }) {
   );
 }
 
-function PlayerBar() {
+export function PlayerBar() {
   const {
     currentTrack, currentLyrics, currentLyricIndex,
     isPlaying, togglePlay, nextTrack, prevTrack,
@@ -359,7 +380,7 @@ function SmallRing({ value, max, color, label }) {
   );
 }
 
-function LeetCodeCard() {
+export function LeetCodeCard() {
   const [lcData, setLcData] = useState(null);
   const [lcLoading, setLcLoading] = useState(true);
 
@@ -604,7 +625,7 @@ const QUOTES = [
   { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
 ];
 
-function QuoteCard() {
+export function QuoteCard() {
   const [index, setIndex] = useState(() => {
     const saved = parseInt(localStorage.getItem('kakuki-quote-idx'), 10);
     if (!Number.isNaN(saved) && saved >= 0) return saved % QUOTES.length;
@@ -674,7 +695,7 @@ function QuoteCard() {
   );
 }
 
-function ProjectsCard() {
+export function ProjectsCard() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -754,7 +775,7 @@ function ProjectsCard() {
   );
 }
 
-function CategoriesCard({ categories }) {
+export function CategoriesCard({ categories }) {
   return (
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -781,7 +802,7 @@ function CategoriesCard({ categories }) {
   );
 }
 
-function TalksCard() {
+export function TalksCard() {
   const [talks, setTalks] = useState([]);
 
   useEffect(() => {
@@ -882,6 +903,63 @@ export default function HomePage() {
     { label: "分类", value: totalCategories, icon: Code2 },
   ];
 
+  // ===== 自由布局 =====
+  const { layout, editing, setEditing, move, moveTo, setWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
+  const [dragId, setDragId] = useState(null);
+  const [overId, setOverId] = useState(null);
+
+  const visibleItems = layout.filter((x) => x.visible);
+  const hiddenItems = layout.filter((x) => !x.visible);
+  const availableComponents = Object.keys(COMPONENT_META).filter((id) => !layout.some((x) => x.id === id));
+
+  const renderComponent = (id) => {
+    switch (id) {
+      case 'profile': return <ProfileCard stats={stats} />;
+      case 'music': return <MusicPlayer />;
+      case 'leetcode': return <LeetCodeCard />;
+      case 'talks': return <TalksCard />;
+      case 'projects': return <ProjectsCard />;
+      case 'categories': return <CategoriesCard categories={categories} />;
+      case 'quote': return <QuoteCard />;
+      case 'todo': return <TodoCard />;
+      case 'pomodoro': return <PomodoroCard />;
+      case 'palette': return <PaletteCard />;
+      case 'countdown': return <CountdownCard />;
+      default: return null;
+    }
+  };
+
+  const handleDragStart = (e, id) => {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', id); } catch { /* ignore */ }
+  };
+  const handleDragOver = (e, id) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (overId !== id) setOverId(id);
+  };
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    if (dragId && dragId !== targetId) moveTo(dragId, targetId);
+    setDragId(null);
+    setOverId(null);
+  };
+  const handleDragEnd = () => { setDragId(null); setOverId(null); };
+
+  const enterEdit = () => {
+    setEditing(true);
+  };
+  const finishEdit = () => {
+    setEditing(false);
+    confetti({
+      particleCount: 90,
+      spread: 75,
+      origin: { y: 0.6 },
+      colors: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#22c55e'],
+    });
+  };
+
   const onSearch = (e) => {
     if (e.key === 'Enter' && e.target.value.trim()) {
       navigate(`/archive?q=${encodeURIComponent(e.target.value.trim())}`);
@@ -916,11 +994,108 @@ export default function HomePage() {
           <input type="text" placeholder="搜索文章、分类..." onKeyDown={onSearch} />
         </div>
 
-        {/* Hero Row: Profile + Music */}
-        <div className="hero-grid">
-          <ProfileCard stats={stats} />
-          <MusicPlayer />
+        {/* Layout Toolbar */}
+        <div className="home-layout-toolbar">
+          {!editing ? (
+            <button className="glass-button" onClick={enterEdit} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+              <LayoutGrid size={15} /> 自定义布局
+            </button>
+          ) : (
+            <>
+              <button className="glass-button-solid" onClick={finishEdit} style={{ padding: '0.5rem 1.1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+                <Check size={15} /> 完成编辑
+              </button>
+              <button className="glass-button" onClick={resetLayout} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+                <RotateCcw size={15} /> 恢复默认
+              </button>
+            </>
+          )}
+          {editing && (
+            <span className="home-layout-hint">
+              <GripVertical size={13} /> 拖动卡片排序 · 点击控件调整
+            </span>
+          )}
         </div>
+
+        {/* Free Layout Grid */}
+        <div className={`home-layout-grid ${editing ? 'editing' : ''}`}>
+          <AnimatePresence>
+            {visibleItems.map((item) => {
+              const meta = COMPONENT_META[item.id];
+              const Icon = meta?.icon;
+              return (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+                  className={`home-layout-item ${item.width === 'wide' ? 'wide' : 'half'}`}
+                  data-id={item.id}
+                  draggable={editing}
+                  onDragStart={(e) => handleDragStart(e, item.id)}
+                  onDragOver={(e) => handleDragOver(e, item.id)}
+                  onDrop={(e) => handleDrop(e, item.id)}
+                  onDragEnd={handleDragEnd}
+                  style={editing && overId === item.id ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : undefined}
+                >
+                  {editing && (
+                    <div className="home-layout-controls">
+                      <span className="home-drag-handle" title="拖动排序">
+                        <GripVertical size={15} />
+                      </span>
+                      <span className="home-ctrl-name">
+                        {Icon && <Icon size={13} />} {meta?.name}
+                      </span>
+                      <div className="home-ctrl-actions">
+                        <button onClick={() => move(item.id, -1)} aria-label="上移" title="上移"><ArrowUp size={13} /></button>
+                        <button onClick={() => move(item.id, 1)} aria-label="下移" title="下移"><ArrowDown size={13} /></button>
+                        <button
+                          onClick={() => setWidth(item.id, item.width === 'wide' ? 'half' : 'wide')}
+                          aria-label={item.width === 'wide' ? '改为半宽' : '改为全宽'}
+                          title={item.width === 'wide' ? '改为半宽' : '改为全宽'}
+                        >
+                          {item.width === 'wide' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                        </button>
+                        <button onClick={() => toggleVisible(item.id)} aria-label="隐藏" title="隐藏"><EyeOff size={13} /></button>
+                        <button onClick={() => removeComponent(item.id)} aria-label="移除" title="移除" className="danger"><X size={13} /></button>
+                      </div>
+                    </div>
+                  )}
+                  <TiltCard>{renderComponent(item.id)}</TiltCard>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+
+        {/* Add / Restore Panel */}
+        {editing && (availableComponents.length > 0 || hiddenItems.length > 0) && (
+          <div className="home-add-panel">
+            <h4 className="home-add-title"><Plus size={15} /> 添加 / 恢复组件</h4>
+            <div className="home-add-list">
+              {availableComponents.map((id) => {
+                const meta = COMPONENT_META[id];
+                const Icon = meta?.icon;
+                return (
+                  <button key={id} className="home-add-chip" onClick={() => addComponent(id, 'half')}>
+                    {Icon && <Icon size={14} />} {meta?.name}
+                  </button>
+                );
+              })}
+              {hiddenItems.map((item) => {
+                const meta = COMPONENT_META[item.id];
+                const Icon = meta?.icon;
+                return (
+                  <button key={item.id} className="home-add-chip restore" onClick={() => toggleVisible(item.id)}>
+                    {Icon && <Icon size={14} />} {meta?.name} <EyeOff size={12} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Player Bar - full width */}
         <PlayerBar />
@@ -974,27 +1149,6 @@ export default function HomePage() {
               );
             })
           )}
-        </div>
-
-        {/* Bottom Row: LeetCode + Talks */}
-        <div className="home-duo-grid">
-          <LeetCodeCard />
-          <TalksCard />
-        </div>
-
-        {/* Interactive Row: Projects + Categories + Quote */}
-        <div className="home-trio-grid">
-          <ProjectsCard />
-          <CategoriesCard categories={categories} />
-          <QuoteCard />
-        </div>
-
-        {/* Tools Row: 轻量工具箱 */}
-        <div className="home-tool-grid">
-          <TodoCard />
-          <PomodoroCard />
-          <PaletteCard />
-          <CountdownCard />
         </div>
       </div>
     </section>

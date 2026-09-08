@@ -4,6 +4,7 @@ import { Sun, Moon, Menu, X, ArrowUp } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 import useUserStore from '../../store/userStore';
 import FeatureMenu from '../FeatureMenu';
+import ParticleField from '../ParticleField';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const NAV_ITEMS = [
@@ -184,6 +185,7 @@ export default function AppLayout() {
         <div className="bg-scene-orb orb-1" />
         <div className="bg-scene-orb orb-2" />
         <div className="bg-scene-orb orb-3" />
+        <ParticleField />
       </div>
 
       {scrollProgress > 0 && (
@@ -301,23 +303,21 @@ export default function AppLayout() {
             <span className="status-dot" />
             <StatusTime />
           </div>
-          <div className="status-item">
+          <div className="status-item status-page">
+            <span className="status-page-icon" />
             <span>正在浏览：{NAV_ITEMS.find(n => location.pathname === n.path)?.label || '首页'}</span>
           </div>
-          <div className="status-item">
+          <div className="status-item status-stack">
             <span className="status-tech-badge">React</span>
             <span className="status-tech-badge">Django</span>
             <span className="status-tech-badge">Tailwind</span>
           </div>
-          <div className="status-item">
-            <span>Prisdvl © 2026</span>
+          <div className="status-item status-meta">
+            <span>Prisdvl © 2026 · v1.0.0</span>
           </div>
           <div className="status-item" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
             {isDark ? <Moon size={12} /> : <Sun size={12} />}
             <span>{isDark ? '深色' : '浅色'}模式</span>
-          </div>
-          <div className="status-item">
-            <span>v1.0.0</span>
           </div>
         </div>
       </div>

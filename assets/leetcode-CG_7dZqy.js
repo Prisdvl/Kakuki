@@ -1,1 +1,0 @@
-import{r as t}from"./index-vyKu256a.js";const o="Likey-e",n={getAllData:async(r=o)=>{try{return await t.get(`/leetcode/${r}/`)||{profile:null,calendar:{},recentSubmissions:[]}}catch(e){return console.error("LeetCode API error:",e),{profile:null,calendar:{},recentSubmissions:[]}}}};export{n as l};

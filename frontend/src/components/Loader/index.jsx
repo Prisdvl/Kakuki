@@ -4,8 +4,8 @@ import useThemeStore from '../../store/themeStore';
 /**
  * 主题化加载动画组件
  * - 透明背景，不遮挡页面内容
- * - 东京食尸鬼风格眨眼眼睛动画（React state 驱动，跨浏览器兼容）
- * - 眨眼时光晕脉冲 + 扫描线 + 虹膜纹理
+ * - 水墨晕环加载动画：渐变外环旋转 + 中心墨滴呼吸 + 涟漪扩散（参照 GitHub 流行加载风格）
+ * - 品牌文字 shimmer 流动 + 进度条
  * - 加载完成平滑淡出
  */
 export default function Loader({
@@ -17,30 +17,10 @@ export default function Loader({
 }) {
   const { isDark, themeColor, colorPalette } = useThemeStore();
   const [mounted, setMounted] = useState(false);
-  const [blink, setBlink] = useState(false);
-  const [phase, setPhase] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 10);
     return () => clearTimeout(t);
-  }, []);
-
-  // 眨眼动画：首次 1 秒后眨眼，之后每 2.5-4 秒眨一次
-  useEffect(() => {
-    let blinkTimer;
-    const triggerBlink = () => {
-      setBlink(true);
-      blinkTimer = setTimeout(() => setBlink(false), 130);
-    };
-    const firstBlink = setTimeout(triggerBlink, 1000);
-    const interval = setInterval(triggerBlink, 2500 + Math.random() * 1500);
-    return () => { clearTimeout(firstBlink); clearInterval(interval); clearTimeout(blinkTimer); };
-  }, []);
-
-  // 扫描线动画
-  useEffect(() => {
-    const t = setInterval(() => setPhase((p) => (p + 1) % 100), 40);
-    return () => clearInterval(t);
   }, []);
 
   const accent = themeColor || '#7c3aed';
@@ -74,14 +54,6 @@ export default function Loader({
 
   const displayProgress = Math.min(100, Math.max(0, progress));
 
-  // 眼睛路径：睁开 vs 完全闭眼
-  const eyePath = blink
-    ? 'M 20 55 Q 55 55 90 55 Q 55 55 20 55 Z'
-    : 'M 20 55 Q 55 20 90 55 Q 55 90 20 55 Z';
-
-  // 扫描线 Y 位置
-  const scanY = 28 + (phase / 100) * 54;
-
   return (
     <div style={containerStyle}>
       {/* 内容层 */}
@@ -99,153 +71,64 @@ export default function Loader({
           transition: 'opacity 0.6s ease 0.1s',
         }}
       >
-        {/* 眼睛后面的光晕 — 眨眼时脉冲增强 */}
-        <div style={{
-          position: 'absolute',
-          width: 220,
-          height: 220,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${accent}${blink ? '45' : '25'} 0%, transparent 70%)`,
-          transition: 'background 0.1s',
-          animation: 'loader-breathe 4s ease-in-out infinite',
-          pointerEvents: 'none',
-        }} />
-
-        {/* 主加载动画 — 东京食尸鬼之眼 */}
-        <div style={{ position: 'relative', width: 120, height: 120 }}>
-          {/* 外圈旋转光环 */}
-          <svg width="120" height="120" style={{ position: 'absolute', inset: 0 }}>
+        {/* 主加载动画 — 水墨晕环：外环旋转 + 中心墨滴呼吸 + 涟漪扩散 */}
+        <div style={{ position: 'relative', width: 132, height: 132 }}>
+          {/* 外圈旋转渐变环 */}
+          <svg width="132" height="132" style={{ position: 'absolute', inset: 0 }}>
             <defs>
               <linearGradient id="loaderGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={accent} />
                 <stop offset="100%" stopColor={accentSecondary} />
               </linearGradient>
             </defs>
-            <circle cx="60" cy="60" r="52" fill="none" stroke={`${accent}15`} strokeWidth="2" />
+            <circle cx="66" cy="66" r="58" fill="none" stroke={`${accent}14`} strokeWidth="2" />
             <circle
-              cx="60" cy="60" r="52"
+              cx="66" cy="66" r="58"
               fill="none"
               stroke="url(#loaderGrad1)"
               strokeWidth="2.5"
               strokeLinecap="round"
-              strokeDasharray="326.7"
-              strokeDashoffset="76"
-              transform="rotate(-90 60 60)"
-              style={{ animation: 'loader-svg-spin 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite' }}
+              strokeDasharray="364"
+              strokeDashoffset="86"
+              transform="rotate(-90 66 66)"
+              style={{ animation: 'loader-svg-spin 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite' }}
+            />
+            {/* 反向细环 */}
+            <circle
+              cx="66" cy="66" r="48"
+              fill="none"
+              stroke={accentLight}
+              strokeWidth="1"
+              strokeDasharray="60 241"
+              opacity="0.55"
+              transform="rotate(90 66 66)"
+              style={{ animation: 'loader-ring-rev 2.4s linear infinite' }}
             />
           </svg>
 
-          {/* 眨眼眼睛 SVG */}
-          <svg
-            width="120"
-            height="120"
-            viewBox="0 0 120 120"
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <defs>
-              <radialGradient id="irisGrad" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor={accentLight} />
-                <stop offset="35%" stopColor={accent} />
-                <stop offset="100%" stopColor={accentSecondary} />
-              </radialGradient>
-              <radialGradient id="pupilGrad" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#fff" />
-                <stop offset="50%" stopColor={accent} />
-                <stop offset="100%" stopColor={accentSecondary} />
-              </radialGradient>
-              <clipPath id="eyeClip">
-                <path d={eyePath} />
-              </clipPath>
-              <filter id="eyeGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation={blink ? '1' : '3'} result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <linearGradient id="scanLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="transparent" />
-                <stop offset="50%" stopColor={accentLight} stopOpacity="0.9" />
-                <stop offset="100%" stopColor="transparent" />
-              </linearGradient>
-            </defs>
-
-            {/* 眼睛轮廓 — 眨眼时变细 */}
-            <path
-              d={eyePath}
-              fill={`${accent}08`}
-              stroke={accent}
-              strokeWidth={blink ? '1' : '2.5'}
-              filter="url(#eyeGlow)"
-              style={{ transition: 'stroke-width 0.08s' }}
-            />
-
-            {/* 虹膜区域（裁剪在眼睛形状内） */}
-            <g clipPath="url(#eyeClip)">
-              {/* 虹膜 */}
-              <g style={{
-                transformBox: 'fill-box',
-                transformOrigin: 'center',
-                animation: 'loader-iris-pulse 2.5s ease-in-out infinite',
-                opacity: blink ? 0 : 1,
-                transition: 'opacity 0.06s',
-              }}>
-                <circle cx="60" cy="60" r="24" fill="url(#irisGrad)" />
-                {/* 虹膜纹理线 */}
-                <circle cx="60" cy="60" r="20" fill="none" stroke={accentLight} strokeWidth="0.5" opacity="0.4" />
-                <circle cx="60" cy="60" r="16" fill="none" stroke={accentLight} strokeWidth="0.5" opacity="0.3" />
-                {/* 瞳孔 */}
-                <circle cx="60" cy="60" r="10" fill="url(#pupilGrad)" />
-                {/* 高光 */}
-                <circle cx="53" cy="53" r="4" fill="rgba(255,255,255,0.9)" />
-                <circle cx="66" cy="66" r="2" fill="rgba(255,255,255,0.5)" />
-              </g>
-
-              {/* 扫描线 — 眼睛睁开时显示 */}
-              {!blink && (
-                <rect
-                  x="15" y={scanY}
-                  width="90" height="1.5"
-                  fill="url(#scanLineGrad)"
-                  opacity="0.7"
-                />
-              )}
-            </g>
-          </svg>
-
-          {/* 轨道粒子 */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            animation: 'loader-spin 3s linear infinite',
-          }}>
+          {/* 涟漪扩散环（两层交错） */}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: '50%',
+              border: `1.5px solid ${accent}55`,
+              animation: 'loader-ripple 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite',
+            }} />
             <div style={{
               position: 'absolute',
-              top: -5,
-              left: '50%',
-              width: 8,
-              height: 8,
-              marginLeft: -4,
-              borderRadius: '50%',
-              background: accentLight,
-              boxShadow: `0 0 10px ${accentLight}`,
+              width: 52, height: 52, borderRadius: '50%',
+              border: `1px solid ${accent}30`,
+              animation: 'loader-ripple 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) 1.2s infinite',
             }} />
           </div>
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            animation: 'loader-spin-rev 2.5s linear infinite',
-          }}>
+
+          {/* 中心墨滴：呼吸 + 微光 */}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{
-              position: 'absolute',
-              bottom: -4,
-              left: '50%',
-              width: 6,
-              height: 6,
-              marginLeft: -3,
-              borderRadius: '50%',
-              background: accentSecondary,
-              boxShadow: `0 0 8px ${accentSecondary}`,
+              width: 34, height: 34, borderRadius: '50%',
+              background: `radial-gradient(circle at 36% 32%, ${accentLight}, ${accent} 62%, ${accentSecondary})`,
+              filter: 'blur(0.5px)',
+              boxShadow: `0 0 20px ${accent}66, 0 0 46px ${accent}2e`,
+              animation: 'loader-ink-breathe 2s ease-in-out infinite',
             }} />
           </div>
         </div>
@@ -349,13 +232,21 @@ export default function Loader({
         @keyframes loader-spin { to { transform: rotate(360deg); } }
         @keyframes loader-spin-rev { to { transform: rotate(-360deg); } }
         @keyframes loader-svg-spin {
-          0% { stroke-dashoffset: 76; transform: rotate(-90deg); }
-          50% { stroke-dashoffset: 280; }
-          100% { stroke-dashoffset: 76; transform: rotate(630deg); }
+          0% { stroke-dashoffset: 86; transform: rotate(-90deg); }
+          50% { stroke-dashoffset: 320; }
+          100% { stroke-dashoffset: 86; transform: rotate(630deg); }
         }
-        @keyframes loader-breathe {
-          0%, 100% { transform: scale(1); opacity: 0.4; }
-          50% { transform: scale(1.2); opacity: 0.7; }
+        @keyframes loader-ring-rev {
+          0% { stroke-dashoffset: 60; }
+          100% { stroke-dashoffset: 420; }
+        }
+        @keyframes loader-ripple {
+          0% { transform: scale(0.55); opacity: 0.9; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes loader-ink-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.85; }
+          50% { transform: scale(1.14); opacity: 1; }
         }
         @keyframes loader-shimmer {
           0% { background-position: 300% 0; }
@@ -368,10 +259,6 @@ export default function Loader({
         @keyframes loader-progress-shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
-        }
-        @keyframes loader-iris-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
         }
       `}</style>
     </div>

@@ -8,6 +8,7 @@ import useThemeStore from './store/themeStore';
 import { useAppLoader } from './hooks/useAppLoader';
 
 const HomePage = lazy(() => import('./pages/home/HomePage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const ArticleDetailPage = lazy(() => import('./pages/article/ArticleDetailPage'));
 const ArchivePage = lazy(() => import('./pages/archive/ArchivePage'));
 const CategoryPage = lazy(() => import('./pages/category/CategoryPage'));
@@ -214,6 +215,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<AppLayout />}>
                   <Route index element={<HomePage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="article/:id" element={<ArticleDetailPage />} />
                   <Route path="archive" element={<ArchivePage />} />
                   <Route path="category" element={<CategoryPage />} />

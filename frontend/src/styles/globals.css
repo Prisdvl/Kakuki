@@ -5975,17 +5975,10 @@ a, button, .article-card, .contact-card, .social-links a,
 }
 .tilt-card > .glass::before,
 .tilt-card > .glass::after { display: none !important; }
-.tilt-glare {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, 0.14) 0%, transparent 55%);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s;
-  z-index: 3;
-}
-.tilt-card:hover .tilt-glare { opacity: 1; }
+/* 只保留倾斜：禁用 tilt 卡片内的鼠标跟随光晕与扫光 */
+.tilt-card > .glass.mouse-glow::before,
+.tilt-card > .mouse-glow::before { display: none !important; }
+.tilt-glare { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .tilt-card { transform: none !important; }
   .tilt-glare { display: none; }

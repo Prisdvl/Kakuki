@@ -119,8 +119,8 @@ request.interceptors.response.use(
   (response) => response.data,
   async (error) => {
     const { response, config } = error;
-    // 后端不可用（网络错误 / 404 / 5xx）时走本地降级数据
-    if (!response || [404, 502, 503, 504].includes(response?.status)) {
+    // 后端不可用（网络错误 / 404 / 5xx，含 vite proxy 转发的 500）时走本地降级数据
+    if (!response || [404, 500, 502, 503, 504].includes(response?.status)) {
       const mocked = mockResolve(config);
       if (mocked) return mocked;
     }

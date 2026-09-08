@@ -11,6 +11,7 @@ import CursorGlow from '../CursorGlow';
 
 const NAV_ITEMS = [
   { label: '首页', path: '/' },
+  { label: '仪表盘', path: '/dashboard' },
   { label: '归档', path: '/archive' },
   { label: '分类', path: '/category' },
   { label: '杂谈', path: '/talks' },

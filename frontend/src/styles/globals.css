@@ -229,34 +229,8 @@ body {
   opacity: 0.55;
 }
 
-/* Brighter grid lines that follow cursor via CSS mask */
-.bg-scene-highlight {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--accent) 40%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent) 1px, transparent 1px);
-  background-size: 60px 60px;
-  -webkit-mask-image: radial-gradient(
-    circle 180px at var(--cursor-x, -50%) var(--cursor-y, -50%),
-    black 0%,
-    transparent 80%
-  );
-  mask-image: radial-gradient(
-    circle 180px at var(--cursor-x, -50%) var(--cursor-y, -50%),
-    black 0%,
-    transparent 80%
-  );
-  mask-composite: exclude;
-  transition: none;
-  pointer-events: none;
-}
-
+/* 网格层仅保留一份，避免双网格叠加重合 */
 @media (max-width: 768px) {
-  .bg-scene-highlight {
-    display: none;
-  }
   .bg-scene-grid {
     opacity: 0.2;
   }
@@ -276,20 +250,20 @@ body {
 .ink-blot {
   position: absolute;
   display: block;
-  border-radius: 41% 59% 55% 45% / 52% 43% 57% 48%;
+  border-radius: 43% 57% 51% 49% / 54% 46% 54% 46%;
   background: currentColor;
-  filter: blur(38px);
+  filter: blur(64px);
   opacity: 0;
-  transform: scale(0.3);
-  animation: inkDiffuse var(--ink-dur, 10s) ease-in-out infinite;
+  transform: translate(0, 0) scale(0.45);
+  animation: smokeDrift var(--ink-dur, 22s) ease-in-out infinite;
   animation-delay: var(--ink-delay, 0s);
   will-change: transform, opacity;
 }
-@keyframes inkDiffuse {
-  0%   { transform: scale(0.3) rotate(0deg);   opacity: 0; }
-  16%  { opacity: var(--ink-max, 0.15); }
-  62%  { transform: scale(1.55) rotate(22deg); opacity: var(--ink-max, 0.15); }
-  100% { transform: scale(2.2) rotate(46deg);  opacity: 0; }
+@keyframes smokeDrift {
+  0%   { transform: translate(0, 0) scale(0.45); opacity: 0; }
+  22%  { opacity: var(--ink-max, 0.1); }
+  68%  { transform: translate(var(--smoke-x, 50px), var(--smoke-y, -36px)) scale(1.35); opacity: var(--ink-max, 0.1); }
+  100% { transform: translate(var(--smoke-x2, 110px), var(--smoke-y2, -80px)) scale(1.85); opacity: 0; }
 }
 @media (max-width: 720px) {
   .ink-wash { opacity: 0.55; }
@@ -1874,26 +1848,20 @@ body.snap-active {
   height: 96px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #7c3aed, #ec4899, #f472b6);
+  background: var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.5rem;
   font-weight: 800;
-  color: #fff;
-  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.35);
+  color: var(--text-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   position: relative;
+  border: 1px solid var(--glass-border);
 }
 
 .profile-avatar::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
-  z-index: -1;
-  opacity: 0.5;
-  filter: blur(8px);
+  display: none;
 }
 
 .profile-info {
@@ -2787,11 +2755,11 @@ input:autofill {
 }
 
 .ant-form-item-explain-error {
-  color: #ef4444 !important;
+  color: var(--error) !important;
 }
 
 .ant-form-item .ant-form-item-explain {
-  color: #ef4444 !important;
+  color: var(--error) !important;
 }
 
 /* Buttons — primary gradient */

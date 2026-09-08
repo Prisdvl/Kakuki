@@ -258,7 +258,6 @@ export default function AppLayout() {
       <div className="bg-scene">
         <div className="bg-image-layer" />
         <div className="bg-scene-grid" />
-        <div className="bg-scene-highlight" />
         <InkWash />
         <div className="bg-scene-flow">
           <div className="bg-flow-beam" />

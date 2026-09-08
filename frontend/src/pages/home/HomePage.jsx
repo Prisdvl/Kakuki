@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -87,7 +87,7 @@ export function ProfileCard({ stats }) {
   const gh = useGithubProfile();
   // 头像：GitHub 官方 → 本地快照（unavatar 下载，与 GitHub 一致）→ 首字母徽章
   const [avatarLevel, setAvatarLevel] = useState(0);
-  const avatarSources = [gh?.avatar_url || 'https://github.com/Prisdvl.png', `${import.meta.env.BASE_URL}github-avatar.png`];
+  const avatarSources = [gh?.avatar_url || 'https://github.com/Prisdvl.png', `${import.meta.env.BASE_URL}github-avatar.jpg`];
   const bio = gh?.bio || '全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。';
   return (
     <div className="glass profile-card mouse-glow">

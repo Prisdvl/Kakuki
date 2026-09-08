@@ -34,10 +34,10 @@
   --accent-dark: #0051d5;
   --accent-light: #5aa8ff;
 
-  /* 语义色 */
+  /* 语义色（错误/警示采用暗调，与水墨主题协调） */
   --success: #22c55e;     --success-soft: rgba(34, 197, 94, 0.15);
-  --warning: #f59e0b;     --warning-soft: rgba(245, 158, 11, 0.15);
-  --error: #ef4444;       --error-soft: rgba(239, 68, 68, 0.15);
+  --warning: #a16207;     --warning-soft: rgba(161, 98, 7, 0.15);
+  --error: #a33a3a;       --error-soft: rgba(163, 58, 58, 0.15);
   --info: #3b82f6;        --info-soft: rgba(59, 130, 246, 0.15);
 
   /* ============ 磨砂液态玻璃（Frosted Liquid Glass）============

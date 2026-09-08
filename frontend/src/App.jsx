@@ -139,7 +139,7 @@ export default function App() {
           colorInfo: accent,
           colorSuccess: '#22c55e',
           colorWarning: '#f59e0b',
-          colorError: '#ef4444',
+          colorError: isDark ? '#c98a8a' : '#a33a3a',
           // 与 design-tokens --radius-md 对齐（12px）
           borderRadius: 12,
           borderRadiusSM: 8,

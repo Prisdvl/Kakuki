@@ -422,8 +422,8 @@ function buildThemeVars(palette, isDark) {
   const { Vibrant, DarkVibrant, LightVibrant, Muted, DarkMuted, LightMuted } = palette;
 
   const successColor = isDark ? '#4ade80' : '#22c55e';
-  const warningColor = isDark ? '#fbbf24' : '#f59e0b';
-  const errorColor = isDark ? '#f87171' : '#ef4444';
+  const warningColor = isDark ? '#d9a441' : '#a16207';
+  const errorColor = isDark ? '#c98a8a' : '#a33a3a';
   const infoColor = isDark ? '#60a5fa' : '#3b82f6';
 
   // 页面底色跟随主题色、但比主题色淡（保留色相、压低饱和与明暗差）

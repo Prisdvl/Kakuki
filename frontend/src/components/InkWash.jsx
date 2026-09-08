@@ -1,29 +1,32 @@
 import { useMemo } from 'react';
 
-// 墨染背景：多个墨滴在宣纸上持续晕开、淡去的写意动画（非交互装饰层）
+// 烟雾背景：大范围柔和烟团在背景中缓慢弥漫、飘散（非交互装饰层）
 // 颜色跟随 --ink-color（浅色=墨黑，深色=淡墨），随主题切换平滑过渡
 
-const BLOT_COUNT = 12;
+const SMOKE_COUNT = 10;
 
 const rand = (min, max) => min + Math.random() * (max - min);
 
-const makeBlots = () =>
-  Array.from({ length: BLOT_COUNT }, (_, i) => ({
+const makeSmoke = () =>
+  Array.from({ length: SMOKE_COUNT }, (_, i) => ({
     id: i,
-    left: rand(1, 94),
-    top: rand(2, 88),
-    size: rand(140, 360),
-    dur: rand(9, 16),
-    delay: rand(0, 15),
-    max: rand(0.09, 0.2),
-    radius: `${rand(38, 46)}% ${rand(54, 62)}% ${rand(50, 60)}% ${rand(40, 50)}% / ${rand(43, 56)}% ${rand(44, 57)}% ${rand(43, 56)}% ${rand(44, 57)}%`,
+    left: rand(0, 90),
+    top: rand(2, 86),
+    size: rand(300, 620),
+    dur: rand(16, 30),
+    delay: rand(0, 22),
+    max: rand(0.05, 0.13),
+    x: rand(30, 90),
+    y: rand(-80, -20),
+    x2: rand(90, 190),
+    y2: rand(-150, -60),
   }));
 
 export default function InkWash() {
-  const blots = useMemo(makeBlots, []);
+  const smoke = useMemo(makeSmoke, []);
   return (
     <div className="ink-wash" aria-hidden="true">
-      {blots.map((b) => (
+      {smoke.map((b) => (
         <span
           key={b.id}
           className="ink-blot"
@@ -32,10 +35,13 @@ export default function InkWash() {
             top: `${b.top}%`,
             width: `${b.size}px`,
             height: `${b.size}px`,
-            borderRadius: b.radius,
             '--ink-dur': `${b.dur}s`,
             '--ink-delay': `${b.delay}s`,
             '--ink-max': b.max,
+            '--smoke-x': `${b.x}px`,
+            '--smoke-y': `${b.y}px`,
+            '--smoke-x2': `${b.x2}px`,
+            '--smoke-y2': `${b.y2}px`,
           }}
         />
       ))}

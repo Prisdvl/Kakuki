@@ -35,6 +35,8 @@ const reactEcosystem = new Set([
 
 export default defineConfig(async () => ({
   plugins: [react(), await analyzePlugin()].filter(Boolean),
+  // GitHub Pages 子路径部署（本地 dev / build 不受影响）
+  base: '/Kakuki/',
   optimizeDeps: {
     include: ['framer-motion', 'canvas-confetti'],
   },

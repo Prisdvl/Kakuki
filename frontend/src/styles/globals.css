@@ -263,6 +263,27 @@ body {
 }
 
 /* ===== Flowing light beams on grid background ===== */
+.ink-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--ink-color);
+  opacity: 0.9;
+  z-index: 4;
+  transition: color 0.8s ease, opacity 0.8s ease;
+}
+.ink-wash .ink-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@media (max-width: 720px) {
+  .ink-wash { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-wash { opacity: 0.4; }
+}
+
 .bg-scene-flow {
   position: absolute;
   inset: 0;
@@ -1786,12 +1807,12 @@ body.snap-active {
 
 /* ===== Global Background Scene ===== */
 .bg-scene {
-  background: linear-gradient(135deg, #ede9fe 0%, #fce7f3 35%, #ede9fe 65%, #e0e7ff 100%);
+  background: linear-gradient(135deg, #f4f3f0 0%, #ecebe7 35%, #f2f1ed 65%, #e7e7e3 100%);
   transition: background 0.6s ease;
 }
 
 .dark .bg-scene {
-  background: linear-gradient(135deg, #0c0a1a 0%, #1e1b4b 50%, #0c0a1a 100%);
+  background: linear-gradient(135deg, #0a0b0c 0%, #131517 50%, #0a0b0c 100%);
 }
 
 .bg-scene::before {

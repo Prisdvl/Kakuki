@@ -85,14 +85,19 @@ function useGithubProfile() {
 
 export function ProfileCard({ stats }) {
   const gh = useGithubProfile();
-  const avatarUrl = gh?.avatar_url || '/avatar.jpg';
+  const [avatarBroken, setAvatarBroken] = useState(false);
+  const avatarUrl = (gh?.avatar_url || 'https://github.com/Prisdvl.png') + (avatarBroken ? '' : '');
   const bio = gh?.bio || '全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。';
   return (
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">
-        <img src={avatarUrl} alt="Prisdvl" style={{
-          width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
-        }} onError={(e) => { if (e.target.src !== '/avatar.jpg') e.target.src = '/avatar.jpg'; }} />
+        {avatarBroken ? (
+          <div style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1.4rem' }}>P</div>
+        ) : (
+          <img src={avatarUrl} alt="Prisdvl" style={{
+            width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
+          }} onError={() => setAvatarBroken(true)} />
+        )}
       </div>
       <div className="profile-info">
         <div className="profile-name">Prisdvl</div>

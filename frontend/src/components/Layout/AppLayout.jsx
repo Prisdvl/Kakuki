@@ -5,6 +5,7 @@ import useThemeStore from '../../store/themeStore';
 import useUserStore from '../../store/userStore';
 import FeatureMenu from '../FeatureMenu';
 import ParticleField from '../ParticleField';
+import InkWash from '../InkWash';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import CursorGlow from '../CursorGlow';
 
@@ -258,6 +259,7 @@ export default function AppLayout() {
         <div className="bg-image-layer" />
         <div className="bg-scene-grid" />
         <div className="bg-scene-highlight" />
+        <InkWash />
         <div className="bg-scene-flow">
           <div className="bg-flow-beam" />
           <div className="bg-flow-beam" />

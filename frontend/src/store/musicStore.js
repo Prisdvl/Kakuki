@@ -1,6 +1,47 @@
 import { create } from 'zustand';
 import request from '../api/request';
 
+// 线上静态部署（无后端）时使用的演示歌单：真实可播放的公开示例音频
+const DEMO_PLAYLIST = {
+  id: 'demo',
+  name: 'Prisdvl 的喜欢音乐',
+  coverImgUrl: '',
+  trackCount: 8,
+  tracks: [
+    { id: 'demo-1', name: 'Song of the Green Whale', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.1', cover: 'https://picsum.photos/seed/kakuki-1/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+    { id: 'demo-2', name: 'Whispering Mountains', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.1', cover: 'https://picsum.photos/seed/kakuki-2/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+    { id: 'demo-3', name: 'Ink Drift', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.2', cover: 'https://picsum.photos/seed/kakuki-3/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+    { id: 'demo-4', name: 'Paper Moon', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.2', cover: 'https://picsum.photos/seed/kakuki-4/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+    { id: 'demo-5', name: 'Misty River', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.3', cover: 'https://picsum.photos/seed/kakuki-5/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
+    { id: 'demo-6', name: 'Brushstroke', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.3', cover: 'https://picsum.photos/seed/kakuki-6/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
+    { id: 'demo-7', name: 'Night Ink', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.4', cover: 'https://picsum.photos/seed/kakuki-7/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
+    { id: 'demo-8', name: 'Pale Whisper', artists: [{ name: 'SoundHelix' }], album: 'Demo Vol.4', cover: 'https://picsum.photos/seed/kakuki-8/300/300', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
+  ],
+};
+
+const DEMO_LIST = [{ id: 'demo', name: 'Prisdvl 的喜欢音乐', coverImgUrl: '', trackCount: 8 }];
+
+const applyDemoPlaylist = (set, get) => {
+  const playlist = { ...DEMO_PLAYLIST, tracks: DEMO_PLAYLIST.tracks.map((t) => ({ ...t })) };
+  set({
+    user: { nickname: 'Prisdvl', avatarUrl: '' },
+    playlists: [playlist],
+    playlistList: DEMO_LIST,
+    currentPlaylist: playlist,
+    currentTrack: null,
+    currentLyrics: [],
+    currentLyricIndex: -1,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+  });
+  if (playlist.tracks.length > 0) {
+    const audio = getAudio();
+    if (audio) audio.src = playlist.tracks[0].url;
+  }
+  return { success: true, playlist, demo: true };
+};
+
 // audio 实例作为模块级单例，不放入 React state，避免触发无意义重渲染
 let audioInstance = null;
 let audioListenersBound = false;
@@ -105,8 +146,9 @@ const useMusicStore = create((set, get) => ({
       set({ playlistList: list });
       return { success: true, playlists: list };
     } catch (err) {
-      console.error('Fetch playlists error:', err);
-      return { success: false, error: '获取歌单列表失败' };
+      console.error('Fetch playlists error, use demo:', err);
+      set({ playlistList: DEMO_LIST });
+      return { success: true, playlists: DEMO_LIST, demo: true };
     }
   },
 
@@ -149,9 +191,8 @@ const useMusicStore = create((set, get) => ({
       }
       return { success: false, error: '未找到歌单数据' };
     } catch (err) {
-      console.error('Fetch playlist error:', err);
-      const serverMsg = err?.response?.data?.error;
-      return { success: false, error: serverMsg || '获取歌单失败' };
+      console.error('Fetch playlist error, use demo:', err);
+      return applyDemoPlaylist(set, get);
     }
   },
 
@@ -214,21 +255,15 @@ const useMusicStore = create((set, get) => ({
         return { success: false, error: '未找到歌单数据' };
       }
     } catch (err) {
-      console.error('Fetch bootstrap error:', err);
-      const status = err?.response?.status;
-      const serverMsg = err?.response?.data?.error;
-      let msg;
-      if (status === 429) msg = serverMsg || 'API 请求过于频繁，请稍后再试';
-      else if (status === 502) msg = serverMsg || '无法连接到网易云 API';
-      else if (err?.code === 'ECONNABORTED') msg = '请求超时，请检查网络连接';
-      else msg = serverMsg || err?.message || '获取歌单失败';
-      return { success: false, error: msg };
+      console.error('Fetch bootstrap error, use demo:', err);
+      return applyDemoPlaylist(set, get);
     }
   },
 
   playTrack: async (track) => {
     try {
-      const url = `https://music.163.com/song/media/outer/url?id=${track.id}.mp3`;
+      // 演示曲目自带完整音频地址；网易云曲目回退外链
+      const url = track.url || `https://music.163.com/song/media/outer/url?id=${track.id}.mp3`;
 
       // 后台非阻塞加载歌词
       request.get(`/netease/song/${track.id}/lyric/`).then((lyricsRes) => {

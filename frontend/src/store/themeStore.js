@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 
 const DEFAULT_BG = null;
-const DEFAULT_COLOR = '#7c3aed';
+// 默认主题：黑白水墨色（中性墨灰，低饱和，避免被强制提饱和）
+const DEFAULT_COLOR = '#2b3036';
 
 const getInitialTheme = () => {
   const stored = localStorage.getItem('kakuki-theme');
@@ -331,15 +332,18 @@ function findBestColor(clusters, type, exclude) {
 function generateVibrantPalette(hex) {
   const [r, g, b] = hexToRgb(hex);
   const [h, s, l] = rgbToHsl(r, g, b);
-  const sSat = clamp(s, 55, 85);
+  // 低饱和色（如水墨灰）保持低饱和，不被强制提饱和；彩色才提升至鲜亮
+  const lowSat = s <= 38;
+  const sSat = lowSat ? clamp(s, 0, 20) : clamp(s, 55, 85);
+  const lSat = lowSat ? clamp(l, 28, 48) : clamp(l, 40, 55);
 
   return {
-    Vibrant: hslToHex(h, sSat, clamp(l, 40, 55)),
-    DarkVibrant: hslToHex(h, sSat, clamp(l - 18, 20, 40)),
-    LightVibrant: hslToHex(h, clamp(s * 0.7, 30, 55), clamp(l + 18, 55, 80)),
-    Muted: hslToHex(h, clamp(s * 0.55, 20, 50), clamp(l, 40, 65)),
-    DarkMuted: hslToHex(h, clamp(s * 0.45, 15, 40), clamp(l - 15, 22, 45)),
-    LightMuted: hslToHex(h, clamp(s * 0.5, 15, 40), clamp(l + 15, 55, 82)),
+    Vibrant: hslToHex(h, sSat, lSat),
+    DarkVibrant: hslToHex(h, sSat, clamp(lSat - 18, 18, 40)),
+    LightVibrant: hslToHex(h, lowSat ? clamp(s, 0, 16) : clamp(s * 0.7, 30, 55), clamp(lSat + 18, 55, 80)),
+    Muted: hslToHex(h, lowSat ? clamp(s, 0, 14) : clamp(s * 0.55, 20, 50), clamp(lSat, 40, 65)),
+    DarkMuted: hslToHex(h, lowSat ? clamp(s, 0, 12) : clamp(s * 0.45, 15, 40), clamp(lSat - 15, 22, 45)),
+    LightMuted: hslToHex(h, lowSat ? clamp(s, 0, 12) : clamp(s * 0.5, 15, 40), clamp(lSat + 15, 55, 82)),
   };
 }
 

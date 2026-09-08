@@ -454,9 +454,9 @@ function buildThemeVars(palette, isDark) {
     darkMuted: DarkMuted,
     lightMuted: LightMuted,
 
-    glassBg: isDark ? rgba(DarkMuted, 0.6) : rgba(LightMuted, 0.55),
-    glassBgStrong: isDark ? rgba(DarkMuted, 0.82) : rgba(LightMuted, 0.78),
-    glassBorder: isDark ? rgba(accent, 0.3) : rgba(accent, 0.2),
+    glassBg: isDark ? rgba(DarkMuted, 0.42) : rgba(LightMuted, 0.4),
+    glassBgStrong: isDark ? rgba(DarkMuted, 0.72) : rgba(LightMuted, 0.7),
+    glassBorder: isDark ? rgba(accent, 0.32) : rgba(accent, 0.28),
     glassShadow: isDark
       ? `0 8px 32px ${rgba(DarkVibrant, 0.4)}`
       : `0 8px 32px ${rgba(accent, 0.08)}`,

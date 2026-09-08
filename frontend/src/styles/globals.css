@@ -366,15 +366,7 @@ body {
   }
 }
 
-/* ===== Glass Card Base ===== */
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow), var(--glass-inner-shadow);
-  position: relative;
-}
+/* .glass 统一由 glass.css 提供（含镜面高光/过渡），此处不再重复定义 */
 
 /* ===== Enhanced Glass with depth ===== */
 .glass-card {

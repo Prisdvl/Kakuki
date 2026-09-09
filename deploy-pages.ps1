@@ -10,6 +10,10 @@ npm run build
 if ($LASTEXITCODE -ne 0) { Write-Host "BUILD_FAILED"; exit 1 }
 Pop-Location
 
+# SPA 路由兜底：GitHub Pages 对未知路径提供 404.html
+Copy-Item "$ROOT\frontend\dist\index.html" "$ROOT\frontend\dist\404.html" -Force
+Write-Host "==> 已生成 404.html（SPA 兜底）"
+
 Write-Host "==> 同步 gh-pages 分支（worktree）..."
 git fetch github gh-pages 2>$null
 

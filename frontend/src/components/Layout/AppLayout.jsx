@@ -236,15 +236,19 @@ export default function AppLayout() {
     const y = rect.top + rect.height / 2;
     // 先切换主题，切换瞬间被扩散层遮住，不会闪
     toggleTheme();
-    // 下一帧读取新主题背景色，从按钮位置圆形扩散，平滑呈现新主题
+    // 下一帧读取新主题背景色，从按钮位置以羽化边缘圆形晕开（径向渐变，边缘柔和融入）
     requestAnimationFrame(() => {
       const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || (isDark ? '#0e0f11' : '#f6f4ef');
-      setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px', background: bg });
+      setRevealStyle({
+        '--rx': x + 'px',
+        '--ry': y + 'px',
+        background: `radial-gradient(circle, ${bg} 0%, ${bg} 58%, color-mix(in srgb, ${bg} 55%, transparent) 82%, transparent 100%)`,
+      });
       setRevealState('active');
     });
     setTimeout(() => {
       setRevealState('idle');
-    }, 780);
+    }, 900);
   }, [toggleTheme, isDark]);
 
   return (

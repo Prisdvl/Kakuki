@@ -8,7 +8,6 @@ import {
   X,
   Sun,
   Moon,
-  Sparkles,
 } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 
@@ -18,17 +17,9 @@ const PRESET_COLORS = [
   { name: '海洋蓝', color: '#3b82f6' },
   { name: '薄荷绿', color: '#10b981' },
   { name: '日落橙', color: '#f97316' },
-  { name: '暮光青', color: '#06b6d4' },
   { name: '夜空蓝', color: '#6366f1' },
-  { name: '烈焰红', color: '#ef4444' },
-  { name: '朱砂红', color: '#e11d48' },
   { name: '琥珀黄', color: '#f59e0b' },
-  { name: '翡翠青', color: '#059669' },
-  { name: '天青蓝', color: '#0284c7' },
-  { name: '薰衣草', color: '#8b5cf6' },
-  { name: '珊瑚橙', color: '#fb7185' },
-  { name: '石墨灰', color: '#64748b' },
-  { name: '曜石黑', color: '#334155' },
+  { name: '曜石灰', color: '#2b3036' },
 ];
 
 export default function FeatureMenu() {
@@ -46,7 +37,6 @@ export default function FeatureMenu() {
     uploadBackground,
     clearBackground,
     setThemeColor,
-    colorPalette,
   } = useThemeStore();
 
   useEffect(() => {
@@ -110,7 +100,6 @@ export default function FeatureMenu() {
   };
 
   const targetMode = isDark ? '浅色模式' : '深色模式';
-  const currentMode = isDark ? '深色模式' : '浅色模式';
 
   return (
     <div className="feature-menu" ref={containerRef}>
@@ -142,26 +131,15 @@ export default function FeatureMenu() {
             </div>
 
             <div className="feature-menu-body">
+              {/* 外观模式 */}
               <div className="feature-section">
-                <div className="feature-section-label">
-                  外观模式
-                  <span className="feature-current-mode">
-                    当前：{currentMode}
-                  </span>
-                </div>
-                <button
-                  className="feature-item"
-                  onClick={() => toggleTheme()}
-                >
+                <button className="feature-item" onClick={() => toggleTheme()}>
                   <div className="feature-item-icon">
                     {isDark ? <Sun size={16} /> : <Moon size={16} />}
                   </div>
                   <div className="feature-item-text">
                     <span className="feature-item-label">
-                      切换到{targetMode}
-                    </span>
-                    <span className="feature-item-desc">
-                      点击切换界面外观
+                      {isDark ? '浅色模式' : '深色模式'}
                     </span>
                   </div>
                   <div className="feature-item-toggle">
@@ -172,31 +150,13 @@ export default function FeatureMenu() {
                 </button>
               </div>
 
+              {/* 主题色 */}
               <div className="feature-section">
                 <div className="feature-section-label">
                   主题色
                   <span className="feature-current-color-label">
-                    Vibrant: {themeColor?.toUpperCase()}
+                    {themeColor?.toUpperCase()}
                   </span>
-                </div>
-                <div className="feature-current-color">
-                  <div className="feature-color-swatches">
-                    <div className="feature-swatch-group">
-                      <div className="feature-swatch-label">Vibrant</div>
-                      <div
-                        className="feature-swatch-large"
-                        style={{ background: colorPalette?.Vibrant }}
-                      />
-                    </div>
-                    <div className="feature-swatch-col">
-                      <div className="feature-swatch-mini" style={{ background: colorPalette?.DarkVibrant }} title="DarkVibrant" />
-                      <div className="feature-swatch-mini" style={{ background: colorPalette?.LightVibrant }} title="LightVibrant" />
-                    </div>
-                    <div className="feature-swatch-col">
-                      <div className="feature-swatch-mini" style={{ background: colorPalette?.Muted }} title="Muted" />
-                      <div className="feature-swatch-mini" style={{ background: colorPalette?.DarkMuted }} title="DarkMuted" />
-                    </div>
-                  </div>
                 </div>
                 <div className="feature-color-grid">
                   {PRESET_COLORS.map((c) => (
@@ -209,63 +169,42 @@ export default function FeatureMenu() {
                     />
                   ))}
                 </div>
-
-                <div className="feature-custom-color">
-                  <div className="feature-custom-head">
-                    <span className="feature-custom-title">任意颜色</span>
-                    <span className="feature-custom-badge">
-                      <Sparkles size={12} /> 文字对比度自动调整
-                    </span>
-                  </div>
-                  <div className="feature-custom-row">
+                <div className="feature-custom-row">
+                  <input
+                    type="color"
+                    value={themeColor}
+                    onChange={(e) => {
+                      setThemeColor(e.target.value);
+                      setHexInput(e.target.value);
+                    }}
+                    className="feature-color-input"
+                    aria-label="选择任意颜色"
+                  />
+                  <div className="feature-hex-input-wrap">
                     <input
-                      type="color"
-                      value={themeColor}
-                      onChange={(e) => {
-                        setThemeColor(e.target.value);
-                        setHexInput(e.target.value);
-                      }}
-                      className="feature-color-input"
-                      aria-label="选择任意颜色"
+                      type="text"
+                      className="feature-hex-input"
+                      value={hexInput}
+                      onChange={(e) => setHexInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleHexApply(); }}
+                      placeholder="#7c3aed"
+                      aria-label="输入十六进制颜色"
+                      spellCheck="false"
                     />
-                    <div className="feature-hex-input-wrap">
-                      <input
-                        type="text"
-                        className="feature-hex-input"
-                        value={hexInput}
-                        onChange={(e) => setHexInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleHexApply(); }}
-                        placeholder="#7c3aed"
-                        aria-label="输入十六进制颜色"
-                        spellCheck="false"
-                      />
-                      <button
-                        className="feature-hex-apply"
-                        onClick={handleHexApply}
-                        aria-label="应用颜色"
-                      >
-                        应用
-                      </button>
-                    </div>
-                  </div>
-                  <div className="feature-on-accent-preview">
-                    <div className="feature-on-accent-swatch" style={{ background: 'var(--accent)' }}>
-                      <span style={{ color: 'var(--on-accent)' }}>Aa 文字清晰</span>
-                    </div>
-                    <span className="feature-on-accent-hint">
-                      文字与强调色的对比度已按 WCAG 4.5:1 自动保障
-                    </span>
+                    <button
+                      className="feature-hex-apply"
+                      onClick={handleHexApply}
+                      aria-label="应用颜色"
+                    >
+                      应用
+                    </button>
                   </div>
                 </div>
               </div>
 
+              {/* 背景图片 */}
               <div className="feature-section">
-                <div className="feature-section-label">
-                  背景图片
-                  <span className="feature-auto-badge">
-                    <Sparkles size={12} /> 自动提取主题色
-                  </span>
-                </div>
+                <div className="feature-section-label">背景图片</div>
                 <div className="feature-bg-row">
                   <div
                     className={`feature-bg-preview ${bgImage ? 'has-bg' : ''}`}
@@ -298,9 +237,6 @@ export default function FeatureMenu() {
                     )}
                   </div>
                 </div>
-                <p className="feature-bg-hint">
-                  上传后自动裁切图片并提取 6 种语义化颜色（Vibrant/Dark/Light/Muted），应用到全站主题
-                </p>
                 <input
                   ref={fileInputRef}
                   type="file"

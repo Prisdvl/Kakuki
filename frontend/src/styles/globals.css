@@ -110,25 +110,23 @@
   --leetcode-hard: #ff453a;
 }
 
-/* ===== Theme Transition Overlay：新主题色从按钮位置圆形扩散 ===== */
+/* ===== Theme Transition Overlay：新主题色从按钮位置圆形扩散（transform 缩放，兼容性最佳） ===== */
 .theme-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  border-radius: 0;
+  border-radius: 50%;
+  transform-origin: var(--rx, 50%) var(--ry, 50%);
+  transform: scale(0);
   opacity: 0;
-  clip-path: circle(0 at var(--rx, 50%) var(--ry, 50%));
-  -webkit-clip-path: circle(0 at var(--rx, 50%) var(--ry, 50%));
-  transition: clip-path 0.72s cubic-bezier(0.65, 0, 0.35, 1),
-              -webkit-clip-path 0.72s cubic-bezier(0.65, 0, 0.35, 1),
-              opacity 0.25s ease;
+  transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1),
+              opacity 0.3s ease;
 }
 
 .theme-overlay.active {
+  transform: scale(4);
   opacity: 1;
-  clip-path: circle(250vmax at var(--rx, 50%) var(--ry, 50%));
-  -webkit-clip-path: circle(250vmax at var(--rx, 50%) var(--ry, 50%));
 }
 
 /* ===== 主题切换过渡：由 .theme-overlay 圆扩散承载，避免全局属性过渡触发渲染合成故障 ===== */
@@ -6085,9 +6083,10 @@ a, button, .article-card, .contact-card, .social-links a,
   filter: brightness(1.08) !important;
   transform: translateY(-1px);
 }
-/* 深色下 antd 输入框背景贴合玻璃 */
+/* 深色下 antd 输入框背景贴合玻璃（默认/focus/autofill 全状态统一，避免输入框内部颜色不一致） */
 .ant-input,
-.ant-input-affix-wrapper {
+.ant-input-affix-wrapper,
+.ant-input-affix-wrapper .ant-input {
   background: var(--bg-tertiary) !important;
   border-color: var(--border) !important;
   color: var(--text-primary) !important;
@@ -6096,6 +6095,24 @@ a, button, .article-card, .contact-card, .social-links a,
 .ant-input::placeholder { color: var(--text-tertiary) !important; }
 .ant-input:hover,
 .ant-input-affix-wrapper:hover { border-color: var(--accent) !important; }
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-input-affix-wrapper:focus-within {
+  background: var(--bg-tertiary) !important;
+  box-shadow: 0 0 0 2px var(--accent-soft) !important;
+}
+/* 浏览器自动填充底色覆盖，保持与主题一致 */
+.ant-input:-webkit-autofill,
+.ant-input:-webkit-autofill:hover,
+.ant-input:-webkit-autofill:focus,
+.ant-input-affix-wrapper:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-tertiary) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  caret-color: var(--text-primary);
+  transition: background-color 9999s ease-out 0s !important;
+}
 
 /* ===== 状态栏：运行时长翻页钟 + 专注统计 ===== */
 .status-uptime,

@@ -1,0 +1,67 @@
+import{r as x,j as e}from"./react-CxaB__7I.js";import{u as V,g as _}from"./musicStore-DSB89x8P.js";import{L as J,e as K,m as Z,y as O,z as Q,aa as ee,x as se,D as ae,ab as te,ac as ie}from"./icons-CGDNfleg.js";import"./state-jpW2MPDA.js";import"./vendor-BZ7PoWCt.js";import"./index-DjMpuVTc.js";import"./http-DhXgJQ-f.js";import"./antd-DlO6Bk2U.js";import"./antd-icons-LycWwXpQ.js";const N=64,X=128,re=`
+.spectrum-visualizer {
+  border-radius: 20px;
+  padding: 1.25rem 1.25rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.sv-ring {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+.sv-ring-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+}
+.sv-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.10);
+}
+.sv-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sv-icon {
+  width: 40px;
+  height: 40px;
+  color: var(--text-secondary);
+  opacity: 0.65;
+}
+.sv-bars {
+  width: 100%;
+  height: 126px;
+  display: block;
+}
+.sv-status {
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  opacity: 0.85;
+}
+@media (max-width: 640px) {
+  .sv-ring { width: 190px; height: 190px; }
+  .sv-center { width: 88px; height: 88px; }
+  .sv-icon { width: 34px; height: 34px; }
+  .sv-bars { height: 110px; }
+}
+`;if(typeof document<"u"&&!document.getElementById("spectrum-visualizer-styles")){const u=document.createElement("style");u.id="spectrum-visualizer-styles",u.textContent=re,document.head.appendChild(u)}function ce(u,v,f){const T=f-1,y=u/(v-1);return Math.max(0,Math.min(f-1,Math.floor(1*Math.pow(T/1,y))))}function ne(){const u=x.useRef(null),v=x.useRef(null),f=V(p=>p.isPlaying),w=V(p=>p.currentTrack),T=x.useRef(!1),y=x.useRef(null),C=x.useRef(Array.from({length:N},()=>.02));return x.useLayoutEffect(()=>{T.current=f},[f]),x.useLayoutEffect(()=>{const p=u.current,S=v.current,t=p&&p.getContext("2d"),g=S&&S.getContext("2d");if(!t||!g)return;const U=window.matchMedia("(prefers-reduced-motion: reduce)").matches,P=Math.min(window.devicePixelRatio||1,2);let l=240,R=600,b=140,k=_(),z=k?new Uint8Array(k.frequencyBinCount):null,L=k?new Uint8Array(k.fftSize):null;const G=setInterval(()=>{const a=_();a&&a!==k&&(k=a,z=new Uint8Array(a.frequencyBinCount),L=new Uint8Array(a.fftSize))},300),I=()=>{l=p.clientWidth||240,p.width=l*P,p.height=l*P,t.setTransform(P,0,0,P,0,0),R=S.clientWidth||600,b=S.clientHeight||140,S.width=R*P,S.height=b*P,g.setTransform(P,0,0,P,0,0)};I();const B=()=>{const a=l/2,r=l/2,i=l*.32;t.clearRect(0,0,l,l),t.beginPath(),t.arc(a,r,i,0,Math.PI*2),t.strokeStyle="rgba(124, 58, 237, 0.35)",t.lineWidth=2,t.stroke()},H=a=>{const r=L.length;let i=0;for(let o=-2;o<=2;o++)i+=L[Math.max(0,Math.min(r-1,a+o))];return i/5},F=()=>{const a=l/2,r=l/2,i=l*.34,o=l*.09;t.clearRect(0,0,l,l);const n=t.createRadialGradient(a,r,i-8,a,r,i+o+12);n.addColorStop(0,"rgba(124, 58, 237, 0.04)"),n.addColorStop(1,"rgba(124, 58, 237, 0)"),t.fillStyle=n,t.fillRect(0,0,l,l),t.beginPath();for(let h=0;h<=X;h++){const s=h/X*Math.PI*2-Math.PI/2,c=Math.floor(h/X*(L.length-1)),M=(H(c)-128)/128,A=i+M*o,j=a+Math.cos(s)*A,Y=r+Math.sin(s)*A;h===0?t.moveTo(j,Y):t.lineTo(j,Y)}t.closePath();const m=t.createLinearGradient(0,0,l,l);m.addColorStop(0,"rgba(124, 58, 237, 0.95)"),m.addColorStop(.5,"rgba(236, 72, 153, 0.85)"),m.addColorStop(1,"rgba(6, 182, 212, 0.85)"),t.strokeStyle=m,t.lineWidth=2,t.shadowColor="rgba(124, 58, 237, 0.28)",t.shadowBlur=6,t.stroke(),t.shadowBlur=0,t.beginPath(),t.arc(a,r,i-16,0,Math.PI*2),t.strokeStyle="rgba(255, 255, 255, 0.06)",t.lineWidth=1,t.stroke()},q=(a,r,i,o,n,m)=>{const h=Math.min(m,o/2,n/2);a.beginPath(),a.moveTo(r+h,i),a.arcTo(r+o,i,r+o,i+n,h),a.arcTo(r+o,i+n,r,i+n,h),a.arcTo(r,i+n,r,i,h),a.arcTo(r,i,r+o,i,h),a.closePath()},W=()=>{g.clearRect(0,0,R,b);const a=C.current,r=z.length,i=3,o=(R-i*(N-1))/N,n=b*.72;for(let m=0;m<N;m++){const h=ce(m,N,r),s=z[h]/255;a[m]+=(s-a[m])*.22;const c=Math.max(3,a[m]*n),d=m*(o+i),M=b-c,A=m/N*300,j=g.createLinearGradient(0,M,0,b);j.addColorStop(0,`hsla(${A+30}, 90%, 68%, 0.95)`),j.addColorStop(1,`hsla(${A}, 78%, 55%, 0.88)`),g.fillStyle=j,q(g,d,M,o,c,Math.min(o/2,3)),g.fill()}},E=()=>{g.clearRect(0,0,R,b);const a=C.current,r=3,i=(R-r*(N-1))/N,o=b*.72;for(let n=0;n<N;n++){const m=Math.max(3,a[n]*o),h=n*(i+r),s=b-m,c=n/N*300,d=g.createLinearGradient(0,s,0,b);d.addColorStop(0,`hsla(${c+30}, 90%, 68%, 0.95)`),d.addColorStop(1,`hsla(${c}, 78%, 55%, 0.88)`),g.fillStyle=d,q(g,h,s,i,m,Math.min(i/2,3)),g.fill()}},D=()=>{if(T.current&&k&&z&&L)k.getByteFrequencyData(z),k.getByteTimeDomainData(L),F(),W();else{const a=C.current;for(let r=0;r<N;r++){const i=.02-a[r];a[r]+=i*.12}B(),E()}y.current=requestAnimationFrame(D)},$=()=>{I(),B(),E()};if(window.addEventListener("resize",$),U){B();const a=Array.from({length:N},()=>.15);C.current=a,E()}else B(),E(),y.current=requestAnimationFrame(D);return()=>{cancelAnimationFrame(y.current),clearInterval(G),window.removeEventListener("resize",$)}},[]),e.jsxs("div",{className:"spectrum-visualizer glass",children:[e.jsxs("div",{className:"sv-ring",children:[e.jsx("canvas",{ref:u,className:"sv-ring-canvas"}),e.jsx("div",{className:"sv-center",children:w!=null&&w.cover?e.jsx("img",{className:`sv-cover ${f?"music-cover-spin":""}`,src:w.cover,alt:(w==null?void 0:w.name)||""}):e.jsxs("svg",{className:"sv-icon",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round","aria-hidden":"true",children:[e.jsx("path",{d:"M9 18V5l12-2v13"}),e.jsx("circle",{cx:"6",cy:"18",r:"3"}),e.jsx("circle",{cx:"18",cy:"16",r:"3"})]})})]}),e.jsx("canvas",{ref:v,className:"sv-bars"}),e.jsx("div",{className:"sv-status",children:f?"Spectrum · 64 bands · Live":"已暂停 · 64 bands"})]})}function ve(){const{currentPlaylist:u,currentTrack:v,isPlaying:f,playlistList:w,currentTime:T,duration:y,currentLyrics:C,currentLyricIndex:p,volume:S,muted:t,fetchBootstrapPlaylist:g,fetchPlaylistById:U,fetchPlaylists:P,playTrack:l,togglePlay:R,nextTrack:b,prevTrack:k,seekTo:z,setVolume:L,toggleMute:G}=V(s=>({currentPlaylist:s.currentPlaylist,currentTrack:s.currentTrack,isPlaying:s.isPlaying,playlistList:s.playlistList,currentTime:s.currentTime,duration:s.duration,currentLyrics:s.currentLyrics,currentLyricIndex:s.currentLyricIndex,volume:s.volume,muted:s.muted,fetchBootstrapPlaylist:s.fetchBootstrapPlaylist,fetchPlaylistById:s.fetchPlaylistById,fetchPlaylists:s.fetchPlaylists,playTrack:s.playTrack,togglePlay:s.togglePlay,nextTrack:s.nextTrack,prevTrack:s.prevTrack,seekTo:s.seekTo,setVolume:s.setVolume,toggleMute:s.toggleMute})),[I,B]=x.useState(!0),[H,F]=x.useState(null),[q,W]=x.useState(!1),[E,D]=x.useState(!1),$=(u==null?void 0:u.tracks)||[];x.useEffect(()=>{let s=!0;return(async()=>{var M,A;const d=V.getState();if((A=(M=d.currentPlaylist)==null?void 0:M.tracks)!=null&&A.length&&d.currentTrack){s&&B(!1);return}B(!0),F(null);try{const[j]=await Promise.all([g(),P()]);s&&!j.success&&F(j.error||"加载失败")}catch(j){s&&F((j==null?void 0:j.message)||"加载失败")}finally{s&&B(!1)}})(),()=>{s=!1}},[]);const a=async s=>{D(!0);const c=await U(s.id);D(!1),c.success&&W(!1)},r=s=>{if(!s||isNaN(s))return"0:00";const c=Math.floor(s/60),d=Math.floor(s%60);return`${c}:${d.toString().padStart(2,"0")}`},i=x.useRef(null),o=x.useCallback(s=>{if(!y||!i.current)return;const c=i.current.getBoundingClientRect(),d=Math.max(0,Math.min(1,(s.clientX-c.left)/c.width));z(d*y)},[y,z]),n=x.useRef(null);x.useEffect(()=>{if(n.current&&p>=0){const s=n.current.querySelector(".lyric-line.active");if(s){const c=n.current,d=s.offsetTop-c.offsetTop-c.clientHeight/2+s.clientHeight/2;c.scrollTo({top:d,behavior:"smooth"})}}},[p]);const m=p>=0&&C[p]?C[p].text:"",h=y>0?T/y*100:0;return e.jsxs("div",{className:"music-page",children:[e.jsx("h1",{className:"music-page-title",children:"音乐"}),e.jsx("p",{className:"music-page-subtitle",children:I?"正在加载...":$.length>0?`共 ${$.length} 首歌曲`:""}),e.jsx(ne,{}),I&&e.jsxs("div",{className:"glass music-loading",children:[e.jsx(J,{size:32,className:"spin",style:{margin:"0 auto",color:"var(--accent)"}}),e.jsx("p",{className:"music-loading-text",children:"正在加载歌单..."}),e.jsx("p",{className:"music-loading-hint",children:"首次加载可能需要几秒"})]}),H&&!I&&e.jsxs("div",{className:"glass music-error",children:[e.jsx("p",{children:H}),e.jsx("button",{onClick:()=>g(),className:"music-retry",children:"重试"})]}),q&&!I&&e.jsxs("div",{className:"glass music-playlist-panel",children:[e.jsxs("div",{className:"music-panel-header",children:[e.jsx("button",{onClick:()=>W(!1),className:"icon-btn","aria-label":"返回",children:"←"}),e.jsx("span",{className:"music-panel-title",children:"选择歌单"}),e.jsxs("span",{className:"music-panel-meta",children:[w.length," 个"]})]}),E?e.jsxs("div",{className:"music-switching",children:[e.jsx(J,{size:20,className:"spin",style:{margin:"0 auto",color:"var(--accent)"}}),e.jsx("div",{children:"加载中..."})]}):e.jsx("div",{className:"music-playlist-list",children:w.map(s=>{const c=(u==null?void 0:u.id)===s.id;return e.jsxs("button",{onClick:()=>a(s),className:"track-row music-playlist-row","aria-label":`选择歌单 ${s.name}`,children:[s.coverImgUrl?e.jsx("img",{src:s.coverImgUrl,alt:s.name,className:"mp-cover-sm",loading:"lazy",decoding:"async"}):e.jsx("div",{className:"mp-cover-sm mp-cover-placeholder",children:e.jsx(K,{size:18})}),e.jsxs("div",{className:"mp-row-body",children:[e.jsx("div",{className:`mp-row-title ${c?"active":""}`,children:s.name}),e.jsxs("div",{className:"mp-row-meta",children:[s.trackCount," 首"]})]})]},s.id)})})]}),$.length>0&&!I&&!q&&e.jsxs(e.Fragment,{children:[e.jsxs("div",{className:"music-panel-header",children:[e.jsx("button",{onClick:()=>W(!0),className:"icon-btn","aria-label":"切换歌单",children:e.jsx(K,{size:18})}),e.jsx("span",{className:"music-panel-title",children:(u==null?void 0:u.name)||"Prisdvl 的喜欢音乐"}),e.jsxs("span",{className:"music-panel-meta",children:[$.length," 首"]})]}),e.jsx("div",{className:"music-track-list",children:$.map((s,c)=>{const d=(v==null?void 0:v.id)===s.id;return e.jsxs("button",{onClick:()=>l(s),className:"track-row music-track-row","aria-label":`播放 ${s.name}`,children:[e.jsx("span",{className:"mp-track-index",children:c+1}),s.cover?e.jsx("img",{src:s.cover,alt:s.name,className:"mp-cover-sm",loading:"lazy",decoding:"async"}):e.jsx("div",{className:"mp-cover-sm mp-cover-placeholder",children:e.jsx(Z,{size:18})}),e.jsxs("div",{className:"mp-row-body",children:[e.jsxs("div",{className:`mp-row-title ${d?"active":""}`,children:[f&&d&&e.jsx("span",{className:"playing-indicator",children:"♪"}),s.name]}),e.jsx("div",{className:"mp-row-meta",children:(s.artists||[]).map(M=>M.name).join(" / ")})]}),e.jsx("div",{className:"music-track-icon",children:d&&f?e.jsx(O,{size:18,style:{color:"var(--accent)"}}):e.jsx(Q,{size:18,style:{color:d?"var(--accent)":"var(--text-tertiary)"}})})]},s.id)})})]}),v&&e.jsx("div",{className:"glass music-player-bar",children:e.jsxs("div",{className:"music-player-inner",children:[e.jsxs("div",{className:"music-player-info",children:[v.cover?e.jsx("img",{src:v.cover,alt:v.name,decoding:"async",fetchpriority:"high",className:`music-player-cover ${f?"music-cover-spin":""}`}):e.jsx("div",{className:"music-player-cover mp-cover-placeholder",children:e.jsx(ee,{size:22})}),e.jsxs("div",{className:"music-player-meta",children:[e.jsx("div",{className:"music-player-name",children:v.name}),e.jsx("div",{className:"music-player-artist",children:(v.artists||[]).map(s=>s.name).join(" / ")})]})]}),e.jsxs("div",{className:"music-player-center",children:[e.jsx("div",{ref:n,className:"lyrics-panel music-lyrics",children:C.length===0?e.jsx("div",{className:"music-lyrics-empty",children:m||"暂无歌词"}):C.map((s,c)=>e.jsx("div",{className:`lyric-line ${c===p?"active":""}`,children:s.text},c))}),e.jsxs("div",{ref:i,className:"progress-bar music-progress",onClick:o,role:"slider","aria-label":"播放进度","aria-valuemin":0,"aria-valuemax":Math.round(y||0),"aria-valuenow":Math.round(T||0),children:[e.jsx("span",{className:"music-time",children:r(T)}),e.jsx("div",{className:"music-progress-track",children:e.jsx("div",{className:"music-progress-fill",style:{width:`${h}%`}})}),e.jsx("span",{className:"music-time",children:r(y)})]})]}),e.jsxs("div",{className:"music-player-controls",children:[e.jsx("button",{onClick:k,className:"music-ctrl-btn","aria-label":"上一首",children:e.jsx(se,{size:18})}),e.jsx("button",{onClick:R,className:"play-pulse music-play-btn","aria-label":f?"暂停":"播放",children:f?e.jsx(O,{size:18}):e.jsx(Q,{size:18,style:{marginLeft:2},fill:"currentColor"})}),e.jsx("button",{onClick:b,className:"music-ctrl-btn","aria-label":"下一首",children:e.jsx(ae,{size:18})}),e.jsxs("div",{className:"music-volume",children:[e.jsx("button",{onClick:G,className:"music-ctrl-btn","aria-label":t?"取消静音":"静音",title:t?"取消静音":"静音",children:t?e.jsx(te,{size:18}):e.jsx(ie,{size:18})}),e.jsx("input",{type:"range",min:"0",max:"1",step:"0.01",value:S,onChange:s=>L(parseFloat(s.target.value)),className:"volume-slider",style:{"--pct":`${(t?0:S)*100}%`},"aria-label":"音量","aria-valuemin":0,"aria-valuemax":1,"aria-valuenow":Number(S.toFixed(2))})]})]})]})})]})}export{ve as default};

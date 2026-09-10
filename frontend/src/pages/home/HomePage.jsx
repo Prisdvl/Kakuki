@@ -960,7 +960,7 @@ export default function HomePage() {
   ];
 
   // ===== 自由布局 =====
-  const { layout, editing, setEditing, move, moveTo, setWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
+  const { layout, editing, setEditing, move, moveTo, cycleWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
   const [dragId, setDragId] = useState(null);
   const [overId, setOverId] = useState(null);
 
@@ -1009,18 +1009,8 @@ export default function HomePage() {
   // 磁吸按钮：光标靠近时吸附跟随
   const magneticRef = useMagnetic(0.22);
   const magneticRefSolid = useMagnetic(0.22);
-  // 完成编辑：从光标位置泛起涟漪扩散至整个页面，组件随之波浪起伏
-  const lastMouse = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  useEffect(() => {
-    const onMove = (e) => { lastMouse.current = { x: e.clientX, y: e.clientY }; };
-    window.addEventListener('mousemove', onMove, { passive: true });
-    return () => window.removeEventListener('mousemove', onMove);
-  }, []);
-  const [ripple, setRipple] = useState(null);
   const finishEdit = () => {
     setEditing(false);
-    setRipple({ key: Date.now(), ...lastMouse.current });
-    setTimeout(() => setRipple(null), 1600);
   };
 
   const onSearch = (e) => {
@@ -1028,25 +1018,6 @@ export default function HomePage() {
       navigate(`/archive?q=${encodeURIComponent(e.target.value.trim())}`);
     }
   };
-
-  const fallbackImages = [
-    "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20style%20illustration%20of%20a%20cute%20girl%20reading%20a%20book%20under%20a%20cherry%20blossom%20tree%2C%20soft%20pastel%20colors%2C%20dreamy%20atmosphere%2C%20digital%20art&image_size=portrait_4_3",
-    "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=warm%20sunlight%20through%20windows%2C%20cozy%20desk%20setup%20with%20books%2C%20plants%2C%20and%20coffee%2C%20minimalist%20anime%20illustration%2C%20soft%20bokeh&image_size=landscape_4_3",
-    "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=starry%20night%20sky%20with%20milky%20way%2C%20mountain%20landscape%2C%20mystical%20anime%20art%2C%20purple%20and%20blue%20gradient%2C%20dreamy%20atmosphere&image_size=portrait_4_3",
-  ];
-
-  const displayArticles = articles.length >= 3 ? articles : [
-    ...articles,
-    ...Array(Math.max(0, 3 - articles.length)).fill(null).map((_, i) => ({
-      id: `placeholder-${i}`,
-      title: articles.length === 0 ? `示例文章 ${i + 1} · 开始写作吧` : `更多精彩内容 ${i + 1}`,
-      summary: "这是一篇示例文章，欢迎在后台管理系统中添加真实内容。",
-      created_at: new Date().toISOString().slice(0, 10),
-      views: 0,
-      category: { name: "未分类" },
-      cover_image: null,
-    })),
-  ];
 
   return (
     <section style={{ padding: '1.5rem 0 1rem' }}>
@@ -1094,7 +1065,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-                  className={`home-layout-item ${item.width === 'wide' ? 'wide' : 'half'}`}
+                  className={`home-layout-item ${item.width === 'third' ? 'third' : item.width === 'full' ? 'full' : 'two-thirds'}`}
                   data-id={item.id}
                   draggable={editing}
                   onDragStart={(e) => handleDragStart(e, item.id)}
@@ -1103,10 +1074,7 @@ export default function HomePage() {
                   onDragEnd={handleDragEnd}
                   style={editing && overId === item.id ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : undefined}
                 >
-                  <div
-                    className={`home-ripple-target ${ripple ? 'bobbing' : ''}`}
-                    style={{ '--ripple-i': visibleItems.indexOf(item) }}
-                  >
+                  <div>
                     {editing && (
                       <div className="home-layout-controls">
                         <span className="home-drag-handle" title="拖动排序">
@@ -1119,11 +1087,11 @@ export default function HomePage() {
                           <button onClick={() => move(item.id, -1)} aria-label="上移" title="上移"><ArrowUp size={13} /></button>
                           <button onClick={() => move(item.id, 1)} aria-label="下移" title="下移"><ArrowDown size={13} /></button>
                           <button
-                            onClick={() => setWidth(item.id, item.width === 'wide' ? 'half' : 'wide')}
-                            aria-label={item.width === 'wide' ? '改为半宽' : '改为全宽'}
-                            title={item.width === 'wide' ? '改为半宽' : '改为全宽'}
+                            onClick={() => cycleWidth(item.id)}
+                            aria-label="切换宽度"
+                            title="循环切换宽度（1/3 · 2/3 · 全宽）"
                           >
-                            {item.width === 'wide' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                            {item.width === 'full' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
                           </button>
                           <button onClick={() => toggleVisible(item.id)} aria-label="隐藏" title="隐藏"><EyeOff size={13} /></button>
                           <button onClick={() => removeComponent(item.id)} aria-label="移除" title="移除" className="danger"><X size={13} /></button>
@@ -1147,7 +1115,7 @@ export default function HomePage() {
                 const meta = COMPONENT_META[id];
                 const Icon = meta?.icon;
                 return (
-                  <button key={id} className="home-add-chip" onClick={() => addComponent(id, 'half')}>
+                  <button key={id} className="home-add-chip" onClick={() => addComponent(id, 'two-thirds')}>
                     {Icon && <Icon size={14} />} {meta?.name}
                   </button>
                 );
@@ -1168,28 +1136,6 @@ export default function HomePage() {
         {/* Player Bar - full width */}
         <PlayerBar />
 
-        {/* 完成编辑涟漪动画（光标处扩散至全页） */}
-        {ripple && (
-          <div key={ripple.key} className="ripple-overlay" aria-hidden="true">
-            <span
-              className="ripple-wave ripple-fill"
-              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)' }}
-            />
-            <span
-              className="ripple-wave"
-              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)', animationDelay: '0.06s' }}
-            />
-            <span
-              className="ripple-wave"
-              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)', animationDelay: '0.14s' }}
-            />
-            <span
-              className="ripple-wave"
-              style={{ left: ripple.x, top: ripple.y, transform: 'translate(-50%, -50%)', animationDelay: '0.22s' }}
-            />
-          </div>
-        )}
-
         {/* Article Grid */}
         <div className="hero-articles">
           {loading ? (
@@ -1200,25 +1146,29 @@ export default function HomePage() {
                 </div>
               ))}
             </>
-          ) : displayArticles.length === 0 ? (
+          ) : articles.length === 0 ? (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-tertiary)' }}>
               <BookOpen size={40} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
               <p>暂无文章，登录后去 <Link to="/admin/articles/new" style={{ color: 'var(--accent)' }}>后台创建</Link> 第一篇吧</p>
             </div>
           ) : (
-            displayArticles.slice(0, 3).map((article, idx) => {
+            articles.slice(0, 3).map((article, idx) => {
               const isFeatured = idx === 0;
-              const isReal = article.id && !String(article.id).startsWith('placeholder');
-              const imgUrl = article.cover_image || fallbackImages[idx % fallbackImages.length];
               return (
                 <Link
                   key={article.id}
-                  to={isReal ? `/article/${article.id}` : '/admin/articles/new'}
+                  to={`/article/${article.id}`}
                   className={`hero-article-card reveal ${isFeatured ? 'featured' : ''}`}
                   style={{ '--reveal-i': idx }}
                 >
                   <div className="hero-article-card-cover">
-                    <img src={imgUrl} alt={article.title} loading="lazy" decoding="async" />
+                    {article.cover_image ? (
+                      <img src={article.cover_image} alt={article.title} loading="lazy" decoding="async" />
+                    ) : (
+                      <div className="hero-article-card-cover-fallback">
+                        <BookOpen size={26} style={{ opacity: 0.45 }} />
+                      </div>
+                    )}
                     <div className="hero-article-card-overlay">
                       {article.category?.name && (
                         <span className="hero-article-card-badge">

@@ -2,19 +2,29 @@ import { create } from 'zustand';
 
 const STORAGE_KEY = 'kakuki-home-layout';
 
+// 宽度档位：third(1/3) · two-thirds(2/3) · full(1/1)
+const WIDTH_ORDER = ['third', 'two-thirds', 'full'];
+
 const DEFAULT_LAYOUT = [
-  { id: 'profile', width: 'wide', visible: true },
-  { id: 'music', width: 'wide', visible: true },
-  { id: 'leetcode', width: 'half', visible: true },
-  { id: 'talks', width: 'half', visible: true },
-  { id: 'projects', width: 'half', visible: true },
-  { id: 'categories', width: 'half', visible: true },
-  { id: 'quote', width: 'wide', visible: true },
+  { id: 'profile', width: 'full', visible: true },
+  { id: 'music', width: 'two-thirds', visible: true },
+  { id: 'leetcode', width: 'third', visible: true },
+  { id: 'talks', width: 'third', visible: true },
+  { id: 'projects', width: 'third', visible: true },
+  { id: 'categories', width: 'third', visible: true },
+  { id: 'quote', width: 'full', visible: true },
   { id: 'todo', width: 'half', visible: true },
   { id: 'pomodoro', width: 'half', visible: true },
   { id: 'palette', width: 'half', visible: true },
   { id: 'countdown', width: 'half', visible: true },
 ];
+
+// 兼容旧数据：wide → full，half → two-thirds
+function normalizeWidth(w) {
+  if (w === 'wide') return 'full';
+  if (w === 'half') return 'two-thirds';
+  return WIDTH_ORDER.includes(w) ? w : 'two-thirds';
+}
 
 function load() {
   try {
@@ -22,7 +32,7 @@ function load() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) {
-        return parsed.map((x) => ({ id: x.id, width: x.width === 'wide' ? 'wide' : 'half', visible: x.visible !== false }));
+        return parsed.map((x) => ({ id: x.id, width: normalizeWidth(x.width), visible: x.visible !== false }));
       }
     }
   } catch { /* ignore */ }
@@ -64,6 +74,15 @@ export const useHomeLayout = create((set) => ({
     persist(arr);
     return { layout: arr };
   }),
+  cycleWidth: (id) => set((s) => {
+    const arr = s.layout.map((x) => {
+      if (x.id !== id) return x;
+      const next = WIDTH_ORDER[(WIDTH_ORDER.indexOf(normalizeWidth(x.width)) + 1) % WIDTH_ORDER.length];
+      return { ...x, width: next };
+    });
+    persist(arr);
+    return { layout: arr };
+  }),
   toggleVisible: (id) => set((s) => {
     const arr = s.layout.map((x) => (x.id === id ? { ...x, visible: !x.visible } : x));
     persist(arr);
@@ -71,7 +90,7 @@ export const useHomeLayout = create((set) => ({
   }),
   addComponent: (id, width) => set((s) => {
     if (s.layout.some((x) => x.id === id)) return {};
-    const arr = [...s.layout, { id, width: width || 'half', visible: true }];
+    const arr = [...s.layout, { id, width: width || 'two-thirds', visible: true }];
     persist(arr);
     return { layout: arr };
   }),

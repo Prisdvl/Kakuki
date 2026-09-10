@@ -231,27 +231,21 @@ export default function AppLayout() {
 
   const handleToggleTheme = useCallback(() => {
     const btn = themeBtnRef.current;
-    const root = document.documentElement;
-    // 全局颜色过渡：切换期间所有元素颜色平滑渐变，避免突兀跳变
-    root.classList.add('theme-transition');
-    if (!btn) { toggleTheme(); }
-    else {
-      const rect = btn.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      const computed = getComputedStyle(document.documentElement);
-      const oldBg = computed.getPropertyValue('--bg-primary').trim() || '#ede9fe';
-      setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px', background: oldBg });
-      setRevealState('ready');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => { toggleTheme(); setRevealState('active'); });
-      });
-    }
+    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    // 先切换主题，切换瞬间被扩散层遮住，不会闪
+    toggleTheme();
+    // 下一帧读取新主题背景色，从按钮位置圆形扩散，平滑呈现新主题
+    requestAnimationFrame(() => {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || (isDark ? '#0e0f11' : '#f6f4ef');
+      setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px', background: bg });
+      setRevealState('active');
+    });
     setTimeout(() => {
-      root.classList.remove('theme-transition');
       setRevealState('idle');
-    }, 700);
-  }, [toggleTheme]);
+    }, 780);
+  }, [toggleTheme, isDark]);
 
   return (
     <>

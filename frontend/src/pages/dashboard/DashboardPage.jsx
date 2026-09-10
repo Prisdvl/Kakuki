@@ -174,8 +174,8 @@ function LeetCodeProgressCard() {
             />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{stats.pct}%</span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>{stats.solved} / {stats.total}</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{stats.solved}</span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>已解答 / 共 {stats.total} 题</span>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', flex: 1, minWidth: 0 }}>

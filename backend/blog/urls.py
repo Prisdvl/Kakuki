@@ -40,6 +40,7 @@ urlpatterns = [
     path('netease/playlist/<int:playlist_id>/', netease_views.netease_playlist, name='netease-playlist'),
     path('netease/playlist/<int:playlist_id>/tracks/', netease_views.netease_playlist_tracks, name='netease-playlist-tracks'),
     path('netease/song/<int:song_id>/', netease_views.netease_song_url, name='netease-song-url'),
+    path('netease/song/<int:song_id>/stream/', netease_views.netease_stream, name='netease-song-stream'),
     path('netease/song/<int:song_id>/lyric/', netease_views.netease_lyric, name='netease-lyric'),
     path('netease/search/', netease_views.netease_search, name='netease-search'),
     path('netease/user/<int:uid>/', netease_views.netease_user_playlist, name='netease-user-playlist'),

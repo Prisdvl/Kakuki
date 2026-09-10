@@ -7,7 +7,6 @@ import FeatureMenu from '../FeatureMenu';
 import ParticleField from '../ParticleField';
 import InkWash from '../InkWash';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
-import CursorGlow from '../CursorGlow';
 
 const NAV_ITEMS = [
   { label: '首页', path: '/' },
@@ -273,7 +272,6 @@ export default function AppLayout() {
         <div className="bg-scene-orb orb-2" />
         <div className="bg-scene-orb orb-3" />
         <ParticleField />
-        <CursorGlow />
       </div>
 
       {scrollProgress > 0 && (

@@ -15,8 +15,7 @@ from blog.models import (
 
 User = get_user_model()
 
-DEMO_ADMIN = {'username': 'admin', 'password': 'admin123456', 'nickname': 'Prisdvl'}
-DEMO_USER = {'username': 'demo', 'password': 'demo123456', 'nickname': '演示用户'}
+DEMO_ADMIN = {'username': 'Prisdvl', 'password': '528491', 'nickname': 'Prisdvl'}
 
 
 class Command(BaseCommand):
@@ -35,17 +34,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('已清除全部博客数据'))
 
         admin = self._ensure_user(DEMO_ADMIN, is_staff=True, is_superuser=True)
-        demo = self._ensure_user(DEMO_USER)
 
         categories = self._seed_categories()
         articles = self._seed_articles(admin, categories)
-        self._seed_comments(articles, admin, demo)
+        self._seed_comments(articles, admin)
         self._seed_talks(admin)
         self._seed_projects()
 
         self.stdout.write(self.style.SUCCESS(
-            f'演示数据就绪！管理员: {DEMO_ADMIN["username"]} / {DEMO_ADMIN["password"]}，'
-            f'普通用户: {DEMO_USER["username"]} / {DEMO_USER["password"]}'
+            f'演示数据就绪！账户: {DEMO_ADMIN["username"]} / {DEMO_ADMIN["password"]}'
         ))
 
     def _ensure_user(self, info, **extra):
@@ -381,22 +378,18 @@ const useMusicStore = create((set) => ({
             created.append(article)
         return created
 
-    def _seed_comments(self, articles, admin, demo):
+    def _seed_comments(self, articles, admin):
         pairs = [
-            (0, demo, '写得太细了！想问一下毛玻璃在 Safari 上的兼容性怎么样？'),
-            (0, admin, 'Safari 需要 -webkit-backdrop-filter 前缀，文中代码已兼容。'),
-            (1, demo, '统一响应格式这块深有同感，每个接口结构不一样真的痛苦。'),
-            (3, demo, 'EXPLAIN 一看 type=ALL 确实扎心，索引设计太重要了。'),
-            (5, demo, '歌词同步用二分查找这个思路学到了！'),
+            (0, '写得太细了！想问一下毛玻璃在 Safari 上的兼容性怎么样？'),
+            (0, 'Safari 需要 -webkit-backdrop-filter 前缀，文中代码已兼容。'),
+            (1, '统一响应格式这块深有同感，每个接口结构不一样真的痛苦。'),
+            (3, 'EXPLAIN 一看 type=ALL 确实扎心，索引设计太重要了。'),
+            (5, '歌词同步用二分查找这个思路学到了！'),
         ]
-        for idx, user, content in pairs:
+        for idx, content in pairs:
             article = articles[idx]
-            parent, _ = Comment.objects.get_or_create(
-                article=article, user=user, content=content)
-            if user == demo:
-                Comment.objects.get_or_create(
-                    article=article, user=admin, parent=parent,
-                    content='感谢支持！有问题欢迎继续交流～')
+            Comment.objects.get_or_create(
+                article=article, user=admin, content=content)
 
     def _seed_talks(self, author):
         items = [

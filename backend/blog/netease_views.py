@@ -3,6 +3,7 @@ import json
 import requests
 import urllib3
 from django.conf import settings
+from django.http import HttpResponse, StreamingHttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -188,6 +189,57 @@ def netease_lyric(request, song_id):
 def netease_song_url(request, song_id):
     """Get playable song URL using outer URL redirect."""
     return Response({'data': [{'id': song_id, 'url': _build_outer_url(song_id)}]})
+
+
+def _stream_song(request, song_id):
+    """流式代理网易云歌曲 MP3。
+
+    前端 <audio> 直接加载本端点（同源 /api 通道，经 vite 代理），媒体天然 CORS-clean，
+    使 createMediaElementSource 能正常输出频谱数据。支持 Range 请求（拖动进度条）。
+    """
+    upstream_headers = dict(NETEASE_HEADERS)
+    range_header = request.headers.get('Range') or request.META.get('HTTP_RANGE')
+    if range_header:
+        upstream_headers['Range'] = range_header
+
+    url = _build_outer_url(song_id)
+    try:
+        upstream = requests.get(url, headers=upstream_headers, stream=True,
+                                timeout=20, allow_redirects=True)
+    except Exception:
+        return HttpResponse('{"error":"音频获取失败"}', status=502,
+                            content_type='application/json')
+
+    if upstream.status_code not in (200, 206):
+        upstream.close()
+        return HttpResponse('{"error":"音频不可用"}', status=upstream.status_code,
+                            content_type='application/json')
+
+    content_type = upstream.headers.get('Content-Type', 'audio/mpeg')
+
+    def _gen():
+        try:
+            for chunk in upstream.iter_content(chunk_size=64 * 1024):
+                if chunk:
+                    yield chunk
+        finally:
+            upstream.close()
+
+    response = StreamingHttpResponse(_gen(), status=upstream.status_code,
+                                     content_type=content_type)
+    response['Accept-Ranges'] = 'bytes'
+    if upstream.status_code == 206 and upstream.headers.get('Content-Range'):
+        response['Content-Range'] = upstream.headers['Content-Range']
+    content_length = upstream.headers.get('Content-Length')
+    if content_length:
+        response['Content-Length'] = content_length
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+def netease_stream(request, song_id):
+    """同源音频流入口（不加 @api_view，避免 DRF 内容协商干扰流式响应）。"""
+    return _stream_song(request, song_id)
 
 
 @api_view(['GET'])

@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Music, Disc3, ListMusic, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Music, Disc3, ListMusic, Loader2, Volume2, VolumeX } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
+import SpectrumVisualizer from '../../components/SpectrumVisualizer';
 
 export default function MusicPage() {
   const {
     currentPlaylist, currentTrack, isPlaying, playlistList,
     currentTime, duration, currentLyrics, currentLyricIndex,
+    volume, muted,
     fetchBootstrapPlaylist, fetchPlaylistById, fetchPlaylists,
     playTrack, togglePlay, nextTrack, prevTrack, seekTo,
+    setVolume, toggleMute,
   } = useMusicStore(
     (state) => ({
       currentPlaylist: state.currentPlaylist,
@@ -18,6 +21,8 @@ export default function MusicPage() {
       duration: state.duration,
       currentLyrics: state.currentLyrics,
       currentLyricIndex: state.currentLyricIndex,
+      volume: state.volume,
+      muted: state.muted,
       fetchBootstrapPlaylist: state.fetchBootstrapPlaylist,
       fetchPlaylistById: state.fetchPlaylistById,
       fetchPlaylists: state.fetchPlaylists,
@@ -26,6 +31,8 @@ export default function MusicPage() {
       nextTrack: state.nextTrack,
       prevTrack: state.prevTrack,
       seekTo: state.seekTo,
+      setVolume: state.setVolume,
+      toggleMute: state.toggleMute,
     })
   );
 
@@ -36,9 +43,16 @@ export default function MusicPage() {
 
   const tracks = currentPlaylist?.tracks || [];
 
+  // 只在挂载时初始化一次。若 store 中已有播放状态（从其他页面返回），保持播放、不重置音频。
   useEffect(() => {
     let mounted = true;
     const init = async () => {
+      const state = useMusicStore.getState();
+      if (state.currentPlaylist?.tracks?.length && state.currentTrack) {
+        // 已有歌单与曲目，说明是页面切换返回，避免 fetchBootstrapPlaylist 重置 audio.src 导致音乐停止
+        if (mounted) setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
@@ -57,7 +71,9 @@ export default function MusicPage() {
     };
     init();
     return () => { mounted = false; };
-  }, [fetchBootstrapPlaylist, fetchPlaylists]);
+    // 依赖项留空：初始化逻辑只在组件挂载时执行一次；currentTrack/currentPlaylist 变化不应触发重新 fetch。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelectPlaylist = async (pl) => {
     setSwitching(true);
@@ -106,6 +122,8 @@ export default function MusicPage() {
       <p className="music-page-subtitle">
         {loading ? '正在加载...' : tracks.length > 0 ? `共 ${tracks.length} 首歌曲` : ''}
       </p>
+
+      <SpectrumVisualizer />
 
       {loading && (
         <div className="glass music-loading">
@@ -232,7 +250,7 @@ export default function MusicPage() {
                   alt={currentTrack.name}
                   decoding="async"
                   fetchpriority="high"
-                  className="music-player-cover"
+                  className={`music-player-cover ${isPlaying ? 'music-cover-spin' : ''}`}
                 />
               ) : (
                 <div className="music-player-cover mp-cover-placeholder">
@@ -297,6 +315,30 @@ export default function MusicPage() {
               <button onClick={nextTrack} className="music-ctrl-btn" aria-label="下一首">
                 <SkipForward size={18} />
               </button>
+              <div className="music-volume">
+                <button
+                  onClick={toggleMute}
+                  className="music-ctrl-btn"
+                  aria-label={muted ? '取消静音' : '静音'}
+                  title={muted ? '取消静音' : '静音'}
+                >
+                  {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="volume-slider"
+                  style={{ '--pct': `${(muted ? 0 : volume) * 100}%` }}
+                  aria-label="音量"
+                  aria-valuemin={0}
+                  aria-valuemax={1}
+                  aria-valuenow={Number(volume.toFixed(2))}
+                />
+              </div>
             </div>
           </div>
         </div>

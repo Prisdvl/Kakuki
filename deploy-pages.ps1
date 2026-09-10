@@ -1,4 +1,4 @@
-# 部署 frontend/dist 到 GitHub Pages（gh-pages 分支）
+﻿# 部署 frontend/dist 到 GitHub Pages（gh-pages 分支）
 # 用法：powershell -ExecutionPolicy Bypass -File deploy-pages.ps1
 $ErrorActionPreference = 'Stop'
 $ROOT = 'D:\develop\Kakuki'

@@ -4112,8 +4112,8 @@ input:autofill {
 }
 
 .feature-color-input {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border: 2px solid var(--glass-border);
   border-radius: 10px;
   padding: 0;
@@ -4235,8 +4235,9 @@ input:autofill {
 
 .feature-bg-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   flex: 1;
 }
 
@@ -4245,7 +4246,8 @@ input:autofill {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 14px;
+  height: 40px;
+  padding: 0 14px;
   border-radius: 10px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -4254,6 +4256,7 @@ input:autofill {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .feature-btn:hover {
@@ -4626,6 +4629,15 @@ a, button, .article-card, .contact-card, .social-links a,
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+.music-cover-spin {
+  animation: music-cover-spin 8s linear infinite;
+}
+
+@keyframes music-cover-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .music-player-meta {
   min-width: 0;
   overflow: hidden;
@@ -4730,6 +4742,64 @@ a, button, .article-card, .contact-card, .social-links a,
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
+}
+
+.music-volume {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: 0.4rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--border);
+}
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 84px;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0% var(--pct, 100%),
+    rgba(255, 255, 255, 0.12) var(--pct, 100%) 100%
+  );
+  transition: background 0.1s linear;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px var(--accent-glow);
+  transition: transform 0.15s ease;
+}
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.volume-slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+@media (max-width: 640px) {
+  .music-volume { padding-left: 0.4rem; }
+  .volume-slider { width: 60px; }
 }
 
 /* ===== LeetCode Heatmap Performance ===== */
@@ -6083,44 +6153,9 @@ a, button, .article-card, .contact-card, .social-links a,
   100% { transform: translateY(0) scale(1); }
 }
 
-/* ===== Cursor Glow 光标光晕（GitHub 热门 spotlight 效果） ===== */
-.cursor-glow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.55;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 62%);
-  filter: blur(6px);
-  will-change: transform;
-}
-
-/* ===== Tilt 卡片 hover 扫光（GitHub 热门 shine 效果） ===== */
-.tilt-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  background: linear-gradient(105deg, transparent 40%, color-mix(in srgb, var(--accent) 9%, transparent) 50%, transparent 60%);
-  background-size: 250% 100%;
-  background-position: 130% 0;
-  transition: background-position 0.9s ease;
-  pointer-events: none;
-  z-index: 2;
-}
-.tilt-card:hover::after {
-  background-position: -30% 0;
-}
-
 /* ===== 动画 reduced-motion 降级 ===== */
 @media (prefers-reduced-motion: reduce) {
-  .cursor-glow { display: none; }
   .home-ripple-target.bobbing { animation: none; }
-  .tilt-card::after { display: none; }
 }
 
 /* ===== 状态栏：运行时长翻页钟 + 专注统计 ===== */
@@ -6180,3 +6215,4 @@ a, button, .article-card, .contact-card, .social-links a,
 @media (prefers-reduced-motion: reduce) {
   .flip-digit { animation: none; }
 }
+

@@ -143,7 +143,7 @@ export default function AboutPage() {
 
             <div style={{ textAlign: "center", marginBottom: "1rem" }}>
               <div style={{ position: "relative", width: 110, height: 110, margin: "0 auto 0.5rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Progress type="circle" percent={lcTotalAll > 0 ? Math.round((lcSolved / lcTotalAll) * 100) : 0} size={110} strokeColor={{ '0%': '#ffb700', '100%': '#00b8a3' }} />
+                <Progress type="circle" showInfo={false} percent={lcTotalAll > 0 ? Math.round((lcSolved / lcTotalAll) * 100) : 0} size={110} strokeColor={{ '0%': '#ffb700', '100%': '#00b8a3' }} />
                 <div style={{ position: "absolute", textAlign: "center" }}>
                   <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)" }}>{lcSolved}</div>
                   <div style={{ fontSize: "0.65rem", color: "var(--text-tertiary)" }}>已解答</div>
@@ -163,7 +163,6 @@ export default function AboutPage() {
                   <div key={d.label}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem", fontSize: "0.75rem" }}>
                       <span style={{ color: "var(--text-secondary)" }}>{d.label} {d.solved}/{d.total}</span>
-                      <span style={{ color: d.color, fontWeight: 600 }}>{pct}%</span>
                     </div>
                     <Progress percent={pct} showInfo={false} strokeColor={d.color} size="small" />
                   </div>

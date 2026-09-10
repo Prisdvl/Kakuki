@@ -93,14 +93,7 @@ function ThemeWrapper({ children }) {
 
   return (
     <>
-      {/* 加载期间隐藏页面内容，避免与全屏 Loader 重叠；加载完成后再淡入 */}
-      <div style={{
-        opacity: showingLoader ? 0 : 1,
-        visibility: showingLoader ? 'hidden' : 'visible',
-        transition: 'opacity 0.7s ease 0.15s',
-      }}>
-        {children}
-      </div>
+      {children}
       {showingLoader && (
         <Loader
           fullscreen

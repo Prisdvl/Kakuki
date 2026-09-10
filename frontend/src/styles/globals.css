@@ -244,7 +244,8 @@ body {
   overflow: hidden;
   color: var(--ink-color);
   opacity: 0.9;
-  z-index: 4;
+  /* 背景装饰层必须低于内容层（.page-content z-index:1），避免烟雾盖住正文 */
+  z-index: 0;
   transition: color 0.8s ease, opacity 0.8s ease;
 }
 .ink-blot {

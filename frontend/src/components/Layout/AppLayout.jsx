@@ -235,21 +235,26 @@ export default function AppLayout() {
     const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    // 先切换主题，切换瞬间被扩散层遮住，不会闪
-    toggleTheme();
-    // 下一帧读取新主题背景色，从按钮位置以羽化边缘圆形晕开（径向渐变，边缘柔和融入）
+    // 切换期间暂停背景动画层（starfield/烟雾/光束等），降低切换帧合成负担，消除卡顿
+    document.body.classList.add('theme-switching');
+    // 在下一帧再切换变量：颜色经 @property 注册后由容器级 transition 平滑插值，
+    // 同时 overlay 从按钮位置羽化晕开遮盖中心区域，视觉上无突变
     requestAnimationFrame(() => {
-      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || (isDark ? '#0e0f11' : '#f6f4ef');
-      setRevealStyle({
-        '--rx': x + 'px',
-        '--ry': y + 'px',
-        background: `radial-gradient(circle, ${bg} 0%, ${bg} 58%, color-mix(in srgb, ${bg} 55%, transparent) 82%, transparent 100%)`,
+      toggleTheme();
+      requestAnimationFrame(() => {
+        const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || (isDark ? '#0e0f11' : '#f6f4ef');
+        setRevealStyle({
+          '--rx': x + 'px',
+          '--ry': y + 'px',
+          background: `radial-gradient(circle, ${bg} 0%, ${bg} 58%, color-mix(in srgb, ${bg} 55%, transparent) 82%, transparent 100%)`,
+        });
+        setRevealState('active');
       });
-      setRevealState('active');
     });
     setTimeout(() => {
       setRevealState('idle');
-    }, 900);
+      document.body.classList.remove('theme-switching');
+    }, 1100);
   }, [toggleTheme, isDark]);
 
   return (

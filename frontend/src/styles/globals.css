@@ -173,8 +173,51 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  transition: background 0.35s ease, color 0.35s ease;
+  transition: background 0.45s var(--ease-standard), color 0.45s var(--ease-standard);
   overflow-x: hidden;
+}
+
+/* Theme switch smooth transition: color vars registered via @property interpolate;
+   container-level transitions (no global *) make text/border/bg morph instead of snapping */
+.app-shell,
+.app-main,
+.page-content,
+.page-shell,
+.site-header,
+.nav-bar,
+.nav-link,
+.status-bar,
+.site-footer,
+.hero-section,
+.section-title,
+h1, h2, h3, h4, h5, h6,
+p, li, a, span, button, input, textarea, select,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-btn,
+.tag-chip,
+.category-chip,
+.profile-card,
+.hero-card,
+.sidebar-card,
+.card,
+.panel,
+.modal,
+.drawer {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: 0.45s;
+  transition-timing-function: var(--ease-standard);
+}
+
+/* Pause background animation layers during theme switch to cut compositing cost */
+body.theme-switching .starfield-stars,
+body.theme-switching .ink-blot,
+body.theme-switching .bg-flow-beam,
+body.theme-switching .bg-scene-orb,
+body.theme-switching .glass-floating,
+body.theme-switching .glass-floating::before,
+body.theme-switching .glass-floating::after {
+  animation-play-state: paused !important;
 }
 
 /* ===== Background Grid with Mouse Glow ===== */

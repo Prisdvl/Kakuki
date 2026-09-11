@@ -14,6 +14,23 @@
  *   - 所有 blur 档位经实测在 Chromium/WebKit 均可硬件加速
  * ============================================================ */
 
+/* 颜色变量注册为 <color>：让 var() 变化可被 transition 平滑插值，
+   实现主题切换的丝滑渐变（替换瞬间突变；不支持 @property 的浏览器自动回退为瞬时切换） */
+@property --bg-primary      { syntax: '<color>'; inherits: true; initial-value: #f5f5f7; }
+@property --bg-secondary    { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.6); }
+@property --bg-tertiary     { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0.04); }
+@property --text-primary    { syntax: '<color>'; inherits: true; initial-value: #1c1c1e; }
+@property --text-secondary  { syntax: '<color>'; inherits: true; initial-value: #3a3a3c; }
+@property --text-tertiary   { syntax: '<color>'; inherits: true; initial-value: #8e8e93; }
+@property --border          { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0.1); }
+@property --accent          { syntax: '<color>'; inherits: true; initial-value: #007aff; }
+@property --accent-soft     { syntax: '<color>'; inherits: true; initial-value: rgba(0,122,255,0.12); }
+@property --accent-glow     { syntax: '<color>'; inherits: true; initial-value: rgba(0,122,255,0.25); }
+@property --glass-bg        { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.45); }
+@property --glass-bg-strong { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.58); }
+@property --glass-border    { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.85); }
+@property --muted           { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0.55); }
+
 :root {
   /* ============ 颜色基线 ============ */
   --bg-primary: #f5f5f7;
@@ -73,6 +90,8 @@
   );
   --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85),
                          inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+  --glass-prism: rgba(255, 255, 255, 0.38);      /* 斜向折射光带（亮主题） */
+  --glass-top-light: rgba(255, 255, 255, 0.5);   /* 顶部受光高光带（亮主题） */
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.07),
                   0 1px 0 rgba(255, 255, 255, 0.8) inset;
   --glass-shadow-hover: 0 18px 52px rgba(0, 0, 0, 0.12),
@@ -212,6 +231,8 @@
   );
   --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
                          inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  --glass-prism: rgba(255, 255, 255, 0.12);      /* 斜向折射光带（暗主题） */
+  --glass-top-light: rgba(255, 255, 255, 0.09);  /* 顶部受光高光带（暗主题） */
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
                   0 1px 0 rgba(255, 255, 255, 0.08) inset;
   --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.6),

@@ -36,18 +36,41 @@
   animation: glassMount 0.55s var(--ease-spring) both;
 }
 
-/* 顶部镜面高光：单层 ::before，避免双伪元素堆叠 */
+/* 顶部镜面高光 + 受光折射带：单层 ::before 双渐变，模拟玻璃上沿受光 */
 .glass::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--glass-specular);
+  background:
+    linear-gradient(180deg, var(--glass-top-light) 0%, transparent 55%),
+    var(--glass-specular);
   opacity: 0.55;
   pointer-events: none;
   mix-blend: overlay;
   z-index: 0;
 }
+
+/* 斜向折射光带：模拟光线穿过玻璃产生的棱镜条纹（静态质感，hover 增强） */
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 22%,
+    var(--glass-prism) 40%,
+    transparent 58%
+  );
+  opacity: 0.65;
+  pointer-events: none;
+  mix-blend: soft-light;
+  transition: opacity var(--motion-base) var(--ease-standard);
+  z-index: 0;
+}
+
+.glass:hover::after { opacity: 1; }
 
 /* 子内容浮于高光之上 */
 .glass > * {
@@ -80,13 +103,16 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--glass-specular);
+  background:
+    linear-gradient(180deg, var(--glass-top-light) 0%, transparent 55%),
+    var(--glass-specular);
   opacity: 0.55;
   pointer-events: none;
   mix-blend: overlay;
   z-index: 0;
 }
 
+/* 折射光斑：跟随鼠标的微光，默认若有若无，hover 明显（光线穿透玻璃的聚焦点） */
 .glass-elevated::after {
   content: '';
   position: absolute;
@@ -97,7 +123,7 @@
     color-mix(in srgb, var(--accent) 10%, transparent) 0%,
     transparent 50%
   );
-  opacity: 0;
+  opacity: 0.14;
   pointer-events: none;
   transition: opacity var(--motion-base) var(--ease-standard);
   z-index: 0;
@@ -197,10 +223,31 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--glass-specular);
+  background:
+    linear-gradient(180deg, var(--glass-top-light) 0%, transparent 55%),
+    var(--glass-specular);
   opacity: 0.5;
   pointer-events: none;
   mix-blend: overlay;
+  z-index: 0;
+}
+
+/* 卡片斜向折射光带 */
+.glass-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 22%,
+    var(--glass-prism) 40%,
+    transparent 58%
+  );
+  opacity: 0.65;
+  pointer-events: none;
+  mix-blend: soft-light;
+  transition: opacity var(--motion-base) var(--ease-standard);
   z-index: 0;
 }
 
@@ -211,6 +258,8 @@
   box-shadow: var(--glass-shadow-hover);
   border-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
+
+.glass-card:hover::after { opacity: 1; }
 
 /* ============ 胶囊玻璃（徽章/标签）============ */
 .glass-pill {

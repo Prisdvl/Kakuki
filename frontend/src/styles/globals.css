@@ -266,6 +266,23 @@ body {
   pointer-events: none;
 }
 
+/* Vanta 风格动态波浪层：跟随主题色，低透明度，鼠标感应 */
+.bg-scene-wave {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.75;
+}
+@media (max-width: 768px) {
+  .bg-scene-wave { opacity: 0.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-scene-wave { display: none; }
+}
+
 .bg-flow-beam {
   position: absolute;
   width: 100%;

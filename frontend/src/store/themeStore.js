@@ -90,12 +90,17 @@ function getContrastText(hex) {
 
 /**
  * 计算“位于强调色背景之上”的前景文字色。
- * 以 WCAG 4.5:1 为门槛：白色可用则用白，否则退回深色，保证任意自定义强调色下文字都清晰。
+ * 双向比较白色与深墨色在强调色上的 WCAG 对比度：任意可达 4.5:1 则选用，否则取更优者，
+ * 保证任何自定义/图片提取的强调色下按钮文字都清晰可辨。
  */
 function pickOnAccentText(accentHex) {
   const lum = getRelativeLuminance(accentHex);
   const whiteRatio = 1.05 / (lum + 0.05);
-  return whiteRatio >= 4.5 ? '#ffffff' : '#1e1b4b';
+  const darkLum = getRelativeLuminance('#1e1b4b');
+  const darkRatio = (lum + 0.05) / (darkLum + 0.05);
+  if (whiteRatio >= 4.5) return '#ffffff';
+  if (darkRatio >= 4.5) return '#1e1b4b';
+  return whiteRatio >= darkRatio ? '#ffffff' : '#1e1b4b';
 }
 
 function getRelativeLuminance(hex) {

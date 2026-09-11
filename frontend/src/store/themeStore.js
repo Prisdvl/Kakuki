@@ -506,6 +506,11 @@ function buildThemeVars(palette, isDark) {
     leetcodeEasy: ensureContrast(isDark ? '#2dd4bf' : '#00b8a3', bgPrimary, 3, isDark),
     leetcodeMedium: ensureContrast(isDark ? '#fbbf24' : '#ffb700', bgPrimary, 3, isDark),
     leetcodeHard: ensureContrast(isDark ? '#f87171' : '#ff375f', bgPrimary, 3, isDark),
+
+    // 星光视差背景（随主题明暗自适应：星点用文本色系，克制不喧宾）
+    starColor: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(15,20,30,0.32)',
+    starColorDim: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(15,20,30,0.15)',
+    starfieldOpacity: isDark ? 0.8 : 0.45,
   };
 }
 
@@ -559,6 +564,9 @@ function applyThemeVars(vars) {
   root.style.setProperty('--heat-level-3', vars.heatLevel3);
   root.style.setProperty('--heat-level-4', vars.heatLevel4);
   root.style.setProperty('--leetcode-easy', vars.leetcodeEasy);
+  root.style.setProperty('--star-color', vars.starColor);
+  root.style.setProperty('--star-color-dim', vars.starColorDim);
+  root.style.setProperty('--starfield-opacity', vars.starfieldOpacity);
   root.style.setProperty('--leetcode-medium', vars.leetcodeMedium);
   root.style.setProperty('--leetcode-hard', vars.leetcodeHard);
 

@@ -6,7 +6,7 @@ import useUserStore from '../../store/userStore';
 import FeatureMenu from '../FeatureMenu';
 import ParticleField from '../ParticleField';
 import InkWash from '../InkWash';
-import BackgroundWave from './BackgroundWave';
+import StarfieldParallax from './StarfieldParallax';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const NAV_ITEMS = [
@@ -256,7 +256,7 @@ export default function AppLayout() {
     <>
       <div className="bg-scene">
         <div className="bg-image-layer" />
-        <BackgroundWave />
+        <StarfieldParallax />
         <div className="bg-scene-grid" />
         <InkWash />
         <div className="bg-scene-flow">

@@ -217,6 +217,43 @@ export default function AppLayout() {
     return () => document.removeEventListener('mousemove', onRefract);
   }, []);
 
+  // 玻璃 backdrop 预热：backdrop-filter 首次合成是异步的，若与挂载淡入动画
+  // （opacity 变化）重叠，Chromium 会延迟创建模糊层，动画结束后才突然合成，
+  // 造成“透明→磨砂”突变。此逻辑在元素挂载/动画结束后强制一次 reflow 预创建模糊层。
+  useEffect(() => {
+    const SEL = '.glass, .glass-elevated, .glass-card, .glass-floating, .glass-pill, .glass-button, .btn-glass, .glass-button-solid, .tilt-card';
+    const warm = (el) => {
+      try {
+        const bf = getComputedStyle(el).backdropFilter;
+        if (!bf || bf === 'none') return;
+        el.style.backdropFilter = 'blur(0px) saturate(100%)';
+        void el.offsetHeight; // 强制 reflow，预创建 backdrop 合成层
+        el.style.backdropFilter = '';
+      } catch { /* 忽略 */ }
+    };
+    let timer = null;
+    const run = () => {
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        document.querySelectorAll(SEL).forEach(warm);
+      }, 120);
+    };
+    // glassMount 动画结束时也预热（防止动画期间 opacity 阻塞合成）
+    const onAnimEnd = (e) => {
+      if (e.animationName === 'glassMount' && e.target && e.target.matches?.(SEL)) warm(e.target);
+    };
+    document.addEventListener('animationend', onAnimEnd, true);
+    run();
+    const mo = new MutationObserver(run);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      mo.disconnect();
+      document.removeEventListener('animationend', onAnimEnd, true);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
   useEffect(() => {
     // scroll 事件依赖渲染帧派发：后台标签/无头窗口渲染帧挂起时事件不会触发，
     // 因此叠加低频轮询兜底，保证任何环境下滚动状态都能更新

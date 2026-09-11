@@ -6033,6 +6033,12 @@ a, button, .article-card, .contact-card, .social-links a,
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
+  /* 挂载淡入：掩盖 backdrop-filter 首帧异步合成的透明→磨砂突变（只动 opacity，不覆盖 3D 倾斜 transform） */
+  animation: tiltMount 0.7s var(--ease-standard) both;
+}
+@keyframes tiltMount {
+  from { opacity: 0.15; }
+  to   { opacity: 1; }
 }
 /* 内部组件根 glass 透明化：由 tilt-card 底座统一提供玻璃，旋转时无直角边框 */
 .tilt-card > .glass {
@@ -6049,7 +6055,7 @@ a, button, .article-card, .contact-card, .social-links a,
 .tilt-card > .mouse-glow::before { display: none !important; }
 .tilt-glare { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
-  .tilt-card { transform: none !important; }
+  .tilt-card { transform: none !important; animation: none; }
   .tilt-glare { display: none; }
 }
 

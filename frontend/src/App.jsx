@@ -1,6 +1,6 @@
 ﻿import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ConfigProvider, theme as antdTheme } from 'antd';
-import { useEffect, Suspense, lazy, useRef, useState } from 'react';
+import { useEffect, Suspense, lazy, useState } from 'react';
 import AppLayout from './components/Layout/AppLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Loader from './components/Loader';
@@ -40,16 +40,16 @@ function PageFallback() {
 function ThemeWrapper({ children }) {
   const isInitialized = useThemeStore((state) => state.isInitialized);
   const { progress, statusText, loading, startLoading, completeTask, finishLoading } = useAppLoader(true);
-  const startedRef = useRef(false);
   const [loaderFading, setLoaderFading] = useState(false);
   const [showingLoader, setShowingLoader] = useState(true);
 
   useEffect(() => {
-    if (!isInitialized || startedRef.current) return;
-    startedRef.current = true;
+    // 注意：React.StrictMode 开发模式会双执行 effect（mount→模拟卸载→再 mount），
+    // 必须让第二次执行能重新设置定时器，否则 finishLoading 永不触发、加载动画卡死。
+    // 因此不使用 startedRef 防重跑，而是依赖 cleanup 清理旧定时器、第二次执行重建。
+    if (!isInitialized) return;
     startLoading();
 
-    const startTime = Date.now();
     const minDuration = 1200;
 
     const steps = [

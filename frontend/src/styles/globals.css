@@ -209,6 +209,22 @@ p, li, a, span, button, input, textarea, select,
   transition-timing-function: var(--ease-standard);
 }
 
+/* Icon / decorative element color morphing during theme switch */
+svg,
+.nav-icon,
+.icon-btn,
+.btn-icon,
+.theme-toggle-btn svg,
+.status-bar svg,
+.feature-btn svg,
+.back-to-top svg,
+.music-play-btn svg,
+.social-link svg {
+  transition-property: color, fill, stroke, background-color;
+  transition-duration: 0.45s;
+  transition-timing-function: var(--ease-standard);
+}
+
 /* Pause background animation layers during theme switch to cut compositing cost */
 body.theme-switching .starfield-stars,
 body.theme-switching .ink-blot,

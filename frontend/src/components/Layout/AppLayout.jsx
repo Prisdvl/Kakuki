@@ -203,6 +203,20 @@ export default function AppLayout() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenu]);
 
+  // 通用玻璃折射：document 级委托，让所有 .glass-elevated 卡片的折射光斑跟随鼠标
+  useEffect(() => {
+    const onRefract = (e) => {
+      const el = e.target.closest?.('.glass-elevated');
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return;
+      el.style.setProperty('--refraction-x', `${((e.clientX - r.left) / r.width) * 100}%`);
+      el.style.setProperty('--refraction-y', `${((e.clientY - r.top) / r.height) * 100}%`);
+    };
+    document.addEventListener('mousemove', onRefract, { passive: true });
+    return () => document.removeEventListener('mousemove', onRefract);
+  }, []);
+
   useEffect(() => {
     // scroll 事件依赖渲染帧派发：后台标签/无头窗口渲染帧挂起时事件不会触发，
     // 因此叠加低频轮询兜底，保证任何环境下滚动状态都能更新

@@ -26,10 +26,15 @@
 @property --accent          { syntax: '<color>'; inherits: true; initial-value: #007aff; }
 @property --accent-soft     { syntax: '<color>'; inherits: true; initial-value: rgba(0,122,255,0.12); }
 @property --accent-glow     { syntax: '<color>'; inherits: true; initial-value: rgba(0,122,255,0.25); }
+@property --accent-secondary { syntax: '<color>'; inherits: true; initial-value: #5856d6; }
+@property --accent-dark      { syntax: '<color>'; inherits: true; initial-value: #0051d5; }
+@property --accent-light     { syntax: '<color>'; inherits: true; initial-value: #5aa8ff; }
 @property --glass-bg        { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.45); }
 @property --glass-bg-strong { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.58); }
 @property --glass-border    { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.85); }
 @property --muted           { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0.55); }
+@property --star-color      { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.55); }
+@property --star-color-dim  { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.22); }
 
 :root {
   /* ============ 颜色基线 ============ */

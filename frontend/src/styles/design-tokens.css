@@ -151,10 +151,11 @@
    * accelerate: 离开画面（慢速离开起点，快速抵达）
    * spring    : 弹性小回弹（仅用于特殊徽章 / 数字滚动）
    * ============================================================ */
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
-  --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-standard: cubic-bezier(0.215, 0.61, 0.355, 1);   /* GSAP power2.out：通用入场/交互 */
+  --ease-decelerate: cubic-bezier(0.165, 0.84, 0.44, 1);   /* GSAP power4.out：长距离减速 */
+  --ease-accelerate: cubic-bezier(0.55, 0.06, 0.68, 0.19); /* GSAP power2.in：离场 */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);        /* GSAP back.out(1.7)：弹性过冲 */
+  --ease-expo: cubic-bezier(0.19, 1, 0.22, 1);            /* GSAP expo.out：进度/数字滚动 */
 
   /* ============ 过渡速记（Transition Shorthand）============
    * 集中管理最常用的过渡组合，避免散写。

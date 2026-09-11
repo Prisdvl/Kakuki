@@ -549,6 +549,24 @@ export function LeetCodeCard() {
     return data;
   }, [lcData, recentSubs]);
 
+  // 月份标签按实际跨越的周列数分配宽度（与瓷砖列对齐，而非 flex 均分）
+  const monthSpans = useMemo(() => {
+    const today = new Date();
+    const sDate = new Date(today);
+    sDate.setDate(sDate.getDate() - (HEATMAP_WEEKS * DAYS - 1));
+    sDate.setDate(sDate.getDate() - sDate.getDay());
+    const spans = [];
+    for (let w = 0; w < HEATMAP_WEEKS; w++) {
+      const date = new Date(sDate);
+      date.setDate(sDate.getDate() + w * DAYS + 3); // 取周中日期判断所属月
+      const m = date.getMonth();
+      const last = spans[spans.length - 1];
+      if (last && last.m === m) last.w += 1;
+      else spans.push({ m, w: 1 });
+    }
+    return spans;
+  }, []);
+
   const cellColor = (count) => {
     if (count < 0) return 'transparent';
     const colors = ['var(--heat-empty)', 'var(--heat-level-1)', 'var(--heat-level-2)', 'var(--heat-level-3)', 'var(--heat-level-4)'];
@@ -624,12 +642,17 @@ export function LeetCodeCard() {
             <div className="lc-heatmap-wrapper">
               <div style={{ display: 'inline-block', minWidth: '100%' }}>
                 <div style={{ display: 'flex', gap: 2, marginLeft: 22, marginBottom: 4 }}>
-                  {MONTHS.map((m, i) => (
+                  {monthSpans.map((s, i) => (
                     <span key={i} style={{
-                      fontSize: '0.6rem', color: 'var(--text-tertiary)',
-                      flex: 1, textAlign: 'left',
+                      flex: s.w,
+                      fontSize: '0.6rem',
+                      color: 'var(--text-tertiary)',
+                      textAlign: 'left',
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
                     }}>
-                      {m}
+                      {MONTHS[s.m]}
                     </span>
                   ))}
                 </div>
@@ -654,8 +677,10 @@ export function LeetCodeCard() {
                             background: cellColor(day.count),
                             opacity: day.count < 0 ? 0.3 : 1,
                             cursor: day.count >= 0 ? 'pointer' : 'default',
-                            transition: 'transform 0.1s',
+                            transition: 'transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
                           }}
+                          onMouseEnter={(e) => { if (day.count >= 0) e.currentTarget.style.transform = 'scale(1.45)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                         />
                       ))}
                     </div>

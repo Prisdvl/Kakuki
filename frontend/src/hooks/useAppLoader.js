@@ -14,12 +14,19 @@ export function useAppLoader(initialLoading = false) {
 
   const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
+  // 待进度到达 100% 时再显示的收尾文案（避免"加载完成"提前于进度条出现）
+  const finishStatusRef = useRef('');
+
   const animateProgress = useCallback(() => {
     const animate = () => {
       const diff = targetProgressRef.current - progressRef.current;
       if (Math.abs(diff) < 0.5) {
         progressRef.current = targetProgressRef.current;
         setProgress(targetProgressRef.current);
+        if (finishStatusRef.current) {
+          setStatusText(finishStatusRef.current);
+          finishStatusRef.current = '';
+        }
         if (loadingRef.current && targetProgressRef.current >= 100) {
           loadingRef.current = false;
           setLoading(false);
@@ -27,7 +34,7 @@ export function useAppLoader(initialLoading = false) {
         return;
       }
 
-      const step = diff * 0.15;
+      const step = diff * 0.18;
       progressRef.current += step;
       setProgress(Math.round(progressRef.current * 10) / 10);
       rafRef.current = requestAnimationFrame(animate);
@@ -68,7 +75,7 @@ export function useAppLoader(initialLoading = false) {
   const finishLoading = useCallback((status) => {
     targetProgressRef.current = 100;
     if (status) {
-      setStatusText(status);
+      finishStatusRef.current = status; // 文案等进度真正到达 100% 再显示
     }
     rafRef.current = requestAnimationFrame(() => {
       animateProgress();

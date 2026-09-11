@@ -150,6 +150,19 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ===== 文本溢出与排版兜底：杜绝长字符串/URL 撑破容器、文字出框 ===== */
+p, span, a, h1, h2, h3, h4, h5, h6, li, td, th, dd, dt, figcaption, blockquote, label, button {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+img, video, svg { max-width: 100%; }
+table { table-layout: auto; }
+/* flex/grid 子项防溢出：允许内容在可用空间内收缩换行，而不是撑破父容器 */
+.card, .panel, .widget, .glass-card, .glass, .tilt-card > *,
+[class*="grid"], [class*="row"], [class*="list"] > * {
+  min-width: 0;
+}
+
 /* ===== Disable text selection on interactive hotspots ===== */
 .navbar,
 .navbar *,

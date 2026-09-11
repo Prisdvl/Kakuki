@@ -29,8 +29,11 @@
   transition:
     transform var(--motion-base) var(--ease-standard),
     box-shadow var(--motion-base) var(--ease-standard),
-    border-color var(--motion-base) var(--ease-standard);
+    border-color var(--motion-base) var(--ease-standard),
+    background var(--motion-base) var(--ease-standard);
   will-change: transform;
+  /* 挂载淡入：避免刷新首帧 backdrop-filter 合成延迟导致的“透明→磨砂”突变 */
+  animation: glassMount 0.5s var(--ease-standard) both;
 }
 
 /* 顶部镜面高光：单层 ::before，避免双伪元素堆叠 */
@@ -65,9 +68,11 @@
   transition:
     transform var(--motion-base) var(--ease-standard),
     box-shadow var(--motion-base) var(--ease-standard),
-    border-color var(--motion-base) var(--ease-standard);
+    border-color var(--motion-base) var(--ease-standard),
+    background var(--motion-base) var(--ease-standard);
   will-change: transform;
   contain: layout style;
+  animation: glassMount 0.55s var(--ease-standard) both;
 }
 
 .glass-elevated::before {
@@ -125,7 +130,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  animation: glassLiquid 12s var(--ease-standard) infinite;
+  animation: glassLiquid 12s var(--ease-standard) infinite, glassMount 0.55s var(--ease-standard) both;
   will-change: transform, border-radius;
 }
 
@@ -180,9 +185,11 @@
   transition:
     transform var(--motion-base) var(--ease-standard),
     box-shadow var(--motion-base) var(--ease-standard),
-    border-color var(--motion-base) var(--ease-standard);
+    border-color var(--motion-base) var(--ease-standard),
+    background var(--motion-base) var(--ease-standard);
   will-change: transform;
   contain: layout style paint;
+  animation: glassMount 0.5s var(--ease-standard) both;
 }
 
 .glass-card::before {
@@ -332,6 +339,12 @@
 }
 
 /* ============ 玻璃关键帧（液态呼吸 + 折射流动）============ */
+/* 挂载淡入：消除刷新首帧 backdrop-filter 合成延迟带来的透明→磨砂突变 */
+@keyframes glassMount {
+  from { opacity: 0.3; }
+  to   { opacity: 1; }
+}
+
 @keyframes glassLiquid {
   0%, 100% { border-radius: var(--radius-2xl); }
   50%      { border-radius: calc(var(--radius-2xl) + 4px); }
@@ -415,3 +428,12 @@
 }
 
 .btn-glass-solid:active { transform: translateY(-1px) scale(0.98); transition-duration: var(--motion-fast); }
+/* ============ 无障碍：减少动态效果时禁用挂载淡入 ============ */
+@media (prefers-reduced-motion: reduce) {
+  .glass,
+  .glass-elevated,
+  .glass-card,
+  .glass-floating {
+    animation: none;
+  }
+}

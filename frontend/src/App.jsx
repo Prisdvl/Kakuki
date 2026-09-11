@@ -30,14 +30,9 @@ function PageFallback() {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', minHeight: '50vh', gap: '1rem',
+      justifyContent: 'center', minHeight: '50vh', gap: '0.75rem',
     }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: '50%',
-        border: '3px solid var(--accent-glow)', borderTopColor: 'var(--accent)',
-        animation: 'spin 0.8s linear infinite',
-      }} />
-      <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>加载中...</span>
+      <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', letterSpacing: '0.12em' }}>加载中…</span>
     </div>
   );
 }

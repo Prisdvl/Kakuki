@@ -120,19 +120,30 @@
   margin-left: -80vmax;
   margin-top: -80vmax;
   border-radius: 50%;
-  background: var(--bg-primary);
+  /* 柔光晕：仅 accent 淡光，无实色大圆硬边；颜色渐变由 @property 全局插值承担 */
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 15%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 7%, transparent) 42%,
+    transparent 68%
+  );
   transform: scale(0);
-  opacity: 0.001;
+  opacity: 0;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 9998;
   will-change: transform, opacity;
-  transition: transform 0.75s cubic-bezier(0.65, 0, 0.35, 1),
-              opacity 0.28s ease;
+  transition: transform 0.85s var(--ease-decelerate),
+              opacity 0.5s var(--ease-standard);
 }
 
 .theme-overlay.active {
-  transform: scale(1);
+  transform: scale(2.4);
   opacity: 1;
+}
+
+/* 扩散完成后的渐隐阶段 */
+.theme-overlay.done {
+  opacity: 0;
 }
 
 /* ===== 主题切换过渡：由 .theme-overlay 圆扩散承载，避免全局属性过渡触发渲染合成故障 ===== */
@@ -205,7 +216,7 @@ p, li, a, span, button, input, textarea, select,
 .modal,
 .drawer {
   transition-property: background-color, color, border-color, box-shadow;
-  transition-duration: 0.45s;
+  transition-duration: 0.6s;
   transition-timing-function: var(--ease-standard);
 }
 
@@ -221,8 +232,17 @@ svg,
 .music-play-btn svg,
 .social-link svg {
   transition-property: color, fill, stroke, background-color;
-  transition-duration: 0.45s;
+  transition-duration: 0.6s;
   transition-timing-function: var(--ease-standard);
+}
+
+/* 主题切换期间：玻璃底色与全局颜色过渡同步（0.6s），平时 hover 仍用 --motion-base 快速响应 */
+body.theme-switching .glass,
+body.theme-switching .glass-card,
+body.theme-switching .glass-elevated,
+body.theme-switching .glass-floating,
+body.theme-switching .tilt-card {
+  transition-duration: 0.6s !important;
 }
 
 /* Pause background animation layers during theme switch to cut compositing cost */

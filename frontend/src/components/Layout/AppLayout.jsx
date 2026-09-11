@@ -286,27 +286,24 @@ export default function AppLayout() {
     const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    // 切换期间暂停背景动画层（starfield/烟雾/光束等），降低切换帧合成负担，消除卡顿
+    // 切换期间暂停背景动画层，降低合成负担
     document.body.classList.add('theme-switching');
-    // 在下一帧再切换变量：颜色经 @property 注册后由容器级 transition 平滑插值，
-    // 同时 overlay 从按钮位置羽化晕开遮盖中心区域，视觉上无突变
+    // 下一帧切换变量：颜色经 @property 注册由容器级 transition 全局插值（丝滑渐变），
+    // 柔光晕从按钮处扩散淡出作为视觉衬托，无实色大圆遮盖
     requestAnimationFrame(() => {
       toggleTheme();
       requestAnimationFrame(() => {
-        const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || (isDark ? '#0e0f11' : '#f6f4ef');
-        setRevealStyle({
-          '--rx': x + 'px',
-          '--ry': y + 'px',
-          background: `radial-gradient(circle, ${bg} 0%, ${bg} 58%, color-mix(in srgb, ${bg} 55%, transparent) 82%, transparent 100%)`,
-        });
+        setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px' });
         setRevealState('active');
       });
     });
+    // 扩散完成 → 渐隐 → 清理
+    setTimeout(() => setRevealState('done'), 650);
     setTimeout(() => {
       setRevealState('idle');
       document.body.classList.remove('theme-switching');
-    }, 1100);
-  }, [toggleTheme, isDark]);
+    }, 1250);
+  }, [toggleTheme]);
 
   return (
     <>
@@ -345,7 +342,7 @@ export default function AppLayout() {
       </button>
 
       {revealState !== 'idle' && (
-        <div className={`theme-overlay ${revealState === 'ready' ? 'ready' : ''} ${revealState === 'active' ? 'active' : ''}`} style={revealStyle} />
+        <div className={`theme-overlay ${revealState === 'active' ? 'active' : ''} ${revealState === 'done' ? 'done' : ''}`} style={revealStyle} />
       )}
 
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>

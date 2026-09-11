@@ -217,6 +217,61 @@ export default function AppLayout() {
     return () => document.removeEventListener('mousemove', onRefract);
   }, []);
 
+  // 全局 3D 倾斜委托：统一所有内容区玻璃组件为首页 TiltCard 同款倾斜交互。
+  // 对 main 内的 .glass / .glass-card / .glass-elevated（非 tilt-card 内部、非固定条/搜索框）
+  // 绑定 mousemove 倾斜 + 光滑回弹；进入时解除一次性 glassMount 动画的 transform 锁定。
+  useEffect(() => {
+    const SEL = 'main .glass, main .glass-card, main .glass-elevated';
+    const EXCLUDE = '.search-center, .music-player-bar, .status-bar, .feature-menu-dropdown, .navbar, .tilt-card, .tilt-card *';
+    const TILT_MAX = 6;
+    const TILT_EASE = 'transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease';
+
+    const bind = (el) => {
+      if (el.__kakukiTilt || el.closest(EXCLUDE)) return;
+      el.__kakukiTilt = true;
+      let savedTransition = '';
+      let restoreTimer = null;
+
+      const onEnter = () => {
+        if (restoreTimer) { clearTimeout(restoreTimer); restoreTimer = null; }
+        savedTransition = el.style.transition;
+        // 若一次性挂载动画仍在运行，解除其对 transform 的锁定，让 inline 倾斜生效
+        const anims = el.getAnimations ? el.getAnimations() : [];
+        const mounting = anims.some((a) => (a.animationName || '').includes('glassMount') && a.playState === 'running');
+        if (mounting) el.style.animation = 'none';
+        el.style.transition = TILT_EASE;
+        el.style.willChange = 'transform';
+      };
+      const onMove = (e) => {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return;
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        const rx = (0.5 - py) * TILT_MAX;
+        const ry = (px - 0.5) * TILT_MAX;
+        el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(1.012)`;
+      };
+      const onLeave = () => {
+        el.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)';
+        if (restoreTimer) clearTimeout(restoreTimer);
+        restoreTimer = setTimeout(() => {
+          el.style.transition = savedTransition;
+          el.style.willChange = '';
+          restoreTimer = null;
+        }, 560);
+      };
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mousemove', onMove);
+      el.addEventListener('mouseleave', onLeave);
+    };
+
+    const scan = () => document.querySelectorAll(SEL).forEach(bind);
+    scan();
+    const mo = new MutationObserver(scan);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+
   // 玻璃 backdrop 预热：backdrop-filter 首次合成是异步的，若与挂载淡入动画
   // （opacity 变化）重叠，Chromium 会延迟创建模糊层，动画结束后才突然合成，
   // 造成“透明→磨砂”突变。此逻辑在元素挂载/动画结束后强制一次 reflow 预创建模糊层。

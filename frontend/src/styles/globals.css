@@ -2572,6 +2572,7 @@ body.snap-active {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  background: var(--glass-bg-strong);
 }
 
 .search-center input {
@@ -3958,12 +3959,12 @@ input:autofill {
   max-height: calc(100vh - 96px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: color-mix(in srgb, var(--bg-secondary) 92%, transparent);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--accent-glow);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px var(--accent-glow);
   z-index: 200;
   transform-origin: top right;
   animation: featureMenuIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -6121,10 +6122,10 @@ a, button, .article-card, .contact-card, .social-links a,
 .ant-input,
 .ant-input-affix-wrapper,
 .ant-input-affix-wrapper .ant-input {
-  background: var(--bg-tertiary) !important;
-  border-color: var(--border) !important;
+  background: var(--glass-bg-strong) !important;
+  border-color: var(--glass-border) !important;
   color: var(--text-primary) !important;
-  transition: border-color var(--motion-fast) var(--ease-standard) !important;
+  transition: border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard) !important;
 }
 .ant-input::placeholder { color: var(--text-tertiary) !important; }
 .ant-input:hover,
@@ -6134,15 +6135,16 @@ a, button, .article-card, .contact-card, .social-links a,
 .ant-input-affix-wrapper:focus,
 .ant-input-affix-wrapper-focused,
 .ant-input-affix-wrapper:focus-within {
-  background: var(--bg-tertiary) !important;
+  background: var(--glass-bg-strong) !important;
   box-shadow: 0 0 0 2px var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
 }
 /* 浏览器自动填充底色覆盖，保持与主题一致 */
 .ant-input:-webkit-autofill,
 .ant-input:-webkit-autofill:hover,
 .ant-input:-webkit-autofill:focus,
 .ant-input-affix-wrapper:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px var(--bg-tertiary) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--glass-bg-strong) inset !important;
   -webkit-text-fill-color: var(--text-primary) !important;
   caret-color: var(--text-primary);
   transition: background-color 9999s ease-out 0s !important;

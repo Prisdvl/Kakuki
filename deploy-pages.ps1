@@ -4,8 +4,9 @@ $ErrorActionPreference = 'Stop'
 $ROOT = 'D:\develop\Kakuki'
 Set-Location $ROOT
 
-Write-Host "==> 构建前端..."
+Write-Host "==> 构建前端（GitHub Pages 子路径模式）..."
 Push-Location "$ROOT\frontend"
+$env:BASE_PATH = '/Kakuki/'
 npm run build
 if ($LASTEXITCODE -ne 0) { Write-Host "BUILD_FAILED"; exit 1 }
 Pop-Location

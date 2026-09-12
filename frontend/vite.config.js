@@ -35,8 +35,8 @@ const reactEcosystem = new Set([
 
 export default defineConfig(async ({ command }) => ({
   plugins: [react(), await analyzePlugin()].filter(Boolean),
-  // 仅构建（GitHub Pages 子路径）时使用 /Kakuki/，本地开发保持根路径
-  base: command === 'build' ? '/Kakuki/' : '/',
+  // 构建路径：默认根路径（kakuki.top 部署）；设 BASE_PATH=/Kakuki/ 时走 GitHub Pages 子路径
+  base: command === 'build' ? (process.env.BASE_PATH || '/') : '/',
   optimizeDeps: {
     include: ['framer-motion', 'canvas-confetti'],
   },

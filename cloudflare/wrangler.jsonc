@@ -1,0 +1,41 @@
+// Kakuki Worker 配置：API + 前端静态资产同源部署
+// 部署后绑定 kakuki.top（wrangler deploy 时用 --routes 或在 dashboard 配置 Custom Domain）
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kakuki",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // 前端构建产物：assets-first，未命中静态文件的请求进入 Worker（API 路由），
+  // 其余路径 SPA fallback 返回 index.html
+  "assets": {
+    "directory": "../frontend/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kakuki-db",
+      "database_id": "d0ba1222-e4b1-4f59-8c80-c618f89051e1"
+    }
+  ],
+
+  "vars": {
+    "JWT_ISSUER": "kakuki",
+    // 本地 dev 的默认密钥；生产用 `wrangler secret put JWT_SECRET` 覆盖
+    "JWT_SECRET_DEV": "kakuki-dev-secret-do-not-use-in-prod"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  // 自定义域：自动创建 DNS 记录与边缘证书（zone = kakuki.top，已托管在 Cloudflare）
+  "routes": [
+    { "pattern": "kakuki.top", "custom_domain": true },
+    { "pattern": "www.kakuki.top", "custom_domain": true }
+  ]
+}

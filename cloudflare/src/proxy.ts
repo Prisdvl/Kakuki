@@ -18,6 +18,8 @@ const LC_HEADERS: Record<string, string> = {
 const LC_DIFF_MAP: Record<string, string> = { EASY: 'Easy', MEDIUM: 'Medium', HARD: 'Hard' };
 const LC_TOTALS: Record<string, number> = { EASY: 850, MEDIUM: 1750, HARD: 800 };
 
+let lcLastError = '';
+
 async function lcPost(query: string, variables: Record<string, unknown>): Promise<Record<string, unknown> | null> {
   try {
     const resp = await fetch(LC_GRAPHQL, {
@@ -26,9 +28,15 @@ async function lcPost(query: string, variables: Record<string, unknown>): Promis
       body: JSON.stringify({ query, variables }),
       signal: AbortSignal.timeout(12_000),
     });
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      lcLastError = `HTTP ${resp.status}`;
+      console.warn(`[leetcode] HTTP ${resp.status} from ${LC_GRAPHQL}`);
+      return null;
+    }
     return (await resp.json()) as Record<string, unknown>;
-  } catch {
+  } catch (e) {
+    lcLastError = e instanceof Error ? e.message : String(e);
+    console.warn(`[leetcode] fetch failed: ${lcLastError}`);
     return null;
   }
 }
@@ -66,11 +74,17 @@ async function fetchLeetcodeLive(userSlug: string): Promise<Record<string, unkno
       }
     }`;
   const progress = await lcPost(progressQuery, { userSlug });
-  if (!progress || 'errors' in progress) return null;
+  if (!progress || 'errors' in progress) {
+    if (progress) lcLastError = 'graphql errors';
+    return null;
+  }
   const progData = (progress.data as Record<string, unknown> | undefined)?.userProfileUserQuestionProgress as
     | { numAcceptedQuestions?: Array<{ difficulty: string; count: number }> }
     | undefined;
-  if (!progData) return null;
+  if (!progData) {
+    lcLastError = 'empty userProfileUserQuestionProgress';
+    return null;
+  }
 
   const acList = progData.numAcceptedQuestions ?? [];
   const acSubmissionNum: Array<{ difficulty: string; count: number }> = [];
@@ -264,11 +278,13 @@ export const proxyRoutes = new Hono<{ Bindings: Env }>()
       profile: {
         matchedUser: {
           submitStatsGlobal: {
+            // leetcode.cn WAF 拦截 Cloudflare 数据中心 IP（HTTP 403），live 不可得；
+            // fallback 为真实数据快照（2026-09-12：All 210 = 69/129/12）
             acSubmissionNum: [
-              { difficulty: 'All', count: 179 },
-              { difficulty: 'Easy', count: 65 },
-              { difficulty: 'Medium', count: 103 },
-              { difficulty: 'Hard', count: 11 },
+              { difficulty: 'All', count: 210 },
+              { difficulty: 'Easy', count: 69 },
+              { difficulty: 'Medium', count: 129 },
+              { difficulty: 'Hard', count: 12 },
             ],
           },
           profile: { ranking: 0 },
@@ -285,6 +301,7 @@ export const proxyRoutes = new Hono<{ Bindings: Env }>()
       streak: 0,
       totalActiveDays: 0,
       source: 'fallback',
+      debug: lcLastError, // 诊断用：live 拉取失败原因（前端不读取此字段）
     };
     const resp = Response.json(payload);
     try {

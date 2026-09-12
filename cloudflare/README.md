@@ -75,3 +75,4 @@ npm run typecheck           # tsc --noEmit
 | 分页 page_size 参数 | 忽略（固定 10） | 支持（1-100） |
 | 删除响应 | HTTP 204 空 body | HTTP 200 + `{code:204}`（HTTP 规范兼容） |
 | LeetCode/网易云缓存 | 单实例内存 | Cache API（边缘节点级） |
+| LeetCode 打卡数据 | live（本机直连 leetcode.cn） | fallback 快照：leetcode.cn WAF 拦截 Cloudflare 数据中心 IP（HTTP 403），live 不可得；返回真实数据快照（2026-09-12：All 210 = Easy 69 / Medium 129 / Hard 12），响应含 `source:"fallback"` / `debug` 字段判别 |

@@ -5,7 +5,7 @@
  * - detail/create/delete 同包装；like 返回 {liked, like_count}
  * - 点赞去重：登录按 user_id，游客按 IP（partial unique index 兜底）
  */
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import type { Env } from './util';
 import { clientIp, fail, nowIso, ok, ok201, ok204, pageParams, paginated } from './util';
 import { authUser, type UserRow } from './auth';
@@ -15,7 +15,7 @@ type Row = Record<string, unknown>;
 const num = (v: unknown): number => (typeof v === 'number' ? v : 0);
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 // 匿名身份兜底：本地 dev 无 CF-Connecting-IP 时与 Django REMOTE_ADDR 行为对齐
-const anonIp = (c: { req: { header: (k: string) => string | undefined } }): string => clientIp(c) ?? 'unknown';
+const anonIp = (c: Context): string => clientIp(c) ?? 'unknown';
 
 const categoryNested = (r: Row) =>
   r.cat_id == null

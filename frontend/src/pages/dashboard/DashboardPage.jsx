@@ -12,6 +12,31 @@ import CountdownCard from '../../components/Tools/CountdownCard';
 const FOCUS_KEY = 'kakuki-focus-records';
 const GITHUB_USERNAME = 'Prisdvl';
 
+/* ================= GitHub 头像（三级回退：官方 → 本地快照 → 首字母徽章） ================= */
+function GitHubAvatar() {
+  const [level, setLevel] = useState(0);
+  const sources = [
+    `${import.meta.env.BASE_URL}github-avatar.jpg`, // 本地快照优先：与 GitHub 一致、网络受限环境零请求
+    `https://github.com/${GITHUB_USERNAME}.png`,
+  ];
+  const style = { width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--glass-border)', flexShrink: 0 };
+  if (level >= sources.length) {
+    return (
+      <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--glass-bg-strong)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1.1rem' }}>
+        {GITHUB_USERNAME[0].toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={sources[level]}
+      alt={GITHUB_USERNAME}
+      style={style}
+      onError={() => setLevel((l) => l + 1)}
+    />
+  );
+}
+
 /* ================= 时钟卡 ================= */
 function ClockCard() {
   const [now, setNow] = useState(() => new Date());
@@ -204,9 +229,26 @@ function GithubCard() {
   const [gh, setGh] = useState(null);
   useEffect(() => {
     let alive = true;
+    const KEY = 'kakuki-gh-profile';
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const cached = JSON.parse(raw);
+        if (Date.now() - cached.ts < 24 * 3600 * 1000) {
+          setGh(cached.data);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
     fetch(`https://api.github.com/users/${GITHUB_USERNAME}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d) setGh(d); })
+      .then((d) => {
+        if (!alive || !d) return;
+        setGh(d);
+        try {
+          localStorage.setItem(KEY, JSON.stringify({ ts: Date.now(), data: { bio: d.bio, public_repos: d.public_repos, followers: d.followers, following: d.following } }));
+        } catch { /* ignore */ }
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -216,12 +258,8 @@ function GithubCard() {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-        <img
-          src={`https://github.com/${GITHUB_USERNAME}.png`}
-          alt={GITHUB_USERNAME}
-          style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--glass-border)' }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        />
+        {/* 头像三级回退：GitHub 官方 → 本地快照（与 GitHub 一致）→ 首字母徽章（网络受限环境可用） */}
+        <GitHubAvatar />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{GITHUB_USERNAME}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -85,9 +85,9 @@ function useGithubProfile() {
 
 export function ProfileCard({ stats }) {
   const gh = useGithubProfile();
-  // 头像：GitHub 官方 → 本地快照（unavatar 下载，与 GitHub 一致）→ 首字母徽章
+  // 头像：本地快照（unavatar 下载，与 GitHub 一致，网络受限环境零请求）→ GitHub 官方 → 首字母徽章
   const [avatarLevel, setAvatarLevel] = useState(0);
-  const avatarSources = [gh?.avatar_url || 'https://github.com/Prisdvl.png', `${import.meta.env.BASE_URL}github-avatar.jpg`];
+  const avatarSources = [`${import.meta.env.BASE_URL}github-avatar.jpg`, gh?.avatar_url || 'https://github.com/Prisdvl.png'];
   const bio = gh?.bio || '全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。';
   return (
     <div className="glass profile-card mouse-glow">

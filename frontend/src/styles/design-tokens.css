@@ -74,10 +74,19 @@
    * ============================================================ */
   --glass-bg: rgba(255, 255, 255, 0.40);
   --glass-bg-strong: rgba(255, 255, 255, 0.58);
+  /* 移动端降级实底：backdrop-filter 关闭后用更高不透明度补偿可读性 */
+  --glass-bg-solid: rgba(255, 255, 255, 0.86);
+  --glass-bg-strong-solid: rgba(255, 255, 255, 0.94);
   --glass-border: rgba(255, 255, 255, 0.85);
-  --glass-blur: 28px;
-  --glass-blur-strong: 36px;
-  --glass-saturate: 200%;
+  /* 性能：28/36px 大 blur 在移动端每帧重算 backdrop 是卡顿主因。
+     降档到 14/18px 并以 --lg-shadow 阴影层次补偿"玻璃厚度"质感
+     （质感来自 shadow 层次而不是把背景糊掉） */
+  --glass-blur: 14px;
+  --glass-blur-strong: 18px;
+  --glass-saturate: 170%;
+  /* 收敛散写 blur 用：浮层（导航/弹窗）与卡片两级 */
+  --blur-float: 16px;
+  --blur-card: 14px;
   --glass-tint: rgba(255, 255, 255, 0.4);
   --glass-specular: linear-gradient(
     135deg,
@@ -97,10 +106,39 @@
                          inset 0 -1px 0 rgba(0, 0, 0, 0.02);
   --glass-prism: rgba(255, 255, 255, 0.38);      /* 斜向折射光带（亮主题） */
   --glass-top-light: rgba(255, 255, 255, 0.5);   /* 顶部受光高光带（亮主题） */
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.07),
+  /* 七层阴影（liquid-glass 思想，为卡片弱化版）：
+     前两层 = 对缘 inset 白高光勾出玻璃"厚度"；中两层 = 对角内侧暗影模拟折射暗部；
+     最后 = 外投影悬浮感 + 顶部受光亮线 */
+  --glass-shadow: inset 0.5px 0.5px 1px rgba(255, 255, 255, 0.55),
+                  inset -0.5px -0.5px 1px rgba(255, 255, 255, 0.2),
+                  inset -10px -12px 26px rgba(0, 0, 0, 0.045),
+                  inset 10px 12px 26px rgba(0, 0, 0, 0.055),
+                  0 8px 32px rgba(0, 0, 0, 0.07),
                   0 1px 0 rgba(255, 255, 255, 0.8) inset;
-  --glass-shadow-hover: 0 18px 52px rgba(0, 0, 0, 0.12),
-                        0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  --glass-shadow-hover: inset 0.5px 0.5px 1px rgba(255, 255, 255, 0.65),
+                  inset -0.5px -0.5px 1px rgba(255, 255, 255, 0.25),
+                  inset -10px -12px 26px rgba(0, 0, 0, 0.06),
+                  inset 10px 12px 26px rgba(0, 0, 0, 0.07),
+                  0 18px 52px rgba(0, 0, 0, 0.12),
+                  0 1px 0 rgba(255, 255, 255, 0.9) inset;
+
+  /* ============ 液态玻璃（Liquid Glass，按钮/小元素级）============
+   * 移植自 PrisTimer 验证过的参数：低模糊 + 提饱和（blur 必须 ≥8px
+   * 才能把高频噪点平均掉），质感全部来自七层阴影而不是糊背景。
+   * 大元素禁用此档 —— 小元素 + 短模糊半径不触碰"大元素禁 blur"红线 */
+  --lg-shadow:
+    inset 0.5px 0.5px 1px rgb(255 255 255 / 0.55),
+    inset -0.5px -0.5px 1px rgb(255 255 255 / 0.2),
+    inset -1.5px -1.5px 3px rgb(255 255 255 / 0.14),
+    inset 1.5px 1.5px 3px rgb(255 255 255 / 0.1),
+    inset -10px -12px 26px rgb(0 0 0 / 0.13),
+    inset 10px 12px 26px rgb(0 0 0 / 0.15),
+    0 6px 16px rgb(0 0 0 / 0.22);
+  --lg-filter: blur(8px) saturate(1.5);
+  /* 亮主题：参考值 0.055 出自深色 UI，亮底页面按钮会隐形，提到底色可见档；
+     暗主题在 .dark 块内用参考原味值 */
+  --lg-bg: rgb(255 255 255 / 0.4);
+  --lg-bg-hover: rgb(255 255 255 / 0.55);
 
   /* 卡片通用 */
   --card-bg: rgba(255, 255, 255, 0.6);
@@ -217,9 +255,11 @@
 
   --glass-bg: rgba(28, 28, 30, 0.32);
   --glass-bg-strong: rgba(28, 28, 30, 0.48);
+  --glass-bg-solid: rgba(24, 24, 28, 0.88);
+  --glass-bg-strong-solid: rgba(24, 24, 28, 0.95);
   --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-blur: 32px;
-  --glass-saturate: 220%;
+  --glass-blur: 16px;
+  --glass-saturate: 180%;
   --glass-tint: rgba(255, 255, 255, 0.06);
   --glass-specular: linear-gradient(
     135deg,
@@ -239,10 +279,22 @@
                          inset 0 -1px 0 rgba(0, 0, 0, 0.4);
   --glass-prism: rgba(255, 255, 255, 0.12);      /* 斜向折射光带（暗主题） */
   --glass-top-light: rgba(255, 255, 255, 0.09);  /* 顶部受光高光带（暗主题） */
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+  --glass-shadow: inset 0.5px 0.5px 1px rgba(255, 255, 255, 0.18),
+                  inset -0.5px -0.5px 1px rgba(255, 255, 255, 0.06),
+                  inset -10px -12px 26px rgba(0, 0, 0, 0.22),
+                  inset 10px 12px 26px rgba(0, 0, 0, 0.24),
+                  0 8px 32px rgba(0, 0, 0, 0.5),
                   0 1px 0 rgba(255, 255, 255, 0.08) inset;
-  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.6),
-                        0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  --glass-shadow-hover: inset 0.5px 0.5px 1px rgba(255, 255, 255, 0.22),
+                  inset -0.5px -0.5px 1px rgba(255, 255, 255, 0.08),
+                  inset -10px -12px 26px rgba(0, 0, 0, 0.26),
+                  inset 10px 12px 26px rgba(0, 0, 0, 0.28),
+                  0 16px 48px rgba(0, 0, 0, 0.6),
+                  0 1px 0 rgba(255, 255, 255, 0.12) inset;
+
+  /* 暗主题液态玻璃：底色换暗调，其余同亮主题 */
+  --lg-bg: rgb(255 255 255 / 0.045);
+  --lg-bg-hover: rgb(255 255 255 / 0.09);
 
   --card-bg: rgba(28, 28, 30, 0.55);
   --card-hover-border: rgba(10, 132, 255, 0.3);

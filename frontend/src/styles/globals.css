@@ -5,15 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-strong: rgba(255, 255, 255, 0.88);
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.12);
-  --glass-blur: 24px;
-  --glass-specular: rgba(255, 255, 255, 0.9);
-  --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
-                          inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+  /* 玻璃令牌（--glass-*）统一由 design-tokens.css 定义，此处不再重复，
+     避免加载顺序覆盖降档值（--glass-blur 曾被这里旧值盖回 24/28px） */
   --bg-primary: #f5f5f7;
   --bg-secondary: rgba(255, 255, 255, 0.6);
   --bg-tertiary: rgba(0, 0, 0, 0.04);
@@ -59,15 +52,7 @@
 }
 
 .dark {
-  --glass-bg: rgba(28, 28, 30, 0.6);
-  --glass-bg-strong: rgba(28, 28, 30, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.6);
-  --glass-blur: 28px;
-  --glass-specular: rgba(255, 255, 255, 0.08);
-  --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
-                          inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  /* 玻璃令牌统一由 design-tokens.css 的 .dark 块定义（含降档后的 --glass-blur） */
   --bg-primary: #000000;
   --bg-secondary: rgba(28, 28, 30, 0.65);
   --bg-tertiary: rgba(255, 255, 255, 0.05);
@@ -328,8 +313,8 @@ body.theme-switching .glass-floating::after {
   position: absolute;
   display: block;
   border-radius: 43% 57% 51% 49% / 54% 46% 54% 46%;
-  background: currentColor;
-  filter: blur(64px);
+  /* 性能：径向渐变软边替代 filter: blur(64px)，动画期间零模糊光栅化 */
+  background: radial-gradient(closest-side, currentColor 0%, transparent 72%);
   opacity: 0;
   transform: translate(0, 0) scale(0.45);
   animation: smokeDrift var(--ink-dur, 22s) ease-in-out infinite;
@@ -375,8 +360,13 @@ body.theme-switching .glass-floating::after {
   background-repeat: repeat;
 }
 
-/* Far layer: sparse dim dots, slow drift */
-.starfield-far {
+/* 漂移动画挂在 ::before 上（transform 合成，零重绘）：
+   本体的 transform 保留给 JS 鼠标视差，两者分层不冲突。
+   ::before 沿漂移方向多铺一个图案周期，平移循环无缝 */
+.starfield-far::before {
+  content: '';
+  position: absolute;
+  inset: 0 -430px -220px 0;
   background-image:
     radial-gradient(1px 1px at 25px 35px, var(--star-color-dim), transparent 55%),
     radial-gradient(1.5px 1.5px at 90px 40px, var(--star-color-dim), transparent 55%),
@@ -389,7 +379,10 @@ body.theme-switching .glass-floating::after {
 }
 
 /* Near layer: brighter denser dots, faster drift */
-.starfield-near {
+.starfield-near::before {
+  content: '';
+  position: absolute;
+  inset: -240px 0 0 -470px;
   background-image:
     radial-gradient(2px 2px at 20px 30px, var(--star-color), transparent 60%),
     radial-gradient(1.5px 1.5px at 70px 110px, var(--star-color-dim), transparent 60%),
@@ -403,12 +396,12 @@ body.theme-switching .glass-floating::after {
 }
 
 @keyframes starfieldDriftFar {
-  from { background-position: 0 0; }
-  to   { background-position: 420px 210px; }
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(420px, 210px, 0); }
 }
 @keyframes starfieldDriftNear {
-  from { background-position: 0 0; }
-  to   { background-position: -460px -230px; }
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-460px, -230px, 0); }
 }
 
 /* 闆舵槦浜槦闂儊 */
@@ -433,7 +426,8 @@ body.theme-switching .glass-floating::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .starfield-stars { animation: none; }
+  .starfield-far::before,
+  .starfield-near::before { animation: none; }
   .sf-twinkle { animation: none; opacity: 0.5; }
 }
 
@@ -612,6 +606,11 @@ body.theme-switching .glass-floating::after {
 .mouse-glow > * {
   position: relative;
   z-index: 1;
+}
+
+/* 触屏设备无 hover：光斑层直接移除，省一层合成 */
+@media (hover: none) {
+  .mouse-glow::before { display: none; }
 }
 
 /* ===== App Container ===== */
@@ -882,8 +881,8 @@ body.theme-switching .glass-floating::after {
 
 .navbar.scrolled {
   background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
+  -webkit-backdrop-filter: blur(var(--blur-float));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
   border-bottom: 1px solid var(--border);
 }
@@ -891,8 +890,8 @@ body.theme-switching .glass-floating::after {
 /* Light mode navbar fix */
 .navbar {
   background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
+  -webkit-backdrop-filter: blur(var(--blur-float));
 }
 
 .dark .navbar {
@@ -903,8 +902,8 @@ body.theme-switching .glass-floating::after {
 
 .dark .navbar.scrolled {
   background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
+  -webkit-backdrop-filter: blur(var(--blur-float));
 }
 
 .navbar-inner {
@@ -1105,8 +1104,8 @@ body.theme-switching .glass-floating::after {
   border-radius: 20px;
   overflow: hidden;
   background: var(--card-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(var(--blur-card)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-card)) saturate(180%);
   border: 1px solid var(--glass-border);
   box-shadow:
     var(--glass-shadow),
@@ -1360,8 +1359,8 @@ body.theme-switching .glass-floating::after {
   padding: 2rem 1.5rem;
   border-radius: 20px;
   background: var(--card-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(var(--blur-card)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-card)) saturate(180%);
   border: 1px solid var(--glass-border);
   box-shadow:
     var(--glass-shadow),
@@ -1636,41 +1635,42 @@ body.theme-switching .glass-floating::after {
   }
 }
 
-/* ===== Floating Background Orbs ===== */
+/* ===== Floating Background Orbs =====
+ * 性能关键：radial-gradient 自带软边，等效替代 filter: blur(80px)。
+ * 原 blur 在动画期间每帧重新光栅化 400px 大半径模糊，移动端 GPU 致命；
+ * 纯渐变零 filter 成本，视觉几乎无差 */
 .bg-scene-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
   pointer-events: none;
   will-change: transform;
 }
 
 .bg-scene-orb.orb-1 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%);
-  top: -10%;
-  right: -5%;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent) 0%, transparent 62%);
+  top: -16%;
+  right: -12%;
   animation: orbFloat1 18s ease-in-out infinite;
 }
 
 .bg-scene-orb.orb-2 {
-  width: 350px;
-  height: 350px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-secondary) 25%, transparent), transparent 70%);
-  bottom: 10%;
-  left: -8%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-secondary) 25%, transparent) 0%, transparent 62%);
+  bottom: 6%;
+  left: -14%;
   animation: orbFloat2 22s ease-in-out infinite;
   opacity: 0.35;
 }
 
 .bg-scene-orb.orb-3 {
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-secondary) 20%, transparent), transparent 70%);
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-secondary) 20%, transparent) 0%, transparent 62%);
   top: 40%;
-  left: 30%;
+  left: 26%;
   animation: orbFloat3 25s ease-in-out infinite;
   opacity: 0.25;
 }
@@ -1806,8 +1806,8 @@ body.theme-switching .glass-floating::after {
   max-width: 75vw;
   height: 100vh;
   background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
+  -webkit-backdrop-filter: blur(var(--blur-float));
   border-left: 1px solid var(--glass-border);
   z-index: 160;
   display: flex;
@@ -2307,8 +2307,8 @@ body.snap-active {
   right: 0;
   z-index: 90;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(var(--blur-float)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-float)) saturate(180%);
   border-top: 1px solid var(--glass-border);
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   padding: 0.6rem 0;
@@ -2983,7 +2983,7 @@ input:autofill {
 /* Message / notification */
 .ant-message-notice-content {
   background: var(--glass-bg-strong) !important;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 32px var(--glass-shadow) !important;
@@ -3065,7 +3065,7 @@ input:autofill {
 /* Modal */
 .ant-modal-content {
   background: var(--glass-bg-strong) !important;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
   border-radius: 20px !important;
   box-shadow: 0 16px 48px var(--glass-shadow) !important;
@@ -3226,7 +3226,7 @@ input:autofill {
 /* Dropdown menu */
 .ant-dropdown-menu {
   background: var(--glass-bg-strong) !important;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 32px var(--glass-shadow) !important;
@@ -3315,13 +3315,13 @@ input:autofill {
 
 .ant-layout-sider {
   background: var(--glass-bg-strong) !important;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
   border-right: 1px solid var(--glass-border) !important;
 }
 
 .ant-layout-header {
   background: var(--glass-bg-strong) !important;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
   border-bottom: 1px solid var(--glass-border) !important;
   color: var(--text-primary) !important;
   padding: 0 1.5rem !important;
@@ -3381,7 +3381,7 @@ input:autofill {
 /* Popconfirm */
 .ant-popover {
   background: var(--glass-bg-strong) !important;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 32px var(--glass-shadow) !important;
@@ -3667,8 +3667,8 @@ input:autofill {
       color-mix(in srgb, var(--accent) 5%, transparent) 0%,
       transparent 70%),
     var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
+  -webkit-backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
@@ -3960,8 +3960,8 @@ input:autofill {
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(var(--blur-float)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-float)) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px var(--accent-glow);
@@ -4773,7 +4773,7 @@ a, button, .article-card, .contact-card, .social-links a,
   z-index: 200;
   padding: 0.6rem 1.25rem;
   border-top: 1px solid var(--border);
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(var(--blur-float));
 }
 
 .music-player-inner {
@@ -6081,6 +6081,69 @@ a, button, .article-card, .contact-card, .social-links a,
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* ============================================================
+ * 移动端性能降级总段（Mobile Performance Fallback）
+ *
+ * 依据：触屏 GPU 上每帧重算 backdrop-filter 的成本是桌面的数倍，
+ * 大面积玻璃 + 常驻背景动画是移动端卡顿的两大主因。策略：
+ *   1. 通配关闭全部 backdrop-filter（先全部砍掉）
+ *   2. 白名单恢复小面积常驻浮层（导航/抽屉）的轻模糊
+ *   3. 玻璃底色切换到高不透明度实底（--glass-bg-solid）补可读性
+ *   4. 纯装饰背景动画（光球/水墨/星域漂移）停掉，保留静态质感
+ * ============================================================ */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1024px) {
+  /* 1) 全量关闭：!important 压过散写规则，一次到位 */
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* 2) 白名单：小面积常驻浮层保留 12px 轻模糊（"小元素 + 短模糊半径"安全档） */
+  .navbar,
+  .navbar.scrolled,
+  .mobile-menu-drawer {
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  }
+
+  /* 3) 玻璃底色补偿：失去磨砂后用实底维持层次与可读性 */
+  .glass,
+  .glass-card,
+  .glass-elevated,
+  .glass-floating,
+  .tilt-card,
+  .article-card,
+  .hero-article-card,
+  .talk-card {
+    background: var(--glass-bg-solid);
+  }
+  .glass-elevated,
+  .glass-card {
+    box-shadow: var(--glass-shadow); /* hover 态的 --glass-shadow-hover 仍由基础规则提供 */
+  }
+
+  /* 4) 纯装饰背景动画停掉：静态光斑/星点保留氛围，零合成成本 */
+  .bg-scene-orb { animation: none !important; }
+  .ink-blot {
+    animation: none !important;
+    opacity: var(--ink-max, 0.1);
+    transform: none;
+  }
+  .starfield-far::before,
+  .starfield-near::before { animation: none !important; }
+
+  /* 5) 挂载弹簧动画缩短：减少首帧合成压力 */
+  .glass,
+  .glass-elevated,
+  .glass-card,
+  .tilt-card {
+    animation-duration: 0.4s !important;
+  }
+
+  /* 6) 图片悬停放大只在悬停设备有意义，触屏移除 transform 覆盖 */
+  .card-image { transition: none; }
 }
 .tilt-card > .glass::before,
 .tilt-card > .glass::after { display: none !important; }

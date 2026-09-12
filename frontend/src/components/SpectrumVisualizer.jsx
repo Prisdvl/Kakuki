@@ -312,10 +312,27 @@ export default function SpectrumVisualizer() {
       rafRef.current = requestAnimationFrame(step);
     }
 
+    // 页面切后台/切应用时暂停 rAF 循环，回前台恢复（暂停态也在逐帧画 idle，常驻跑纯属浪费）
+    const startLoop = () => {
+      if (!reduced && !rafRef.current) rafRef.current = requestAnimationFrame(step);
+    };
+    const stopLoop = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+    };
+    const onVisibility = () => {
+      if (document.hidden) stopLoop();
+      else startLoop();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     return () => {
-      cancelAnimationFrame(rafRef.current);
+      stopLoop();
       clearInterval(pollHandle);
       window.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 

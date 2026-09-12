@@ -31,8 +31,7 @@
     box-shadow var(--motion-base) var(--ease-standard),
     border-color var(--motion-base) var(--ease-standard),
     background var(--motion-base) var(--ease-standard);
-  will-change: transform;
-  /* 挂载淡入：避免刷新首帧 backdrop-filter 合成延迟导致的“透明→磨砂”突变 */
+  /* 挂载淡入：避免刷新首帧 backdrop-filter 合成延迟导致的"透明→磨砂"突变 */
   animation: glassMount 0.7s var(--ease-spring) both;
 }
 
@@ -93,7 +92,6 @@
     box-shadow var(--motion-base) var(--ease-standard),
     border-color var(--motion-base) var(--ease-standard),
     background var(--motion-base) var(--ease-standard);
-  will-change: transform;
   contain: layout style;
   animation: glassMount 0.7s var(--ease-spring) both;
 }
@@ -213,7 +211,6 @@
     box-shadow var(--motion-base) var(--ease-standard),
     border-color var(--motion-base) var(--ease-standard),
     background var(--motion-base) var(--ease-standard);
-  will-change: transform;
   contain: layout style paint;
   animation: glassMount 0.7s var(--ease-spring) both;
 }
@@ -290,7 +287,9 @@
   box-shadow: var(--shadow-accent);
 }
 
-/* ============ 按钮玻璃 ============ */
+/* ============ 按钮玻璃 ============
+ * liquid-glass 透明质感：低模糊高饱和 + 七层阴影（--lg-shadow），
+ * 质感来自 shadow 层次而不是把背景糊掉 */
 .glass-button {
   display: inline-flex;
   align-items: center;
@@ -300,22 +299,22 @@
   border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 0.95rem;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background: var(--lg-bg);
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-z2);
+  box-shadow: var(--lg-shadow);
   color: var(--text-primary);
   cursor: pointer;
   text-decoration: none;
   position: relative;
   overflow: hidden;
   transition:
-    transform var(--motion-base) var(--ease-standard),
-    box-shadow var(--motion-base) var(--ease-standard),
-    border-color var(--motion-base) var(--ease-standard),
-    color var(--motion-base) var(--ease-standard);
-  will-change: transform;
+    transform var(--motion-base) var(--ease-spring),
+    background var(--motion-base) var(--ease-expo),
+    border-color var(--motion-base) var(--ease-expo),
+    color var(--motion-base) var(--ease-expo),
+    box-shadow var(--motion-base) var(--ease-expo);
 }
 
 .glass-button::after {
@@ -328,24 +327,83 @@
   pointer-events: none;
 }
 
-.glass-button:hover {
-  transform: translateY(-3px);
+.glass-button:hover:not(:disabled) {
+  transform: translateY(-1px);
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: var(--shadow-accent);
+  background: var(--lg-bg-hover);
+  box-shadow: var(--lg-shadow), 0 0 18px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .glass-button:hover::after { opacity: 1; }
 
-.glass-button:active {
-  transform: translateY(-1px) scale(0.98);
+.glass-button:active:not(:disabled) {
+  transform: scale(0.97);
   transition-duration: var(--motion-fast);
+}
+
+.glass-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.glass-button:focus-visible,
+.btn-glass:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  outline-offset: 2px;
 }
 
 .glass-button svg {
   transition: transform var(--motion-base) var(--ease-standard);
 }
 .glass-button:hover svg { transform: translateX(3px); }
+
+/* ============ 液态玻璃按钮变体（透明液态）============
+ * 强调色退到描边与文字，按钮本体是透明玻璃——内部气泡（.blob）
+ * 在透明底上更有"液体"感。JSX 结构：<button className="glass-liquid">
+ * 可选三粒气泡 <span className="blob" />，由本文件统一驱动动画 */
+.glass-liquid {
+  position: relative;
+  overflow: hidden;
+  background: var(--lg-bg);
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  box-shadow:
+    var(--lg-shadow),
+    0 0 18px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.glass-liquid:hover:not(:disabled) {
+  background: var(--lg-bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  color: var(--accent);
+}
+
+.glass-liquid .blob {
+  position: absolute;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.24);
+  filter: blur(8px);           /* 小元素 + 短模糊半径，不触碰大元素禁 blur 红线 */
+  pointer-events: none;
+  animation: blobFloat 4s ease-in-out infinite;
+}
+.glass-liquid .blob:nth-of-type(1) { width: 34px; height: 34px; top: -12px; left: 14%; }
+.glass-liquid .blob:nth-of-type(2) { width: 22px; height: 22px; bottom: -9px; right: 18%; animation-delay: -1.2s; animation-duration: 4.6s; }
+.glass-liquid .blob:nth-of-type(3) { width: 27px; height: 27px; top: 38%; left: 58%; animation-delay: -2.4s; animation-duration: 3.6s; }
+
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(10px, -7px) scale(1.18); }
+  66%      { transform: translate(-8px, 6px) scale(0.88); }
+}
+
+/* 按下禁用后气泡冻住——"液体凝固"暗示不可点 */
+.glass-liquid:disabled .blob {
+  animation-play-state: paused;
+  opacity: 0.55;
+}
 
 /* 主色实心按钮（替代旧 .btn-glass-solid） */
 .glass-button-solid {
@@ -420,18 +478,22 @@
   border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 0.95rem;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background: var(--lg-bg);
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-z2);
+  box-shadow: var(--lg-shadow);
   color: var(--text-primary);
   cursor: pointer;
-  transition: var(--t-default);
+  transition:
+    transform var(--motion-base) var(--ease-spring),
+    background var(--motion-base) var(--ease-expo),
+    border-color var(--motion-base) var(--ease-expo),
+    color var(--motion-base) var(--ease-expo),
+    box-shadow var(--motion-base) var(--ease-expo);
   text-decoration: none;
   position: relative;
   overflow: hidden;
-  will-change: transform;
 }
 
 .btn-glass::after {
@@ -444,14 +506,17 @@
   pointer-events: none;
 }
 
-.btn-glass:hover {
-  transform: translateY(-3px);
+.btn-glass:hover:not(:disabled) {
+  transform: translateY(-1px);
   border-color: var(--accent);
-  box-shadow: var(--shadow-accent);
+  color: var(--accent);
+  background: var(--lg-bg-hover);
+  box-shadow: var(--lg-shadow), 0 0 18px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .btn-glass:hover::after { opacity: 1; }
-.btn-glass:active { transform: translateY(-1px) scale(0.98); transition-duration: var(--motion-fast); }
+.btn-glass:active:not(:disabled) { transform: scale(0.97); transition-duration: var(--motion-fast); }
+.btn-glass:disabled { opacity: 0.4; cursor: default; }
 
 .btn-glass-solid {
   /* 旧别名，复用 .glass-button-solid 规则集 */
@@ -487,4 +552,30 @@
   .glass-floating {
     animation: none;
   }
+  .glass-liquid .blob { animation: none; opacity: 0.5; }
+}
+
+/* ============ 移动端性能降级 ============
+ * 移动 GPU 对 backdrop-filter + mix-blend-mode 的合成开销是桌面的数倍，
+ * 大面积玻璃是移动端卡顿主因。触屏设备上：
+ *   - 伪元素混合模式关闭（overlay/soft-light 最贵）
+ *   - 挂载动画缩短，减少首帧弹簧合成压力
+ *   - 折射光斑（无 hover 意义）直接隐藏
+ * 全局 backdrop-filter 的通配降级见 globals.css 末尾移动端段落 */
+@media (hover: none), (max-width: 768px) {
+  .glass::before,
+  .glass-elevated::before,
+  .glass-card::before,
+  .glass::after,
+  .glass-card::after {
+    mix-blend-mode: normal;
+    opacity: 0.35;
+  }
+  .glass-elevated::after { display: none; }
+  .glass,
+  .glass-elevated,
+  .glass-card {
+    animation-duration: 0.45s;
+  }
+  .glass-liquid .blob { filter: blur(6px); }
 }

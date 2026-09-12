@@ -189,6 +189,21 @@
 .lift-on-hover:hover { transform: translate3d(0, -4px, 0); }
 .lift-on-hover:active { transform: translate3d(0, -1px, 0) scale(0.99); transition-duration: var(--motion-fast); }
 
+/* ============ 懒加载图片入场淡入 ============
+ * 网络图陆续到达时突兀蹦出 → 统一柔和淡入（纯 opacity，合成层零成本）。
+ * 覆盖文章卡封面 / 首页 hero 卡 / 项目卡图片 */
+.card-image,
+.hero-article-card-cover img,
+.project-card img,
+.article-cover img {
+  animation: imgIn var(--motion-slow) var(--ease-decelerate) both;
+}
+
+@keyframes imgIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* ============ 减少动效偏好 ============ */
 @media (prefers-reduced-motion: reduce) {
   .reveal,
@@ -211,4 +226,9 @@
   .icon-spin-hover:hover,
   .lift-on-hover:hover,
   .lift-on-hover:active { transform: none !important; }
+
+  .card-image,
+  .hero-article-card-cover img,
+  .project-card img,
+  .article-cover img { animation: none !important; opacity: 1 !important; }
 }

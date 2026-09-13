@@ -1,20 +1,31 @@
 import { useState, useEffect } from "react";
 import { Row, Col, Pagination, Empty, Input } from "antd";
-import { Link, useSearchParams } from "react-router-dom";
-import { ChevronRight, Search, ArrowLeft, FileSearch } from "lucide-react";
-import { getArchives, getArticles } from "../../api/article";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { ChevronRight, Search, ArrowLeft, FileSearch, Edit3 } from "lucide-react";
+import { getArchives, getArticles, getCategories } from "../../api/article";
 import { extractList } from "../../api/request";
+import useUserStore from "../../store/userStore";
 
 const { Search: SearchInput } = Input;
 
 const PAGE_SIZE = 10;
 
 export default function ArchivePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useSearchParams()[0];
+  const setSearchParams = useSearchParams()[1];
+  const navigate = useNavigate();
   const q = (searchParams.get("q") || "").trim();
+  const isLoggedIn = useUserStore((s) => s.isLoggedIn);
+  const isStaff = isLoggedIn && useUserStore((s) => s.user)?.is_staff;
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // 分类（从分类页整合进归档：搜索、分类都在这一页完成）
+  const [categories, setCategories] = useState([]);
+  const [activeCat, setActiveCat] = useState(null);
+  const [catArticles, setCatArticles] = useState([]);
+  const [catLoading, setCatLoading] = useState(false);
 
   // 搜索态
   const [searching, setSearching] = useState(q.length > 0);
@@ -22,6 +33,10 @@ export default function ArchivePage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  useEffect(() => {
+    getCategories().then((res) => setCategories(extractList(res))).catch(() => {});
+  }, []);
 
   // 归档：无搜索词时加载
   useEffect(() => {
@@ -37,6 +52,16 @@ export default function ArchivePage() {
       .catch((err) => console.warn("Failed to load archives:", err.message))
       .finally(() => setLoading(false));
   }, [q]);
+
+  // 分类筛选：选中非空分类时拉取该分类文章
+  useEffect(() => {
+    if (!activeCat) { setCatArticles([]); return; }
+    setCatLoading(true);
+    getArticles({ category: activeCat, page_size: 50 })
+      .then((res) => setCatArticles(extractList(res)))
+      .catch(() => setCatArticles([]))
+      .finally(() => setCatLoading(false));
+  }, [activeCat]);
 
   // 搜索：URL 带 ?q= 时执行全文搜索
   useEffect(() => {
@@ -93,12 +118,29 @@ export default function ArchivePage() {
   return (
     <Row gutter={24} className="pt-8">
       <Col xs={24}>
-        <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: searching ? "0.5rem" : "1.25rem" }}>
-          {searching ? "搜索文章" : "文章归档"}
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: searching ? "0.5rem" : "1.25rem" }}>
+          <h2 style={{ fontSize: "1.8rem", fontWeight: 700, margin: 0 }}>
+            {searching ? "搜索文章" : activeCat ? "分类文章" : "文章归档"}
+          </h2>
+          {isStaff && (
+            <button
+              className="glass-button"
+              onClick={() => navigate("/admin/articles/new")}
+              title="用富编辑器写新文章"
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", flexShrink: 0 }}
+            >
+              <Edit3 size={14} /> 写文章
+            </button>
+          )}
+        </div>
         {searching && (
           <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
             关键词「{q}」的搜索结果
+          </p>
+        )}
+        {activeCat && !searching && (
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
+            分类「{categories.find((c) => c.id === activeCat)?.name}」· {catArticles.length} 篇
           </p>
         )}
 
@@ -109,8 +151,34 @@ export default function ArchivePage() {
           enterButton={<><Search size={14} /> 搜索</>}
           defaultValue={q}
           onSearch={handleSearch}
-          style={{ maxWidth: 480, marginBottom: "1.75rem" }}
+          style={{ maxWidth: 480, marginBottom: "1rem" }}
         />
+
+        {/* 分类 chips（原独立「分类」页整合至此） */}
+        {!searching && categories.length > 0 && (
+          <div className="category-chip-container" style={{ marginBottom: "1.75rem" }}>
+            <button
+              className={`category-chip ${!activeCat ? "active" : ""}`}
+              onClick={() => setActiveCat(null)}
+            >
+              全部
+              <span className="category-chip-count">{categories.length}</span>
+            </button>
+            {categories.map((cat) => {
+              const count = cat.article_count || 0;
+              return (
+                <button
+                  key={cat.id}
+                  className={`category-chip ${activeCat === cat.id ? "active" : ""}`}
+                  onClick={() => setActiveCat(activeCat === cat.id ? null : cat.id)}
+                >
+                  {cat.name}
+                  {count > 0 && <span className="category-chip-count">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {searching ? (
           <>
@@ -160,6 +228,29 @@ export default function ArchivePage() {
               </>
             )}
           </>
+        ) : activeCat ? (
+          catLoading ? (
+            <p style={{ color: "var(--text-tertiary)", padding: "2rem 0" }}>加载中...</p>
+          ) : catArticles.length === 0 ? (
+            <Empty description="该分类下暂无文章" style={{ padding: "3rem 0" }} />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {catArticles.map((article, i) => (
+                <Link
+                  key={article.id}
+                  to={`/article/${article.id}`}
+                  className="article-card reveal"
+                  style={{ padding: "0.9rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem", '--reveal-i': i }}
+                >
+                  <span style={{ color: "var(--text-primary)", fontSize: "0.95rem", flex: 1, minWidth: 0 }}>{article.title}</span>
+                  <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", flexShrink: 0 }}>
+                    {article.created_at?.slice(0, 10)}
+                  </span>
+                  <ChevronRight size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
+                </Link>
+              ))}
+            </div>
+          )
         ) : data.length === 0 ? (
           <Empty description="还没有文章" style={{ padding: "3rem 0" }} />
         ) : (

@@ -1,142 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, ListMusic } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, ListMusic, Upload } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
 
-function PlaylistSelector({ onSelect, loading }) {
-  const { playlistList, currentPlaylist, fetchPlaylists } = useMusicStore();
-
-  useEffect(() => {
-    if (playlistList.length === 0) {
-      fetchPlaylists();
-    }
-  }, [playlistList.length, fetchPlaylists]);
-
-  if (loading) {
-    return (
-      <div className="mp-empty">
-        <Loader2 size={20} className="spin" style={{ margin: '0 auto', color: 'var(--accent)' }} />
-        <div className="mp-empty-text">加载歌单列表...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mp-panel">
-      <div className="mp-section-header">
-        <span className="mp-section-title">Prisdvl 的歌单</span>
-        <span className="mp-section-meta">{playlistList.length} 个</span>
-      </div>
-      <div className="mp-scroll-list">
-        {playlistList.map((pl) => {
-          const isActive = currentPlaylist?.id === pl.id;
-          return (
-            <button
-              key={pl.id}
-              onClick={() => onSelect(pl)}
-              className="track-row mp-row"
-              aria-label={`选择歌单 ${pl.name}`}
-            >
-              {pl.coverImgUrl ? (
-                <img src={pl.coverImgUrl} alt={pl.name} className="mp-cover-sm" loading="lazy" decoding="async" />
-              ) : (
-                <div className="mp-cover-sm mp-cover-placeholder">
-                  <ListMusic size={18} />
-                </div>
-              )}
-              <div className="mp-row-body">
-                <div className={`mp-row-title ${isActive ? 'active' : ''}`}>{pl.name}</div>
-                <div className="mp-row-meta">{pl.trackCount} 首</div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function TrackList({ onPlay, currentTrack, onBack }) {
-  const { currentPlaylist, isPlaying, sourceKind } = useMusicStore();
-  const tracks = currentPlaylist?.tracks || [];
-
-  return (
-    <div className="mp-panel">
-      <div className="mp-section-header">
-        <button onClick={onBack} className="icon-btn mp-back" aria-label="返回歌单列表">
-          <ListMusic size={16} />
-        </button>
-        <span className="mp-section-title mp-truncate">{currentPlaylist?.name || 'Prisdvl 的喜欢音乐'}</span>
-        <span className="mp-section-meta">{tracks.length} 首</span>
-      </div>
-      {sourceKind === 'fallback' && (
-        <div className="mp-source-notice">
-          原歌单曲目的网易云外链已失效，当前播放示例曲目（可在 public/music/ 放置自己的音频恢复）
-        </div>
-      )}
-      {tracks.length === 0 ? (
-        <div className="mp-empty-text">歌单暂无歌曲</div>
-      ) : (
-        <div className="mp-scroll-list">
-          {tracks.map((track, idx) => {
-            const isActive = currentTrack?.id === track.id;
-            const activePlaying = isActive && isPlaying;
-            return (
-              <button
-                key={track.id}
-                onClick={() => onPlay(track)}
-                className="track-row mp-row"
-                aria-label={`播放 ${track.name}`}
-              >
-                <span className="mp-track-index">{idx + 1}</span>
-                <div className="mp-row-body">
-                  <div className={`mp-row-title ${isActive ? 'active' : ''}`}>
-                    {activePlaying && (
-                      <span className="eq" aria-hidden="true" style={{ marginRight: '0.35rem', verticalAlign: 'middle' }}>
-                        <span /><span /><span /><span /><span />
-                      </span>
-                    )}
-                    {track.name}
-                  </div>
-                  <div className="mp-row-meta">
-                    {(track.artists || []).map((a) => a.name).join(' / ')}
-                  </div>
-                </div>
-                {isActive && (
-                  isPlaying ? (
-                    <span className="eq" aria-hidden="true">
-                      <span /><span /><span /><span /><span />
-                    </span>
-                  ) : (
-                    <span className="playing-indicator" aria-hidden="true">❚❚</span>
-                  )
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
+/**
+ * 首页音乐卡：站内音频库曲目列表（简约版）。
+ * 示例曲目已删除——空库时给出上传引导，不再播放占位音频。
+ */
 export default function MusicPlayer() {
   const {
-    currentTrack,
-    playTrack, fetchBootstrapPlaylist, fetchPlaylistById,
+    currentPlaylist, currentTrack,
+    playTrack, fetchBootstrapPlaylist,
   } = useMusicStore(
     (state) => ({
       currentTrack: state.currentTrack,
       playTrack: state.playTrack,
       fetchBootstrapPlaylist: state.fetchBootstrapPlaylist,
-      fetchPlaylistById: state.fetchPlaylistById,
     })
   );
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
-  const [view, setView] = useState('tracks');
-  const [switching, setSwitching] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -157,14 +42,8 @@ export default function MusicPlayer() {
     fetchData();
   }, [fetchData, retryKey]);
 
-  const handleSelectPlaylist = async (pl) => {
-    setSwitching(true);
-    const result = await fetchPlaylistById(pl.id);
-    setSwitching(false);
-    if (result.success) {
-      setView('tracks');
-    }
-  };
+  const tracks = currentPlaylist?.tracks || [];
+  const isPlaying = useMusicStore((s) => s.isPlaying);
 
   return (
     <div className="glass music-card mouse-glow" style={{ padding: 0, overflow: 'hidden' }}>
@@ -180,14 +59,47 @@ export default function MusicPlayer() {
             重试
           </button>
         </div>
-      ) : view === 'playlists' ? (
-        <PlaylistSelector onSelect={handleSelectPlaylist} loading={switching} />
+      ) : tracks.length === 0 ? (
+        <div className="mp-empty">
+          <ListMusic size={26} style={{ margin: '0 auto', color: 'var(--text-tertiary)' }} />
+          <div className="mp-empty-text">音频库还没有歌曲</div>
+          <Link to="/music" className="mp-retry" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Upload size={13} /> 去上传
+          </Link>
+        </div>
       ) : (
-        <TrackList
-          onPlay={playTrack}
-          currentTrack={currentTrack}
-          onBack={() => setView('playlists')}
-        />
+        <div className="mp-panel">
+          <div className="mp-section-header">
+            <span className="mp-section-title">我的音乐</span>
+            <span className="mp-section-meta">{tracks.length} 首</span>
+          </div>
+          <div className="mp-scroll-list">
+            {tracks.map((track, idx) => {
+              const isActive = currentTrack?.id === track.id;
+              return (
+                <button
+                  key={track.id}
+                  onClick={() => playTrack(track)}
+                  className="track-row mp-row"
+                  aria-label={`播放 ${track.name}`}
+                >
+                  <span className="mp-track-index">{idx + 1}</span>
+                  <div className="mp-row-body">
+                    <div className={`mp-row-title ${isActive ? 'active' : ''}`}>{track.name}</div>
+                    <div className="mp-row-meta">
+                      {(track.artists || []).map((a) => a.name).join(' / ')}
+                    </div>
+                  </div>
+                  {isActive && isPlaying && (
+                    <span className="eq" aria-hidden="true">
+                      <span /><span /><span /><span /><span />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

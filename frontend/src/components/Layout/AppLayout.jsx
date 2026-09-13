@@ -15,12 +15,18 @@ const NAV_ITEMS = [
   { label: '首页', path: '/' },
   { label: '仪表盘', path: '/dashboard' },
   { label: '归档', path: '/archive' },
-  { label: '分类', path: '/category' },
   { label: '杂谈', path: '/talks' },
   { label: '项目', path: '/projects' },
   { label: '音乐', path: '/music' },
   { label: '关于', path: '/about' },
 ];
+
+// ===== 液态玻璃折射滤镜的位移贴图（径向渐变，中心黑 → 边缘纯色通道） =====
+// R 通道水平位移、G 通道垂直位移；经 feComposite 相加后得到径向对称的位移场，
+// feDisplacementMap 据此把 backdrop 里的网格线弯出透镜形变。
+// colorInterpolationFilters 必须是 sRGB（默认 linearRGB 会把贴图值整体压暗，位移失真）。
+const REFRACT_MAP_R = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='70%25'%3E%3Cstop offset='0' stop-color='%23000000'/%3E%3Cstop offset='1' stop-color='%23ff0000'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='300' height='300' fill='url(%23g)'/%3E%3C/svg%3E";
+const REFRACT_MAP_G = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='70%25'%3E%3Cstop offset='0' stop-color='%23000000'/%3E%3Cstop offset='1' stop-color='%2300ff00'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='300' height='300' fill='url(%23g)'/%3E%3C/svg%3E";
 
 // 独立的时间组件，避免每秒刷新导致整个布局重渲染
 const StatusTime = memo(function StatusTime() {
@@ -266,7 +272,7 @@ export default function AppLayout() {
   // 因为大幅倾斜会干扰长文阅读。
   useEffect(() => {
     const SEL = 'main .glass, main .glass-card, main .glass-elevated';
-    const EXCLUDE = '.search-center, .music-player-bar, .status-bar, .feature-menu-dropdown, .navbar, .tilt-card, .tilt-card *';
+    const EXCLUDE = '.search-center, .music-player-bar, .status-bar, .feature-menu-dropdown, .navbar, .tilt-card, .tilt-card *, .about-page, .about-page *';
     const DEFAULT_TILT_MAX = 7;
     const DEFAULT_TILT_SCALE = 1.012;
     const TILT_EASE = 'transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease';
@@ -477,6 +483,19 @@ export default function AppLayout() {
       {scrollProgress > 0 && (
         <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
       )}
+
+      {/* 玻璃折射滤镜定义：全站玻璃小件（按钮/胶囊/返回顶部/输入框）共用。
+          常驻挂载、0 尺寸不可见；CSS 里用 backdrop-filter: url(#kakuki-refract) 引用。 */}
+      <svg aria-hidden="true" focusable="false" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+        <defs>
+          <filter id="kakuki-refract" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            <feImage href={REFRACT_MAP_R} preserveAspectRatio="none" result="mr" />
+            <feImage href={REFRACT_MAP_G} preserveAspectRatio="none" result="mg" />
+            <feComposite in="mr" in2="mg" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="map" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale="64" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
 
       {/* 返回顶部 */}
       <button

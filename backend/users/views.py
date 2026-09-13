@@ -6,19 +6,18 @@ from .models import User
 
 
 class RegisterView(generics.CreateAPIView):
+    """本站不开放注册：仅站长账号可登录（与 Cloudflare 版契约一致，返回 403）。"""
+
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
         return Response({
-            'code': 201,
-            'message': '注册成功',
-            'data': UserProfileSerializer(user).data,
-        }, status=status.HTTP_201_CREATED)
+            'code': 403,
+            'message': '本站不开放注册',
+            'data': None,
+        }, status=status.HTTP_403_FORBIDDEN)
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

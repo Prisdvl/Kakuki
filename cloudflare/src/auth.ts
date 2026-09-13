@@ -7,7 +7,7 @@
  */
 import { Hono } from 'hono';
 import type { Env, JwtPayload } from './util';
-import { fail, hashPassword, nowIso, ok, ok201, signToken, verifyPassword, verifyToken } from './util';
+import { fail, hashPassword, ok, signToken, verifyPassword, verifyToken } from './util';
 
 export interface UserRow {
   id: number;
@@ -59,31 +59,8 @@ const tokenInvalid = () => fail(401, 'Token is invalid or expired', { code: 'tok
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
   .post('/auth/register/', async (c) => {
-    const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
-    const username = typeof body.username === 'string' ? body.username.trim() : '';
-    const password = typeof body.password === 'string' ? body.password : '';
-    const email = typeof body.email === 'string' ? body.email.trim() : '';
-    const nickname = typeof body.nickname === 'string' && body.nickname.trim() ? body.nickname.trim() : username;
-
-    const errors: Record<string, string[]> = {};
-    if (!username) errors.username = ['该字段是必填项。'];
-    else if (username.length > 150) errors.username = ['确保该字段包含的字符不超过 150 个。'];
-    if (!password) errors.password = ['该字段是必填项。'];
-    else if (password.length < 6) errors.password = ['密码长度至少 6 位。'];
-    if (Object.keys(errors).length) return fail(400, 'Invalid input.', errors);
-
-    if (await getUserByUsername(c.env.DB, username)) {
-      return fail(400, 'Invalid input.', { username: ['具有 username 的 用户 已存在。'] });
-    }
-
-    const hashed = await hashPassword(password);
-    const res = await c.env.DB.prepare(
-      'INSERT INTO users (username, password, email, nickname, is_staff, is_superuser, date_joined) VALUES (?1, ?2, ?3, ?4, 0, 0, ?5)',
-    )
-      .bind(username, hashed, email, nickname, nowIso())
-      .run();
-    const user = await getUserById(c.env.DB, res.meta.last_row_id as number);
-    return ok201(profileOf(user!), '注册成功');
+    // 本站不开放注册：仅站长账号（Prisdvl）可登录，账号由站长在 D1 中手工管理。
+    return fail(403, '本站不开放注册');
   })
 
   .post('/auth/login/', async (c) => {

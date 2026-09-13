@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Form, Input, Button, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { login } from "../../api/user";
@@ -46,7 +46,7 @@ export default function LoginPage() {
             </Button>
           </Form.Item>
           <div style={{ textAlign: "center", color: "var(--text-tertiary)", fontSize: "0.85rem" }}>
-            还没有账号？<Link to="/register" style={{ color: "var(--accent)", fontWeight: 500 }}>立即注册</Link>
+            本站不开放注册，仅站长账号可登录
           </div>
         </Form>
       </div>

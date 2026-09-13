@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route } from 'react-router-dom';
+﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme as antdTheme } from 'antd';
 import { useEffect, Suspense, lazy, useState } from 'react';
 import AppLayout from './components/Layout/AppLayout';
@@ -11,13 +11,11 @@ const HomePage = lazy(() => import('./pages/home/HomePage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const ArticleDetailPage = lazy(() => import('./pages/article/ArticleDetailPage'));
 const ArchivePage = lazy(() => import('./pages/archive/ArchivePage'));
-const CategoryPage = lazy(() => import('./pages/category/CategoryPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
 const MusicPage = lazy(() => import('./pages/music/MusicPage'));
 const TalksPage = lazy(() => import('./pages/talks/TalksPage'));
 const AboutPage = lazy(() => import('./pages/about/AboutPage'));
 const LoginPage = lazy(() => import('./pages/login/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/login/RegisterPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminLayout = lazy(() => import('./components/Layout/AdminLayout'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
@@ -213,14 +211,14 @@ export default function App() {
           <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="article/:id" element={<ArticleDetailPage />} />
                   <Route path="archive" element={<ArchivePage />} />
-                  <Route path="category" element={<CategoryPage />} />
-                  <Route path="category/:id" element={<CategoryPage />} />
+                  {/* 分类已整合进归档页（搜索 + 分类同页），旧路由重定向 */}
+                  <Route path="category" element={<Navigate to="/archive" replace />} />
+                  <Route path="category/:id" element={<Navigate to="/archive" replace />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="music" element={<MusicPage />} />
                   <Route path="talks" element={<TalksPage />} />
                   <Route path="about" element={<AboutPage />} />
                   <Route path="login" element={<LoginPage />} />
-                  <Route path="register" element={<RegisterPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
                 <Route path="/admin" element={<AdminLayout />}>

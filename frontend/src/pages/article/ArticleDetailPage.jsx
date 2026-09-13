@@ -144,7 +144,7 @@ export default function ArticleDetailPage() {
   useEffect(() => {
     if (article?.title) {
       document.title = `${article.title} - Kakuki`;
-      return () => { document.title = "Kakuki - 个人博客"; };
+      return () => { document.title = "Kakuki"; };
     }
   }, [article?.title]);
 

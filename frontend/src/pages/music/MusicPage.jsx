@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, Music, Disc3, ListMusic, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Music, Disc3, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2 } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
 import useUserStore from '../../store/userStore';
 import mediaApi from '../../api/media';
@@ -160,48 +160,28 @@ function UploadPanel({ onDone, onClose }) {
 }
 
 export default function MusicPage() {
-  const {
-    currentPlaylist, currentTrack, isPlaying, playlistList,
-    currentTime, duration, currentLyrics, currentLyricIndex,
-    volume, muted, sourceKind,
-    fetchBootstrapPlaylist, fetchPlaylistById, fetchPlaylists,
-    refreshUploads,
-    playTrack, togglePlay, nextTrack, prevTrack, seekTo,
-    setVolume, toggleMute,
-  } = useMusicStore(
-    (state) => ({
-      currentPlaylist: state.currentPlaylist,
-      currentTrack: state.currentTrack,
-      isPlaying: state.isPlaying,
-      playlistList: state.playlistList,
-      currentTime: state.currentTime,
-      duration: state.duration,
-      currentLyrics: state.currentLyrics,
-      currentLyricIndex: state.currentLyricIndex,
-      volume: state.volume,
-      muted: state.muted,
-      sourceKind: state.sourceKind,
-      fetchBootstrapPlaylist: state.fetchBootstrapPlaylist,
-      fetchPlaylistById: state.fetchPlaylistById,
-      fetchPlaylists: state.fetchPlaylists,
-      refreshUploads: state.refreshUploads,
-      playTrack: state.playTrack,
-      togglePlay: state.togglePlay,
-      nextTrack: state.nextTrack,
-      prevTrack: state.prevTrack,
-      seekTo: state.seekTo,
-      setVolume: state.setVolume,
-      toggleMute: state.toggleMute,
-    })
-  );
+  const currentPlaylist = useMusicStore((s) => s.currentPlaylist);
+  const currentTrack = useMusicStore((s) => s.currentTrack);
+  const isPlaying = useMusicStore((s) => s.isPlaying);
+  const currentTime = useMusicStore((s) => s.currentTime);
+  const duration = useMusicStore((s) => s.duration);
+  const volume = useMusicStore((s) => s.volume);
+  const muted = useMusicStore((s) => s.muted);
+  const fetchBootstrapPlaylist = useMusicStore((s) => s.fetchBootstrapPlaylist);
+  const refreshUploads = useMusicStore((s) => s.refreshUploads);
+  const playTrack = useMusicStore((s) => s.playTrack);
+  const togglePlay = useMusicStore((s) => s.togglePlay);
+  const nextTrack = useMusicStore((s) => s.nextTrack);
+  const prevTrack = useMusicStore((s) => s.prevTrack);
+  const seekTo = useMusicStore((s) => s.seekTo);
+  const setVolume = useMusicStore((s) => s.setVolume);
+  const toggleMute = useMusicStore((s) => s.toggleMute);
 
   const isLoggedIn = useUserStore((s) => s.isLoggedIn);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showPlaylists, setShowPlaylists] = useState(false);
-  const [switching, setSwitching] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [notice, setNotice] = useState('');
 
@@ -223,20 +203,17 @@ export default function MusicPage() {
     let mounted = true;
     const init = async () => {
       const state = useMusicStore.getState();
-      if (state.currentPlaylist?.tracks?.length && state.currentTrack) {
-        // 已有歌单与曲目，说明是页面切换返回，避免 fetchBootstrapPlaylist 重置 audio.src 导致音乐停止
+      if (state.currentPlaylist) {
+        // 已有歌单，说明是页面切换返回，避免 fetchBootstrapPlaylist 重置 audio.src 导致音乐停止
         if (mounted) setLoading(false);
         return;
       }
       setLoading(true);
       setError(null);
       try {
-        const [playlistRes] = await Promise.all([
-          fetchBootstrapPlaylist(),
-          fetchPlaylists(),
-        ]);
-        if (mounted && !playlistRes.success) {
-          setError(playlistRes.error || '加载失败');
+        const result = await fetchBootstrapPlaylist();
+        if (mounted && !result.success) {
+          setError(result.error || '加载失败');
         }
       } catch (err) {
         if (mounted) setError(err?.message || '加载失败');
@@ -246,18 +223,9 @@ export default function MusicPage() {
     };
     init();
     return () => { mounted = false; };
-    // 依赖项留空：初始化逻辑只在组件挂载时执行一次；currentTrack/currentPlaylist 变化不应触发重新 fetch。
+    // 初始化只在挂载时执行一次；currentTrack/currentPlaylist 变化不应触发重新 fetch。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleSelectPlaylist = async (pl) => {
-    setSwitching(true);
-    const result = await fetchPlaylistById(pl.id);
-    setSwitching(false);
-    if (result.success) {
-      setShowPlaylists(false);
-    }
-  };
 
   const formatTime = (s) => {
     if (!s || isNaN(s)) return '0:00';
@@ -266,30 +234,37 @@ export default function MusicPage() {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
+  // ===== 进度条：点击 + 按住拖动（pointer capture）=====
   const progressRef = useRef(null);
-  const handleProgressClick = useCallback((e) => {
-    if (!duration || !progressRef.current) return;
+  const [dragPct, setDragPct] = useState(null);   // 拖动中的本地预览百分比
+
+  const pctFromEvent = useCallback((clientX) => {
+    if (!progressRef.current) return 0;
     const rect = progressRef.current.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    seekTo(pct * duration);
-  }, [duration, seekTo]);
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  }, []);
 
-  const lyricsContainerRef = useRef(null);
-  useEffect(() => {
-    if (lyricsContainerRef.current && currentLyricIndex >= 0) {
-      const active = lyricsContainerRef.current.querySelector('.lyric-line.active');
-      if (active) {
-        const container = lyricsContainerRef.current;
-        const offset = active.offsetTop - container.offsetTop - container.clientHeight / 2 + active.clientHeight / 2;
-        container.scrollTo({ top: offset, behavior: 'smooth' });
-      }
-    }
-  }, [currentLyricIndex]);
+  const handlePointerDown = useCallback((e) => {
+    if (!duration) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setDragPct(pctFromEvent(e.clientX));
+  }, [duration, pctFromEvent]);
 
-  const currentLyricText = currentLyricIndex >= 0 && currentLyrics[currentLyricIndex]
-    ? currentLyrics[currentLyricIndex].text
-    : '';
-  const displayPct = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const handlePointerMove = useCallback((e) => {
+    if (dragPct === null) return;
+    setDragPct(pctFromEvent(e.clientX));
+  }, [dragPct, pctFromEvent]);
+
+  const handlePointerUp = useCallback((e) => {
+    if (dragPct === null) return;
+    const pct = pctFromEvent(e.clientX);
+    setDragPct(null);
+    if (duration) seekTo(pct * duration);
+  }, [dragPct, duration, seekTo, pctFromEvent]);
+
+  const displayPct = dragPct !== null
+    ? dragPct * 100
+    : duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="music-page">
@@ -297,13 +272,7 @@ export default function MusicPage() {
         <div style={{ minWidth: 0 }}>
           <h1 className="music-page-title">音乐</h1>
           <p className="music-page-subtitle">
-            {loading
-              ? '正在加载...'
-              : tracks.length === 0
-                ? ''
-                : sourceKind === 'uploads'
-                  ? `共 ${tracks.length} 首 · 站内音频库`
-                  : `共 ${tracks.length} 首 · 示例音源，上传自己的音乐后自动替换`}
+            {loading ? '正在加载...' : tracks.length > 0 ? `共 ${tracks.length} 首 · 站内音频库` : ''}
           </p>
         </div>
         <button
@@ -347,59 +316,23 @@ export default function MusicPage() {
         </div>
       )}
 
-      {showPlaylists && !loading && (
-        <div className="glass music-playlist-panel">
-          <div className="music-panel-header">
-            <button onClick={() => setShowPlaylists(false)} className="icon-btn" aria-label="返回">
-              ←
-            </button>
-            <span className="music-panel-title">选择歌单</span>
-            <span className="music-panel-meta">{playlistList.length} 个</span>
-          </div>
-          {switching ? (
-            <div className="music-switching">
-              <Loader2 size={20} className="spin" style={{ margin: '0 auto', color: 'var(--accent)' }} />
-              <div>加载中...</div>
-            </div>
-          ) : (
-            <div className="music-playlist-list">
-              {playlistList.map((pl) => {
-                const isActive = currentPlaylist?.id === pl.id;
-                return (
-                  <button
-                    key={pl.id}
-                    onClick={() => handleSelectPlaylist(pl)}
-                    className="track-row music-playlist-row"
-                    aria-label={`选择歌单 ${pl.name}`}
-                  >
-                    {pl.coverImgUrl ? (
-                      <img src={pl.coverImgUrl} alt={pl.name} className="mp-cover-sm" loading="lazy" decoding="async" />
-                    ) : (
-                      <div className="mp-cover-sm mp-cover-placeholder">
-                        <ListMusic size={18} />
-                      </div>
-                    )}
-                    <div className="mp-row-body">
-                      <div className={`mp-row-title ${isActive ? 'active' : ''}`}>{pl.name}</div>
-                      <div className="mp-row-meta">{pl.trackCount} 首</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+      {!loading && !error && tracks.length === 0 && (
+        <div className="glass music-empty-library">
+          <Music size={28} style={{ color: 'var(--text-tertiary)' }} />
+          <p>音频库还没有歌曲</p>
+          <button
+            className="glass-button-solid"
+            onClick={() => { if (!isLoggedIn) { navigate('/login'); return; } setShowUpload(true); }}
+          >
+            <Upload size={14} /> {isLoggedIn ? '上传第一首歌' : '登录后上传'}
+          </button>
         </div>
       )}
 
-      {tracks.length > 0 && !loading && !showPlaylists && (
+      {tracks.length > 0 && !loading && (
         <>
           <div className="music-panel-header">
-            <button onClick={() => setShowPlaylists(true)} className="icon-btn" aria-label="切换歌单">
-              <ListMusic size={18} />
-            </button>
-            <span className="music-panel-title">
-              {currentPlaylist?.name || 'Prisdvl 的喜欢音乐'}
-            </span>
+            <span className="music-panel-title">我的音乐</span>
             <span className="music-panel-meta">{tracks.length} 首</span>
           </div>
 
@@ -454,112 +387,100 @@ export default function MusicPage() {
               );
             })}
           </div>
-        </>
-      )}
 
-      {currentTrack && (
-        <div className="glass music-player-bar">
-          <div className="music-player-inner">
-            {/* Left: Cover + Title */}
-            <div className="music-player-info">
-              {currentTrack.cover ? (
-                <img
-                  src={currentTrack.cover}
-                  alt={currentTrack.name}
-                  decoding="async"
-                  fetchpriority="high"
-                  className={`music-player-cover ${isPlaying ? 'music-cover-spin' : ''}`}
-                />
-              ) : (
-                <div className="music-player-cover mp-cover-placeholder">
-                  <Disc3 size={22} />
-                </div>
-              )}
-              <div className="music-player-meta">
-                <div className="music-player-name">{currentTrack.name}</div>
-                <div className="music-player-artist">
-                  {(currentTrack.artists || []).map((a) => a.name).join(' / ')}
-                </div>
-              </div>
-            </div>
-
-            {/* Center: Lyrics + Progress */}
-            <div className="music-player-center">
-              <div ref={lyricsContainerRef} className="lyrics-panel music-lyrics">
-                {currentLyrics.length === 0 ? (
-                  <div className="music-lyrics-empty">{currentLyricText || '暂无歌词'}</div>
-                ) : (
-                  currentLyrics.map((lyric, idx) => (
-                    <div
-                      key={idx}
-                      className={`lyric-line ${idx === currentLyricIndex ? 'active' : ''}`}
-                    >
-                      {lyric.text}
+          {/* 播放控制条：嵌在列表下方，与列表同宽对齐（不再悬浮全屏） */}
+          {currentTrack && (
+            <div className="glass music-player-bar">
+              <div className="music-player-inner">
+                {/* Left: Cover + Title */}
+                <div className="music-player-info">
+                  {currentTrack.cover ? (
+                    <img
+                      src={currentTrack.cover}
+                      alt={currentTrack.name}
+                      decoding="async"
+                      className={`music-player-cover ${isPlaying ? 'music-cover-spin' : ''}`}
+                    />
+                  ) : (
+                    <div className="music-player-cover mp-cover-placeholder">
+                      <Disc3 size={22} />
                     </div>
-                  ))
-                )}
-              </div>
-
-              <div
-                ref={progressRef}
-                className="progress-bar music-progress"
-                onClick={handleProgressClick}
-                role="slider"
-                aria-label="播放进度"
-                aria-valuemin={0}
-                aria-valuemax={Math.round(duration || 0)}
-                aria-valuenow={Math.round(currentTime || 0)}
-              >
-                <span className="music-time">{formatTime(currentTime)}</span>
-                <div className="music-progress-track">
-                  <div className="music-progress-fill" style={{ width: `${displayPct}%` }} />
+                  )}
+                  <div className="music-player-meta">
+                    <div className="music-player-name">{currentTrack.name}</div>
+                    <div className="music-player-artist">
+                      {(currentTrack.artists || []).map((a) => a.name).join(' / ')}
+                    </div>
+                  </div>
                 </div>
-                <span className="music-time">{formatTime(duration)}</span>
-              </div>
-            </div>
 
-            {/* Right: Controls */}
-            <div className="music-player-controls">
-              <button onClick={prevTrack} className="music-ctrl-btn" aria-label="上一首">
-                <SkipBack size={18} />
-              </button>
-              <button onClick={togglePlay} className="play-pulse music-play-btn" aria-label={isPlaying ? '暂停' : '播放'}>
-                {isPlaying ? (
-                  <Pause size={18} />
-                ) : (
-                  <Play size={18} style={{ marginLeft: 2 }} fill="currentColor" />
-                )}
-              </button>
-              <button onClick={nextTrack} className="music-ctrl-btn" aria-label="下一首">
-                <SkipForward size={18} />
-              </button>
-              <div className="music-volume">
-                <button
-                  onClick={toggleMute}
-                  className="music-ctrl-btn"
-                  aria-label={muted ? '取消静音' : '静音'}
-                  title={muted ? '取消静音' : '静音'}
-                >
-                  {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  className="volume-slider"
-                  style={{ '--pct': `${(muted ? 0 : volume) * 100}%` }}
-                  aria-label="音量"
-                  aria-valuemin={0}
-                  aria-valuemax={1}
-                  aria-valuenow={Number(volume.toFixed(2))}
-                />
+                {/* Center: Progress（可点击 + 可拖动） */}
+                <div className="music-player-center">
+                  <div
+                    ref={progressRef}
+                    className="progress-bar music-progress"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    role="slider"
+                    aria-label="播放进度"
+                    aria-valuemin={0}
+                    aria-valuemax={Math.round(duration || 0)}
+                    aria-valuenow={Math.round(currentTime || 0)}
+                  >
+                    <span className="music-time">{formatTime(currentTime)}</span>
+                    <div className="music-progress-track">
+                      <div className="music-progress-fill" style={{ width: `${displayPct}%` }} />
+                    </div>
+                    <span className="music-time">{formatTime(duration)}</span>
+                  </div>
+                </div>
+
+                {/* Right: Controls */}
+                <div className="music-player-controls">
+                  <button onClick={prevTrack} className="music-ctrl-btn" aria-label="上一首">
+                    <SkipBack size={18} />
+                  </button>
+                  <button onClick={togglePlay} className="play-pulse music-play-btn" aria-label={isPlaying ? '暂停' : '播放'}>
+                    {isPlaying ? (
+                      <Pause size={18} />
+                    ) : (
+                      <Play size={18} style={{ marginLeft: 2 }} fill="currentColor" />
+                    )}
+                  </button>
+                  <button onClick={nextTrack} className="music-ctrl-btn" aria-label="下一首">
+                    <SkipForward size={18} />
+                  </button>
+                  <div className="music-volume">
+                    <button
+                      onClick={toggleMute}
+                      className="music-ctrl-btn"
+                      aria-label={muted ? '取消静音' : '静音'}
+                      title={muted ? '取消静音' : '静音'}
+                    >
+                      {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={volume}
+                      onChange={(e) => setVolume(parseFloat(e.target.value))}
+                      className="volume-slider"
+                      style={{ '--pct': `${(muted ? 0 : volume) * 100}%` }}
+                      aria-label="音量"
+                      aria-valuemin={0}
+                      aria-valuemax={1}
+                      aria-valuenow={Number(volume.toFixed(2))}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );

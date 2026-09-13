@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Mail, Code2,
+  Search, Code2,
   MessageSquare, BookOpen, Sparkles,
   Calendar, ExternalLink, Music,
   BarChart3, Flame, TrendingUp,
@@ -114,9 +114,8 @@ export function ProfileCard({ stats }) {
         </div>
         <div className="profile-social">
           <a href="https://github.com/Prisdvl" target="_blank" rel="noopener noreferrer" title="GitHub"><Code2 size={16} /></a>
-          <a href="mailto:kakuki@example.com" title="Email"><Mail size={16} /></a>
           <a href="/archive" title="文章"><BookOpen size={16} /></a>
-          <a href="/category" title="分类"><FolderTree size={16} /></a>
+          <a href="/music" title="音乐"><Music size={16} /></a>
           <a href="/about" title="关于"><Sparkles size={16} /></a>
         </div>
       </div>
@@ -126,14 +125,12 @@ export function ProfileCard({ stats }) {
 
 export function PlayerBar() {
   const {
-    currentTrack, currentLyrics, currentLyricIndex,
+    currentTrack,
     isPlaying, togglePlay, nextTrack, prevTrack,
     currentTime, duration, seekTo, audioError,
   } = useMusicStore(
     (state) => ({
       currentTrack: state.currentTrack,
-      currentLyrics: state.currentLyrics,
-      currentLyricIndex: state.currentLyricIndex,
       isPlaying: state.isPlaying,
       togglePlay: state.togglePlay,
       nextTrack: state.nextTrack,
@@ -177,9 +174,6 @@ export function PlayerBar() {
     lyricText = audioError;
     lyricKey = 'err-' + audioError;
     lyricColor = 'var(--warning)';
-  } else if (currentTrack && currentLyrics.length > 0 && currentLyricIndex >= 0) {
-    lyricText = currentLyrics[currentLyricIndex]?.text || currentTrack.name;
-    lyricKey = 'lyric-' + currentLyricIndex;
   } else if (currentTrack) {
     lyricText = currentTrack.name;
     lyricKey = 'track-' + currentTrack.id;

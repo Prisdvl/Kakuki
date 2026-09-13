@@ -4683,7 +4683,7 @@ a, button, .article-card, .contact-card, .social-links a,
   padding-top: 2rem;
   max-width: 900px;
   margin: 0 auto;
-  padding-bottom: 13rem;
+  padding-bottom: 6rem;
 }
 
 .music-page-title {
@@ -5011,21 +5011,15 @@ a, button, .article-card, .contact-card, .social-links a,
 }
 
 .music-player-bar {
-  position: fixed;
-  /* 跟随状态栏实测高度（AppLayout 写入 --status-bar-h）。
-     写死 3.6rem 时，390px 视口下状态栏换行到 83px，播放条会压住它 25px。 */
-  bottom: var(--status-bar-h, 3.6rem);
-  left: 0;
-  right: 0;
-  z-index: 200;
-  padding: 0.6rem 1.25rem;
-  border-top: 1px solid var(--border);
-  backdrop-filter: blur(var(--blur-float));
+  /* 播放控制条嵌在音乐列表下方，与列表同宽对齐（不再 fixed 悬浮全屏） */
+  position: static;
+  margin-top: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
 }
 
 .music-player-inner {
-  max-width: 900px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -5129,6 +5123,12 @@ a, button, .article-card, .contact-card, .social-links a,
   color: var(--text-tertiary);
   user-select: none;
   cursor: pointer;
+  /* 按住拖动进度：阻止触摸滚动劫持 pointer 事件 */
+  touch-action: none;
+}
+
+.music-progress:active .music-progress-track {
+  height: 7px;
 }
 
 .music-progress-track {
@@ -5231,8 +5231,21 @@ a, button, .article-card, .contact-card, .social-links a,
   .music-player-controls { gap: 0.15rem; }
   .music-ctrl-btn { width: 32px; height: 32px; }
   .music-play-btn { width: 44px; height: 44px; }
-  /* 中间区只剩约 100px，歌词挤进去不可读，只留进度条 */
-  .music-player-bar .music-lyrics { display: none; }
+  .music-player-bar { margin-top: 0.75rem; }
+}
+
+/* ===== 音乐页空态 ===== */
+.music-empty-library {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.music-empty-library p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 /* ===== LeetCode Heatmap Performance ===== */
@@ -6566,3 +6579,39 @@ a, button, .article-card, .contact-card, .social-links a,
 
 
 
+
+/* ===== 关于页：去炫光 ===== */
+/* 老大要求关于页组件去掉炫光：关掉 .glass 的镜面高光/棱镜光带两层，
+   并停用全局倾斜委托（AboutPage 根节点挂 about-page）。 */
+.about-page .glass::before,
+.about-page .glass::after {
+  display: none !important;
+}
+.about-page .glass {
+  --tilt-max: 0;
+  --tilt-scale: 1;
+}
+
+/* ===== 液态玻璃折射：背景网格透过玻璃小件发生透镜形变 ===== */
+/* 滤镜定义在 AppLayout（#kakuki-refract）。只给悬浮小件与输入框用；
+   大卡片是 0.82 近实底卡面，折射没有可见意义。 */
+.glass-button,
+.btn-glass,
+.glass-pill,
+.glass-floating,
+.theme-toggle,
+.back-to-top,
+.ant-input,
+.ant-input-affix-wrapper {
+  /* 不能加 blur：1px 网格线会被直接糊没，折射就不可见了。只位移 + 提饱和。 */
+  -webkit-backdrop-filter: url(#kakuki-refract) saturate(1.45);
+  backdrop-filter: url(#kakuki-refract) saturate(1.45);
+}
+
+/* 输入框：浅色用 0.4 轻玻璃让网格折射可见（对比度实测达标），
+   深色由上方 .dark 作用域规则抬到 0.72 强玻璃 */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-password .ant-input {
+  background: var(--glass-bg) !important;
+}

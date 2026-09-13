@@ -1,12 +1,7 @@
 import { create } from 'zustand';
 import request, { extractList } from '../api/request';
-import { STATIC_MUSIC } from '../data/musicStatic';
-import { FALLBACK_PLAYLIST } from '../data/musicFallback';
 
-// 同源音频流地址：经后端代理转发网易云 MP3，媒体 CORS-clean，频谱分析可正常输出
-const streamUrl = (songId) => `/api/v1/netease/song/${songId}/stream/`;
-
-/** 站内音频库（用户上传）的歌单标识 */
+/** 站内音频库（用户上传）歌单 */
 export const UPLOAD_PLAYLIST_ID = 'kakuki-uploads';
 export const UPLOAD_PLAYLIST_NAME = '我的音乐';
 
@@ -23,9 +18,9 @@ export const toUploadTrack = (t) => ({
 });
 
 /**
- * 拉取站内音频库。
- * 这是当前唯一稳定可播的音源：网易云外链已失效，
- * 而自建音源同源，既能播也能输出频谱。
+ * 拉取站内音频库（KV）。
+ * 这是站点唯一的音源：示例曲目已按需求删除，网易云外链早已失效。
+ * 上传的歌同源存储、同源播放，频谱可用。
  */
 async function fetchUploadTracks() {
   try {
@@ -36,64 +31,7 @@ async function fetchUploadTracks() {
   }
 }
 
-/** 降级到示例曲目歌单（保留原歌单在 playlists 中不丢） */
-const applyFallbackPlaylist = (set, get, extra = {}) => {
-  const playlist = { ...FALLBACK_PLAYLIST, tracks: FALLBACK_PLAYLIST.tracks.map((t) => ({ ...t })) };
-  // 同时把首曲写入 currentTrack：否则播放条只显示"未在播放"，
-  // 用户点了播放看到进度在走却没有曲目信息。
-  const first = playlist.tracks[0] || null;
-  set({
-    ...extra,
-    currentPlaylist: playlist,
-    currentTrack: first,
-    currentLyrics: [],
-    currentLyricIndex: -1,
-    isPlaying: false,
-    currentTime: 0,
-    duration: 0,
-    sourceKind: 'fallback',
-    audioError: '',
-    badTracks: [],
-  });
-  const audio = getAudio();
-  if (audio && first) audio.src = first.url;
-  return { success: true, playlist, fallback: true };
-};
-
-// 线上静态部署（无后端）时使用的真实歌单静态快照（来自本地后端接口，构建时生成）
-const STATIC_LIST = [{ id: STATIC_MUSIC.id, name: STATIC_MUSIC.name, coverImgUrl: STATIC_MUSIC.coverImgUrl, trackCount: STATIC_MUSIC.trackCount }];
-
-const applyStaticPlaylist = (set, get) => {
-  const playlist = {
-    ...STATIC_MUSIC,
-    tracks: STATIC_MUSIC.tracks.map((t) => ({ ...t })),
-  };
-  // 首曲一并写入 currentTrack，保证播放条有曲目信息（否则只显示"未在播放"）
-  const first = playlist.tracks[0] || null;
-  set({
-    user: { nickname: 'Prisdvl', avatarUrl: STATIC_MUSIC.coverImgUrl || '' },
-    playlists: [playlist],
-    playlistList: STATIC_LIST,
-    currentPlaylist: playlist,
-    currentTrack: first,
-    currentLyrics: [],
-    currentLyricIndex: -1,
-    isPlaying: false,
-    currentTime: 0,
-    duration: 0,
-  });
-  if (playlist.tracks.length > 0) {
-    const audio = getAudio();
-    if (audio) audio.src = playlist.tracks[0].url;
-  }
-  return { success: true, playlist, demo: true };
-};
-
-/**
- * 把站内音频库装载为当前歌单。
- * 与网易云歌单/示例曲目的区别：这里的曲目一定可播（同源、无防盗链），
- * 所以不做 hasPlayableTrack 探测，直接作为主音源。
- */
+/** 把上传库装载为当前歌单；空库时清空播放状态（不再回退到示例曲目） */
 const applyUploadPlaylist = (set, get, tracks) => {
   const playlist = {
     id: UPLOAD_PLAYLIST_ID,
@@ -106,14 +44,6 @@ const applyUploadPlaylist = (set, get, tracks) => {
   const isSamePlaylist = prevTrack && get().currentPlaylist?.id === UPLOAD_PLAYLIST_ID;
 
   set({
-    user: { nickname: 'Prisdvl', avatarUrl: '' },
-    playlists: [playlist],
-    playlistList: [{
-      id: playlist.id,
-      name: playlist.name,
-      coverImgUrl: playlist.coverImgUrl,
-      trackCount: playlist.trackCount,
-    }],
     currentPlaylist: playlist,
     sourceKind: 'uploads',
     audioError: '',
@@ -124,14 +54,18 @@ const applyUploadPlaylist = (set, get, tracks) => {
     const first = tracks[0] || null;
     set({
       currentTrack: first,
-      currentLyrics: [],
-      currentLyricIndex: -1,
       isPlaying: false,
       currentTime: 0,
       duration: 0,
     });
     const audio = getAudio();
-    if (audio && first) audio.src = first.url;
+    if (audio) {
+      if (first) audio.src = first.url;
+      else {
+        audio.pause();
+        audio.removeAttribute('src');
+      }
+    }
   }
 
   return { success: true, playlist, tracks };
@@ -208,7 +142,7 @@ const getAudio = () => {
   if (!audioInstance) {
     audioInstance = new Audio();
     audioInstance.preload = 'metadata';
-    // 音频统一走同源 /api 流代理，无需 crossOrigin，媒体 CORS-clean，
+    // 音频统一走同源 /api 流接口，无需 crossOrigin，媒体 CORS-clean，
     // createMediaElementSource 可正常输出频谱数据。
     // 首次创建时从 store 同步持久化的音量与静音状态
     try {
@@ -237,17 +171,7 @@ function bindAudioListeners(audio) {
   audioListenersBound = true;
 
   const onTimeUpdate = () => {
-    const time = audio.currentTime || 0;
-    const state = useMusicStore.getState();
-    let newIdx = -1;
-    const lyrics = state.currentLyrics;
-    for (let i = 0; i < lyrics.length; i++) {
-      if (time >= lyrics[i].time) newIdx = i;
-      else break;
-    }
-    const next = { currentTime: time };
-    if (newIdx !== state.currentLyricIndex) next.currentLyricIndex = newIdx;
-    useMusicStore.setState(next);
+    useMusicStore.setState({ currentTime: audio.currentTime || 0 });
   };
 
   const onLoadedMetadata = () => {
@@ -295,34 +219,9 @@ function bindAudioListeners(audio) {
   audio.addEventListener('playing', onPlaying);
 }
 
-const parseLyric = (lrcData) => {
-  if (!lrcData || !lrcData.lyric) return [];
-  const lines = lrcData.lyric.split('\n');
-  const result = [];
-  lines.forEach((line) => {
-    const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
-    if (match) {
-      const minutes = parseInt(match[1], 10);
-      const seconds = parseInt(match[2], 10);
-      const ms = parseInt(match[3], 10);
-      const time = minutes * 60 + seconds + ms / 1000;
-      const text = match[4].trim();
-      if (text) {
-        result.push({ time, text });
-      }
-    }
-  });
-  return result;
-};
-
 const useMusicStore = create((set, get) => ({
-  user: null,
-  playlists: [],
-  playlistList: [],
   currentPlaylist: null,
   currentTrack: null,
-  currentLyrics: [],
-  currentLyricIndex: -1,
   isPlaying: false,
   currentTime: 0,
   duration: 0,
@@ -330,8 +229,8 @@ const useMusicStore = create((set, get) => ({
   audioError: '',
   /** 已确认不可播放的曲目 id 集合，用于自动跳过 */
   badTracks: [],
-  /** 当前音源类型：netease = 原歌单；fallback = 原歌单外链失效后的示例曲目 */
-  sourceKind: 'netease',
+  /** 当前音源类型：uploads = 站内音频库 */
+  sourceKind: 'uploads',
   volume: (() => {
     try {
       const v = localStorage.getItem('kakuki_volume');
@@ -344,106 +243,25 @@ const useMusicStore = create((set, get) => ({
   })(),
   muted: false,
 
-  fetchPlaylists: async () => {
-    try {
-      const res = await request.get('/netease/playlists/', { timeout: 15000 });
-      const list = res?.playlists || [];
-      set({ playlistList: list });
-      return { success: true, playlists: list };
-    } catch (err) {
-      console.error('Fetch playlists error, use static:', err);
-      set({ playlistList: STATIC_LIST });
-      return { success: true, playlists: STATIC_LIST, demo: true };
-    }
-  },
-
-  fetchPlaylistById: async (playlistId) => {
-    try {
-      const res = await request.get('/netease/bootstrap/', {
-        params: { playlist_id: playlistId },
-        timeout: 30000,
-      });
-      if (res && res.playlist && res.playlist.tracks) {
-        const allTracks = res.playlist.tracks || [];
-
-        const tracks = allTracks.map((t) => ({
-          id: t.id,
-          name: t.name,
-          artists: (t.ar || []).map((a) => ({ name: a.name })),
-          album: (t.al || {}).name || '',
-          cover: (t.al || {}).picUrl || '',
-          url: streamUrl(t.id),
-          duration: t.duration || 0,
-        }));
-
-        const playlist = {
-          id: res.playlist.id,
-          name: res.playlist.name,
-          coverImgUrl: res.playlist.coverImgUrl || '',
-          trackCount: tracks.length,
-          tracks,
-        };
-
-        set({ currentPlaylist: playlist, currentTrack: null, currentLyrics: [], currentLyricIndex: -1 });
-
-        if (tracks.length > 0) {
-          get().playTrack(tracks[0]);
-        }
-
-        return { success: true, playlist };
-      }
-      return { success: false, error: '未找到歌单数据' };
-    } catch (err) {
-      console.error('Fetch playlist error, use static:', err);
-      return applyStaticPlaylist(set, get);
-    }
-  },
-
+  /** 初始化：装载站内音频库。示例曲目已删除，空库就是空态，不再降级。 */
   fetchBootstrapPlaylist: async () => {
-    // 1) 站内音频库优先：只要上传过歌，就以它作为主歌单（真实可播）
-    const uploads = await fetchUploadTracks();
-    if (uploads.length > 0) {
-      return applyUploadPlaylist(set, get, uploads);
-    }
-
-    // 2) 音频库为空 → 直接落到示例音源。
-    //
-    //    刻意不再请求 /netease/bootstrap/ 并逐首探测可播性：
-    //      · 该外链接口已确证失效（上游返回 HTML 而非音频，见 proxy.ts 的显式 404）；
-    //      · 探测是串行的，2 首最坏要等 2×12s，是首屏长期停在「正在加载」的根因。
-    //    原歌单仍保留在「切换歌单」列表中，需要时可用 fetchPlaylistById 主动加载。
-    return applyFallbackPlaylist(set, get, { playlistList: STATIC_LIST });
+    const tracks = await fetchUploadTracks();
+    return applyUploadPlaylist(set, get, tracks);
   },
 
   /** 重新拉取站内音频库（上传/删除后调用），并把它切换为当前歌单 */
   refreshUploads: async () => {
     const tracks = await fetchUploadTracks();
-    if (tracks.length === 0) {
-      // 库清空：退回原有降级链路
-      const result = await get().fetchBootstrapPlaylist();
-      return { success: true, tracks: [], ...result };
-    }
     const result = applyUploadPlaylist(set, get, tracks);
     return { success: true, tracks, ...result };
   },
 
   playTrack: async (track) => {
     try {
-      // 网易云曲目经 fetch 已带同源流地址；静态/演示曲目自带完整地址则直接使用，
-      // 兜底再用同源流代理。
-      const url = track.url || streamUrl(track.id);
-
-      // 后台非阻塞加载歌词
-      request.get(`/netease/song/${track.id}/lyric/`).then((lyricsRes) => {
-        const lyrics = parseLyric(lyricsRes?.lrc);
-        set({ currentLyrics: lyrics, currentLyricIndex: -1 });
-      }).catch(() => {
-        set({ currentLyrics: [], currentLyricIndex: -1 });
-      });
+      const url = track.url || `/api/v1/media/stream/${track.id}/`;
 
       set({
         currentTrack: { ...track, url },
-        currentLyricIndex: -1,
         audioError: '',
       });
 
@@ -542,17 +360,7 @@ const useMusicStore = create((set, get) => ({
     if (!audio || !isFinite(time)) return;
     const clamped = Math.max(0, Math.min(time, audio.duration || time));
     audio.currentTime = clamped;
-    // 立即同步一次状态与歌词索引，避免等待 timeupdate
-    const state = get();
-    let newIdx = -1;
-    const lyrics = state.currentLyrics;
-    for (let i = 0; i < lyrics.length; i++) {
-      if (clamped >= lyrics[i].time) newIdx = i;
-      else break;
-    }
-    const next = { currentTime: clamped };
-    if (newIdx !== state.currentLyricIndex) next.currentLyricIndex = newIdx;
-    set(next);
+    set({ currentTime: clamped });
   },
 
   setVolume: (v) => {

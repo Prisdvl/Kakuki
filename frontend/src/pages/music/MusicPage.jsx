@@ -4,12 +4,12 @@ import { Play, Pause, SkipBack, SkipForward, Music, Disc3, Loader2, Volume2, Vol
 import useMusicStore from '../../store/musicStore';
 import useUserStore from '../../store/userStore';
 import mediaApi from '../../api/media';
-import SpectrumVisualizer from '../../components/SpectrumVisualizer';
+import CoverParticles from '../../components/CoverParticles';
 
 const ACCEPT = '.mp3,.m4a,.aac,.wav,.ogg,.flac,audio/*';
-const MAX_MB = 20;
+const MAX_MB = 60;
 
-/** 上传面板：把本地音频收进站内音频库（Cloudflare KV），播放走同源流接口 */
+/** 上传面板：把本地音频收进站内音频库（D1 元数据 + R2 二进制），播放走同源流接口 */
 function UploadPanel({ onDone, onClose }) {
   const inputRef = useRef(null);
   const [queue, setQueue] = useState([]);      // [{ file, name }]
@@ -303,7 +303,7 @@ export default function MusicPage() {
         </p>
       )}
 
-      <SpectrumVisualizer />
+      <CoverParticles />
 
       {loading && (
         <div className="glass music-loading">

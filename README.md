@@ -1,9 +1,24 @@
+<div align="center">
+
 # Kakuki
 
-**全栈个人博客平台** — 线上运行于 [kakuki.top](https://kakuki.top)
+**个人博客与作品集 — 全栈一体化博客系统**
+
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F6821F?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
+[![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono&logoColor=white)](https://hono.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](cloudflare/package.json)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](frontend/package.json)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](frontend/package.json)
+[![Ant Design](https://img.shields.io/badge/Ant%20Design-5-1677FF?logo=antdesign&logoColor=white)](frontend/package.json)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-06B6D4?logo=tailwindcss&logoColor=white)](frontend/package.json)
+[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
+**在线体验：[https://kakuki.top](https://kakuki.top)** ✨
+
+</div>
 
 > 前后端同仓：`frontend/`（React SPA）+ `cloudflare/`（Cloudflare Workers 后端）。
-> 全 Serverless 架构，免费额度内运行，24 小时在线、零本机依赖。
+> 全 Serverless ， 24小时在线。
 
 ---
 

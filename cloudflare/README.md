@@ -1,5 +1,12 @@
 # Kakuki Backend
 
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F6821F?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
+[![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono&logoColor=white)](https://hono.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](package.json)
+[![D1](https://img.shields.io/badge/D1-SQLite-07401e?logo=cloudflare&logoColor=white)](wrangler.jsonc)
+[![R2](https://img.shields.io/badge/R2-Object%20Storage-07401e?logo=cloudflare&logoColor=white)](wrangler.jsonc)
+[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
 **Kakuki 个人博客的后端服务** — 基于 Cloudflare Workers 的全 Serverless 实现
 
 > Hono + TypeScript + Cloudflare Workers/D1/R2，驱动 [kakuki.top](https://kakuki.top) 的全部业务接口：

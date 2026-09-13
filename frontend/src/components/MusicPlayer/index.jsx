@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, ListMusic, Upload } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
+import PlayerBar from './PlayerBar';
 
 /**
  * 首页音乐卡：站内音频库曲目列表（简约版）。
@@ -13,6 +14,7 @@ export default function MusicPlayer() {
     playTrack, fetchBootstrapPlaylist,
   } = useMusicStore(
     (state) => ({
+      currentPlaylist: state.currentPlaylist,
       currentTrack: state.currentTrack,
       playTrack: state.playTrack,
       fetchBootstrapPlaylist: state.fetchBootstrapPlaylist,
@@ -101,6 +103,9 @@ export default function MusicPlayer() {
           </div>
         </div>
       )}
+
+      {/* 播放控制条：嵌在曲目列表下方，与卡片同宽 */}
+      <PlayerBar />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { getArticles, getCategories } from "../../api/article";
 import { getTalks, likeTalk } from "../../api/talk";
 import { extractList } from "../../api/request";
+import githubApi from "../../api/github";
 import { useGithubProjects, LANG_COLORS } from "../../hooks/useGithubProjects";
 import MusicPlayer from "../../components/MusicPlayer";
 import TodoCard from "../../components/Tools/TodoCard";
@@ -65,8 +66,8 @@ function useGithubProfile() {
         }
       }
     } catch { /* ignore */ }
-    fetch(`https://api.github.com/users/${GITHUB_USERNAME}`)
-      .then((r) => (r.ok ? r.json() : null))
+    githubApi
+      .user(GITHUB_USERNAME)
       .then((data) => {
         if (cancelled || !data) return;
         setProfile(data);

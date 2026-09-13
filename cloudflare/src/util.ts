@@ -14,6 +14,8 @@ export type Env = {
   JWT_SECRET?: string;
   /** 本地 PrisTimer 同步脚本的上报令牌 */
   SYNC_TOKEN?: string;
+  /** 可选：GitHub 代理用的 PAT，未配置时走匿名配额 + 缓存兜底 */
+  GITHUB_TOKEN?: string;
 };
 
 export interface JwtPayload {

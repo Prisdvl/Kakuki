@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import githubApi from '../api/github';
 
 /**
  * 真实项目数据源：GitHub 仓库
@@ -8,8 +9,9 @@ import { useEffect, useState } from 'react';
  *  - 排除空仓库与有描述为空且无语言的仓，避免出现"光秃秃的卡片"
  *  - 按最近更新排序，并允许通过 PINNED 指定置顶顺序
  *
- * 数据源直连 GitHub 公开 API（无需后端），带 localStorage 缓存降低请求频率；
- * 网络失败时回退到 FALLBACK 快照，保证线上静态部署也有内容。
+ * 数据源走**本站 Worker 代理**（/api/v1/github/repos/:login/），不直连 GitHub：
+ * 浏览器直连用的是未认证配额（60 次/小时/IP），访客几次刷新就打满后全部 403。
+ * 这里再叠一层 localStorage 缓存，网络失败时回退到 FALLBACK 快照。
  */
 const GH_USER = 'Prisdvl';
 const CACHE_KEY = 'kakuki-github-repos';
@@ -120,7 +122,8 @@ function deriveTech(repo) {
   if (name.includes('pristimer') || desc.includes('tauri')) {
     if (!tags.includes('Rust')) tags.push('Rust');
   }
-  if (name.includes('kakuki')) tags.push('Django', 'React');
+  // 仓库里同时含 backend/(Django) 与 cloudflare/(Hono)，对外展示以线上实际架构为准
+  if (name.includes('kakuki')) tags.push('React', 'Hono', 'Cloudflare');
   if (name.includes('nvim')) tags.push('Neovim');
   return tags.slice(0, 4);
 }
@@ -180,10 +183,8 @@ export function useGithubProjects() {
       setLoading(false);
     }
 
-    fetch(`https://api.github.com/users/${GH_USER}/repos?per_page=100&sort=updated`, {
-      headers: { Accept: 'application/vnd.github+json' },
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    githubApi
+      .repos(GH_USER)
       .then((data) => {
         if (cancelled || !Array.isArray(data)) return;
         const list = normalize(data);

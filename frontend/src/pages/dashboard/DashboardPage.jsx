@@ -6,6 +6,7 @@ import {
 import TiltCard from '../../components/TiltCard';
 import leetcodeApi from '../../api/leetcode';
 import checkinApi from '../../api/checkin';
+import githubApi from '../../api/github';
 import TodoCard from '../../components/Tools/TodoCard';
 import CountdownCard from '../../components/Tools/CountdownCard';
 
@@ -309,8 +310,8 @@ function GithubCard() {
         }
       }
     } catch { /* ignore */ }
-    fetch(`https://api.github.com/users/${GITHUB_USERNAME}`)
-      .then((r) => (r.ok ? r.json() : null))
+    githubApi
+      .user(GITHUB_USERNAME)
       .then((d) => {
         if (!alive || !d) return;
         setGh(d);

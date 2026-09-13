@@ -11,6 +11,7 @@ import { blogRoutes } from './blog';
 import { checkinRoutes } from './checkin';
 import { proxyRoutes, audioProbeRoutes } from './proxy';
 import { audioRoutes } from './audio';
+import { mediaRoutes } from './media';
 import { checkRateLimit } from './ratelimit';
 
 type AppEnv = { Bindings: Env };
@@ -24,10 +25,11 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// 限流：音频流端点除外（Django 版该端点同样不受 DRF 限流）
+// 限流：媒体流端点除外（播放一首歌会发多次 Range 请求，计入限流会误伤正常听歌）
 app.use('*', async (c, next) => {
   if (c.req.method === 'GET' && /\/netease\/song\/\d+\/stream\/$/.test(c.req.path)) return next();
   if (c.req.method === 'GET' && /\/audio\/[^/]+\/stream\/$/.test(c.req.path)) return next();
+  if (c.req.method === 'GET' && /\/media\/(stream|cover)\/[^/]+\/$/.test(c.req.path)) return next();
   const limited = await checkRateLimit(c);
   if (limited) return limited;
   await next();
@@ -39,6 +41,7 @@ app.route('/', checkinRoutes);
 app.route('/', proxyRoutes);
 app.route('/', audioProbeRoutes);
 app.route('/', audioRoutes);
+app.route('/', mediaRoutes);
 
 app.notFound((c) => fail(404, '未找到。'));
 

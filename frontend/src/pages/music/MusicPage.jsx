@@ -1,14 +1,171 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Music, Disc3, ListMusic, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Play, Pause, SkipBack, SkipForward, Music, Disc3, ListMusic, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2 } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
+import useUserStore from '../../store/userStore';
+import mediaApi from '../../api/media';
 import SpectrumVisualizer from '../../components/SpectrumVisualizer';
+
+const ACCEPT = '.mp3,.m4a,.aac,.wav,.ogg,.flac,audio/*';
+const MAX_MB = 20;
+
+/** 上传面板：把本地音频收进站内音频库（Cloudflare KV），播放走同源流接口 */
+function UploadPanel({ onDone, onClose }) {
+  const inputRef = useRef(null);
+  const [queue, setQueue] = useState([]);      // [{ file, name }]
+  const [artist, setArtist] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);        // { type: 'ok'|'err', text }
+
+  const pick = (fileList) => {
+    const list = Array.from(fileList || []);
+    const tooBig = list.filter((f) => f.size > MAX_MB * 1024 * 1024);
+    const ok = list.filter((f) => f.size <= MAX_MB * 1024 * 1024);
+    if (tooBig.length) {
+      setMsg({ type: 'err', text: `已跳过 ${tooBig.length} 个超过 ${MAX_MB} MB 的文件` });
+    }
+    if (!ok.length) return;
+    setQueue((q) => [
+      ...q,
+      ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, '') })),
+    ]);
+  };
+
+  const start = async () => {
+    if (!queue.length || busy) return;
+    setBusy(true);
+    setMsg(null);
+    let done = 0;
+    for (const item of queue) {
+      try {
+        await mediaApi.upload(
+          item.file,
+          { name: item.name, artist },
+          (p) => setProgress(Math.round(((done + p / 100) / queue.length) * 100))
+        );
+        done += 1;
+      } catch (e) {
+        const m = e?.response?.data?.message || e?.message || '上传失败';
+        setMsg({ type: 'err', text: `第 ${done + 1} 首失败：${m}` });
+        setBusy(false);
+        setProgress(0);
+        if (done > 0) onDone();
+        return;
+      }
+    }
+    setProgress(100);
+    setBusy(false);
+    setQueue([]);
+    setMsg({ type: 'ok', text: `已上传 ${done} 首` });
+    onDone();
+  };
+
+  return (
+    <div className="glass music-upload-panel">
+      <div className="music-panel-header">
+        <button onClick={onClose} className="icon-btn" aria-label="关闭上传面板"><X size={18} /></button>
+        <span className="music-panel-title">上传歌曲</span>
+        <span className="music-panel-meta">≤ {MAX_MB} MB / 首</span>
+      </div>
+
+      <div
+        className="music-upload-drop"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('dragging'); }}
+        onDragLeave={(e) => e.currentTarget.classList.remove('dragging')}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove('dragging');
+          pick(e.dataTransfer?.files);
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter') inputRef.current?.click(); }}
+      >
+        <Upload size={20} />
+        <span>选择或拖入音频文件（支持多选）</span>
+        <span className="music-upload-hint">mp3 / m4a / wav / ogg · 上传后同源播放，频谱可用</span>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          hidden
+          onChange={(e) => { pick(e.target.files); e.target.value = ''; }}
+        />
+      </div>
+
+      {queue.length > 0 && (
+        <div className="music-upload-queue">
+          {queue.map((q, i) => (
+            <div key={`${q.file.name}-${i}`} className="music-upload-item">
+              <input
+                value={q.name}
+                onChange={(e) => setQueue((prev) => prev.map((x, xi) => (xi === i ? { ...x, name: e.target.value } : x)))}
+                disabled={busy}
+                aria-label="曲名"
+              />
+              <span className="music-upload-size">{(q.file.size / 1024 / 1024).toFixed(1)} MB</span>
+              <button
+                className="icon-btn"
+                aria-label="移除"
+                disabled={busy}
+                onClick={() => setQueue((prev) => prev.filter((_, xi) => xi !== i))}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="music-upload-meta">
+        <label>
+          歌手
+          <input
+            value={artist}
+            onChange={(e) => setArtist(e.target.value)}
+            placeholder="整批统一填写，可留空"
+            disabled={busy}
+          />
+        </label>
+      </div>
+
+      {busy && (
+        <div className="music-upload-progress" aria-label="上传进度">
+          <div style={{ width: `${progress}%` }} />
+          <span>{progress}%</span>
+        </div>
+      )}
+
+      {msg && (
+        <p className={`music-upload-msg ${msg.type}`}>
+          {msg.type === 'ok' && <CheckCircle2 size={14} />} {msg.text}
+        </p>
+      )}
+
+      <div className="music-upload-actions">
+        <button
+          className="glass-button-solid music-upload-submit"
+          onClick={start}
+          disabled={!queue.length || busy}
+        >
+          {busy ? <Loader2 size={15} className="spin" /> : <Upload size={15} />}
+          {busy ? '上传中…' : `上传 ${queue.length || ''}`.trim()}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function MusicPage() {
   const {
     currentPlaylist, currentTrack, isPlaying, playlistList,
     currentTime, duration, currentLyrics, currentLyricIndex,
-    volume, muted,
+    volume, muted, sourceKind,
     fetchBootstrapPlaylist, fetchPlaylistById, fetchPlaylists,
+    refreshUploads,
     playTrack, togglePlay, nextTrack, prevTrack, seekTo,
     setVolume, toggleMute,
   } = useMusicStore(
@@ -23,9 +180,11 @@ export default function MusicPage() {
       currentLyricIndex: state.currentLyricIndex,
       volume: state.volume,
       muted: state.muted,
+      sourceKind: state.sourceKind,
       fetchBootstrapPlaylist: state.fetchBootstrapPlaylist,
       fetchPlaylistById: state.fetchPlaylistById,
       fetchPlaylists: state.fetchPlaylists,
+      refreshUploads: state.refreshUploads,
       playTrack: state.playTrack,
       togglePlay: state.togglePlay,
       nextTrack: state.nextTrack,
@@ -36,12 +195,27 @@ export default function MusicPage() {
     })
   );
 
+  const isLoggedIn = useUserStore((s) => s.isLoggedIn);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPlaylists, setShowPlaylists] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [notice, setNotice] = useState('');
 
   const tracks = currentPlaylist?.tracks || [];
+
+  const handleDelete = async (track) => {
+    if (!window.confirm(`删除《${track.name}》？此操作不可撤销。`)) return;
+    try {
+      await mediaApi.remove(track.id);
+      setNotice(`已删除《${track.name}》`);
+      await refreshUploads();
+    } catch (e) {
+      setNotice(e?.response?.data?.message || '删除失败');
+    }
+  };
 
   // 只在挂载时初始化一次。若 store 中已有播放状态（从其他页面返回），保持播放、不重置音频。
   useEffect(() => {
@@ -118,10 +292,41 @@ export default function MusicPage() {
 
   return (
     <div className="music-page">
-      <h1 className="music-page-title">音乐</h1>
-      <p className="music-page-subtitle">
-        {loading ? '正在加载...' : tracks.length > 0 ? `共 ${tracks.length} 首歌曲` : ''}
-      </p>
+      <div className="music-page-head">
+        <div style={{ minWidth: 0 }}>
+          <h1 className="music-page-title">音乐</h1>
+          <p className="music-page-subtitle">
+            {loading
+              ? '正在加载...'
+              : tracks.length === 0
+                ? ''
+                : sourceKind === 'uploads'
+                  ? `共 ${tracks.length} 首 · 站内音频库`
+                  : `共 ${tracks.length} 首 · 示例音源，上传自己的音乐后自动替换`}
+          </p>
+        </div>
+        <button
+          className="glass-button music-upload-entry"
+          onClick={() => { if (!isLoggedIn) { navigate('/login'); return; } setShowUpload((v) => !v); }}
+          title={isLoggedIn ? '上传本地音频到站内音频库' : '登录后可上传'}
+        >
+          <Upload size={15} /> 上传歌曲
+        </button>
+      </div>
+
+      {showUpload && (
+        <UploadPanel
+          onDone={() => refreshUploads()}
+          onClose={() => setShowUpload(false)}
+        />
+      )}
+
+      {notice && (
+        <p className="music-notice">
+          {notice}
+          <button className="icon-btn" aria-label="关闭提示" onClick={() => setNotice('')}><X size={14} /></button>
+        </p>
+      )}
 
       <SpectrumVisualizer />
 
@@ -202,9 +407,12 @@ export default function MusicPage() {
             {tracks.map((track, idx) => {
               const isActive = currentTrack?.id === track.id;
               return (
-                <button
+                <div
                   key={track.id}
                   onClick={() => playTrack(track)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playTrack(track); } }}
+                  role="button"
+                  tabIndex={0}
                   className="track-row music-track-row"
                   aria-label={`播放 ${track.name}`}
                 >
@@ -232,7 +440,17 @@ export default function MusicPage() {
                       <Play size={18} style={{ color: isActive ? 'var(--accent)' : 'var(--text-tertiary)' }} />
                     )}
                   </div>
-                </button>
+                  {track.isUpload && isLoggedIn && (
+                    <button
+                      className="music-track-del icon-btn"
+                      aria-label={`删除 ${track.name}`}
+                      title="删除"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(track); }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>

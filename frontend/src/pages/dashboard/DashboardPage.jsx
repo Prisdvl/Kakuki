@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Clock, Timer, CheckCircle2, BarChart3, CalendarDays,
-  Flame, BookOpen, TrendingUp, ListTodo, Sparkles,
+  Clock, Timer, CheckCircle2, BarChart3,
+  Flame, BookOpen, TrendingUp,
 } from 'lucide-react';
 import TiltCard from '../../components/TiltCard';
 import leetcodeApi from '../../api/leetcode';
+import checkinApi from '../../api/checkin';
 import TodoCard from '../../components/Tools/TodoCard';
-import PomodoroCard from '../../components/Tools/PomodoroCard';
 import CountdownCard from '../../components/Tools/CountdownCard';
 
-const FOCUS_KEY = 'kakuki-focus-records';
 const GITHUB_USERNAME = 'Prisdvl';
 
 /* ================= GitHub 头像（三级回退：官方 → 本地快照 → 首字母徽章） ================= */
@@ -62,75 +61,133 @@ function ClockCard() {
   );
 }
 
-/* ================= 学习时间统计卡 ================= */
-function loadFocusRecords() {
-  try { return JSON.parse(localStorage.getItem(FOCUS_KEY) || '[]'); } catch { return []; }
+/* ================= 学习时间统计卡 =================
+ * 数据源：GET /api/v1/focus/summary/ —— 本地 PrisTimer 专注记录同步进 D1 后的聚合结果。
+ * 后端不可用或尚无同步数据时，回退到浏览器本地记录，保证卡片不空。
+ * ================================================================= */
+const LOCAL_FOCUS_KEY = 'kakuki-focus-records';
+
+function readLocalFocus() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(LOCAL_FOCUS_KEY) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
 }
+
 function StudyTimeCard() {
-  const [records, setRecords] = useState(loadFocusRecords);
+  const [summary, setSummary] = useState(null);
+  const [localRecords, setLocalRecords] = useState(readLocalFocus);
+
   useEffect(() => {
-    const refresh = () => setRecords(loadFocusRecords());
-    window.addEventListener('kakuki:focus-updated', refresh);
-    return () => window.removeEventListener('kakuki:focus-updated', refresh);
+    let alive = true;
+    const load = () => {
+      checkinApi.focusSummary(90)
+        .then((res) => { if (alive) setSummary(res?.data || null); })
+        .catch(() => { if (alive) setSummary(null); });
+      setLocalRecords(readLocalFocus());
+    };
+    load();
+    window.addEventListener('kakuki:focus-updated', load);
+    window.addEventListener('storage', load);
+    const t = setInterval(load, 5 * 60 * 1000);
+    return () => {
+      alive = false;
+      window.removeEventListener('kakuki:focus-updated', load);
+      window.removeEventListener('storage', load);
+      clearInterval(t);
+    };
   }, []);
 
-  const { today, week, total, sessions } = useMemo(() => {
+  // 后端（PrisTimer 真实专注）优先；否则用本地记录兜底
+  const stats = useMemo(() => {
+    const recent = Array.isArray(summary?.recent) ? summary.recent : [];
+    if (recent.length > 0 || (summary?.total_minutes ?? 0) > 0) {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const monday = midnight - (now.getDay() === 0 ? 6 : now.getDay() - 1) * 86400000;
+      let week = 0;
+      recent.forEach((r) => {
+        const ts = new Date(`${r.date}T00:00:00`).getTime();
+        if (!Number.isNaN(ts) && ts >= monday) week += Number(r.total_minutes) || 0;
+      });
+      return {
+        today: Number(summary.today_minutes) || 0,
+        week,
+        total: Number(summary.total_minutes) || 0,
+        sessions: Number(summary.total_sessions) || 0,
+        source: 'pristimer',
+      };
+    }
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfWeek = startOfDay - (now.getDay() === 0 ? 6 : now.getDay() - 1) * 86400000;
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const monday = midnight - (now.getDay() === 0 ? 6 : now.getDay() - 1) * 86400000;
     let today = 0, week = 0, total = 0;
-    records.forEach((r) => {
-      const ts = r.ts || new Date(r.date).getTime();
+    localRecords.forEach((r) => {
+      const ts = Number(r.ts) || new Date(r.date).getTime();
       const m = Number(r.minutes) || 0;
+      if (!Number.isFinite(ts)) return;
       total += m;
-      if (ts >= startOfDay) today += m;
-      if (ts >= startOfWeek) week += m;
+      if (ts >= midnight) today += m;
+      if (ts >= monday) week += m;
     });
-    return { today, week, total, sessions: records.length };
-  }, [records]);
+    return { today, week, total, sessions: localRecords.length, source: 'local' };
+  }, [summary, localRecords]);
 
   const goal = 480; // 今日目标 8 小时（分钟）
-  const pct = Math.min(100, Math.round((today / goal) * 100));
-  const R = 52, C = 2 * Math.PI * R;
+  const pct = Math.min(100, Math.round((stats.today / goal) * 100));
+  const R = 46, C = 2 * Math.PI * R;
   const fmt = (min) => {
     if (min < 60) return `${min} 分钟`;
     const h = Math.floor(min / 60), m = Math.round(min % 60);
     return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
   };
 
+  const cells = [
+    { icon: Flame, label: '今日', value: fmt(stats.today), color: 'var(--accent)' },
+    { icon: TrendingUp, label: '本周', value: fmt(stats.week), color: 'var(--text-primary)' },
+    { icon: BookOpen, label: '累计', value: fmt(stats.total), color: 'var(--text-primary)' },
+    { icon: CheckCircle2, label: '专注次数', value: `${stats.sessions} 次`, color: 'var(--text-primary)' },
+  ];
+
   return (
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '0.9rem' }}>
-        <Timer size={15} style={{ color: 'var(--accent)' }} /> 已学习时间
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
+          <Timer size={15} style={{ color: 'var(--accent)' }} /> 已学习时间
+        </span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+          {stats.source === 'pristimer' ? 'PrisTimer 同步' : '本地记录'}
+        </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flex: 1 }}>
-        <div style={{ position: 'relative', width: 124, height: 124, flexShrink: 0 }}>
-          <svg width="124" height="124" viewBox="0 0 124 124">
-            <circle cx="62" cy="62" r={R} fill="none" stroke="var(--glass-border)" strokeWidth="9" />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+        {/* 今日进度环 */}
+        <div style={{ position: 'relative', width: 112, height: 112, flexShrink: 0 }}>
+          <svg width="112" height="112" viewBox="0 0 112 112">
+            <circle cx="56" cy="56" r={R} fill="none" stroke="var(--glass-border)" strokeWidth="8" />
             <circle
-              cx="62" cy="62" r={R} fill="none"
-              stroke="var(--accent)" strokeWidth="9" strokeLinecap="round"
+              cx="56" cy="56" r={R} fill="none"
+              stroke="var(--accent)" strokeWidth="8" strokeLinecap="round"
               strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)}
-              transform="rotate(-90 62 62)"
+              transform="rotate(-90 56 56)"
               style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }}
             />
           </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>{fmt(today)}</span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>今日 / {Math.round(goal / 60)}h 目标</span>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.today}<span style={{ fontSize: '0.68rem', fontWeight: 600, marginLeft: 3 }}>分</span></span>
+            <span style={{ fontSize: '0.66rem', color: 'var(--text-tertiary)' }}>目标 8h</span>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
-          {[
-            { icon: Flame, label: '今日', value: fmt(today), color: 'var(--accent)' },
-            { icon: TrendingUp, label: '本周', value: fmt(week), color: 'var(--text-primary)' },
-            { icon: BookOpen, label: '累计', value: fmt(total), color: 'var(--text-primary)' },
-            { icon: CheckCircle2, label: '专注次数', value: `${sessions} 次`, color: 'var(--text-primary)' },
-          ].map((s) => (
-            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem' }}>
-              <s.icon size={13} style={{ color: s.color, flexShrink: 0 }} />
-              <span style={{ color: 'var(--text-tertiary)', width: 42 }}>{s.label}</span>
-              <span style={{ color: 'var(--text-primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{s.value}</span>
+
+        {/* 2×2 指标 */}
+        <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.7rem 1rem' }}>
+          {cells.map((s) => (
+            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+              <s.icon size={14} style={{ color: s.color, flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', lineHeight: 1.3, whiteSpace: 'nowrap' }}>{s.label}</div>
+                <div style={{ fontSize: '0.86rem', color: s.color, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.value}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -168,11 +225,11 @@ function LeetCodeProgressCard() {
     return (
       <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
         <BarChart3 size={22} style={{ color: 'var(--accent)' }} />
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{err ? '暂无 LeetCode 数据' : '加载 LeetCode 数据...'}</span>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{err ? '暂无 LeetCode 数据' : '加载中'}</span>
       </div>
     );
   }
-  const R = 52, C = 2 * Math.PI * R;
+  const R = 46, C = 2 * Math.PI * R;
   const diff = [
     { label: '简单', solved: stats.easy, total: stats.easyT, color: 'var(--leetcode-easy)' },
     { label: '中等', solved: stats.medium, total: stats.mediumT, color: 'var(--leetcode-medium)' },
@@ -180,40 +237,52 @@ function LeetCodeProgressCard() {
   ];
   return (
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
           <BarChart3 size={15} style={{ color: 'var(--accent)' }} /> LeetCode 进度
         </span>
-        <a href="https://leetcode.cn/u/Likey-e/" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>查看 →</a>
+        <a href="https://leetcode.cn/u/Likey-e/" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>
+          共 {stats.total} 题 · 查看 →
+        </a>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flex: 1 }}>
-        <div style={{ position: 'relative', width: 124, height: 124, flexShrink: 0 }}>
-          <svg width="124" height="124" viewBox="0 0 124 124">
-            <circle cx="62" cy="62" r={R} fill="none" stroke="var(--glass-border)" strokeWidth="9" />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+        {/* 总进度环 */}
+        <div style={{ position: 'relative', width: 112, height: 112, flexShrink: 0 }}>
+          <svg width="112" height="112" viewBox="0 0 112 112">
+            <circle cx="56" cy="56" r={R} fill="none" stroke="var(--glass-border)" strokeWidth="8" />
             <circle
-              cx="62" cy="62" r={R} fill="none"
-              stroke="var(--accent)" strokeWidth="9" strokeLinecap="round"
+              cx="56" cy="56" r={R} fill="none"
+              stroke="var(--accent)" strokeWidth="8" strokeLinecap="round"
               strokeDasharray={C} strokeDashoffset={C * (1 - stats.pct / 100)}
-              transform="rotate(-90 62 62)"
+              transform="rotate(-90 56 56)"
               style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }}
             />
           </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{stats.solved}</span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>已解答 / 共 {stats.total} 题</span>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.solved}</span>
+            <span style={{ fontSize: '0.66rem', color: 'var(--text-tertiary)' }}>已解答 · {stats.pct}%</span>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', flex: 1, minWidth: 0 }}>
+
+        {/* 三档进度 */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
           {diff.map((d) => {
-            const p = d.total ? Math.round((d.solved / d.total) * 100) : 0;
+            const p = d.total ? Math.round((d.solved / d.total) * 1000) / 10 : 0;
             return (
               <div key={d.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 3 }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{d.label}</span>
-                  <span style={{ color: 'var(--text-tertiary)' }}>{d.solved} / {d.total}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.76rem', marginBottom: 4, gap: '0.5rem' }}>
+                  <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <i style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, display: 'inline-block' }} />
+                    {d.label}
+                  </span>
+                  <span style={{ color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    {d.solved} / {d.total}
+                    <span style={{ marginLeft: '0.4rem', color: d.color, fontWeight: 600 }}>{p}%</span>
+                  </span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: 'var(--glass-border)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${p}%`, borderRadius: 3, background: d.color, transition: 'width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }} />
+                  <div style={{ height: '100%', width: `${Math.max(p, 0.6)}%`, borderRadius: 3, background: d.color, transition: 'width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }} />
                 </div>
               </div>
             );
@@ -256,6 +325,7 @@ function GithubCard() {
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        GitHub
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
         {/* 头像三级回退：GitHub 官方 → 本地快照（与 GitHub 一致）→ 首字母徽章（网络受限环境可用） */}
@@ -292,20 +362,16 @@ function GithubCard() {
 export default function DashboardPage() {
   return (
     <div className="page-enter">
-      <div style={{ marginBottom: '1.4rem' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Sparkles size={22} style={{ color: 'var(--accent)' }} /> 仪表盘
-        </h1>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-tertiary)', margin: '0.35rem 0 0' }}>学习、刷题、生活，一眼尽收。</p>
-      </div>
+      <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 1.4rem' }}>
+        仪表盘
+      </h1>
 
       <div className="dashboard-grid">
-        <TiltCard className="dash-span-2"><ClockCard /></TiltCard>
+        <TiltCard><ClockCard /></TiltCard>
         <TiltCard><StudyTimeCard /></TiltCard>
         <TiltCard><LeetCodeProgressCard /></TiltCard>
         <TiltCard><GithubCard /></TiltCard>
         <TiltCard><TodoCard /></TiltCard>
-        <TiltCard><PomodoroCard /></TiltCard>
         <TiltCard><CountdownCard /></TiltCard>
       </div>
 
@@ -314,14 +380,10 @@ export default function DashboardPage() {
           display: grid;
           grid-template-columns: repeat(12, 1fr);
           gap: 1.1rem;
+          align-items: stretch;
         }
-        .dashboard-grid > .tilt-card { grid-column: span 4; }
-        .dashboard-grid > .dash-span-2 { grid-column: span 8; }
-        @media (max-width: 1024px) {
-          .dashboard-grid > .tilt-card { grid-column: span 6; }
-          .dashboard-grid > .dash-span-2 { grid-column: span 12; }
-        }
-        @media (max-width: 640px) {
+        .dashboard-grid > .tilt-card { grid-column: span 6; }
+        @media (max-width: 900px) {
           .dashboard-grid > .tilt-card { grid-column: span 12; }
         }
         @keyframes clock-colon { 50% { opacity: 0.35; } }

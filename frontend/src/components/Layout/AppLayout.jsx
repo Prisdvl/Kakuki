@@ -60,12 +60,14 @@ const FlipUnit = memo(function FlipUnit({ value, label }) {
   );
 });
 
-// 站点运行时长：以 kakuki.top 首次部署时刻为基准累计（翻页天数/小时风格）
+// 站点运行时长：以 kakuki.top 首次 Worker 部署时刻为基准累计（翻页钟风格）
 const StatusUptime = memo(function StatusUptime() {
-  // 部署基准：kakuki.top 的首次 Worker 部署时刻。
-  // 经 Cloudflare API 核验（workers/scripts/kakuki/deployments 最早一条）：
-  // 2026-09-12T14:51:01Z = 本地 UTC+8 2026-09-12 22:51:01
-  const DEPLOY_TS = new Date('2026-09-12T14:51:01Z').getTime();
+  // 部署基准：kakuki.top 的首次 Worker 部署时刻（Cloudflare 记为 UTC）。
+  // 2026-09-12T14:51:01Z ≡ 北京时间 2026-09-12 22:51:01。
+  // 交叉核对：Cloudflare Workers 分析显示该脚本 9-12 之前零请求，
+  // 9-12 最早的一小时落在 14:00Z 时段（即首部署后立即产生的验证流量）。
+  const DEPLOY_ISO = '2026-09-12T14:51:01Z';
+  const DEPLOY_TS = Date.parse(DEPLOY_ISO);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -79,10 +81,17 @@ const StatusUptime = memo(function StatusUptime() {
   const minutes = Math.floor(diff / 60000) % 60;
   const seconds = Math.floor(diff / 1000) % 60;
 
+  // title 里写清基准时刻，便于与真实上线时间逐秒核对
+  const deployLocal = new Date(DEPLOY_TS).toLocaleString('zh-CN', {
+    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+
   return (
-    <span className="status-item status-uptime" title="自 kakuki.top 上线起的运行时长">
+    <span className="status-item status-uptime" title={`kakuki.top 上线于 ${deployLocal}（北京时间），此处为自上线起的连续运行时长`}>
       <Activity size={11} />
-      <FlipUnit value={days} label="天" />
+      {/* 不足一天时不显示"天"，避免 0 天看着像故障 */}
+      {days > 0 && <FlipUnit value={days} label="天" />}
       <FlipUnit value={hours} label="时" />
       <FlipUnit value={minutes} label="分" />
       <FlipUnit value={seconds} label="秒" />
@@ -575,8 +584,8 @@ export default function AppLayout() {
           <StatusFocus />
           <div className="status-item status-stack">
             <span className="status-tech-badge">React</span>
-            <span className="status-tech-badge">Django</span>
-            <span className="status-tech-badge">Tailwind</span>
+            <span className="status-tech-badge">Hono</span>
+            <span className="status-tech-badge">D1</span>
           </div>
           <div className="status-item status-meta">
             <span>Prisdvl © 2026 · v1.0.0</span>

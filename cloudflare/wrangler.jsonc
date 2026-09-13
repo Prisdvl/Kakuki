@@ -23,6 +23,15 @@
     }
   ],
 
+  // 站内音频库：上传的音乐以 KV 值存储（单值 ≤ 25 MiB，业务侧限 20 MiB）；
+  // 播放走 /api/v1/media/stream/<id>/ 同源流接口，支持 Range。
+  "kv_namespaces": [
+    {
+      "binding": "MEDIA",
+      "id": "13b8a4ca29dd45ebae3f428886cfb182"
+    }
+  ],
+
   "vars": {
     "JWT_ISSUER": "kakuki",
     // 本地 dev 的默认密钥；生产用 `wrangler secret put JWT_SECRET` 覆盖

@@ -9,7 +9,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Heart,
   Rocket, FolderTree, Quote, ThumbsUp, Shuffle, ArrowRight,
   LayoutGrid, GripVertical, ArrowUp, ArrowDown, Maximize2, Minimize2,
-  EyeOff, Plus, RotateCcw, Check, X, Timer, CalendarCheck,
+  EyeOff, Plus, RotateCcw, Check, X, CalendarCheck,
 } from "lucide-react";
 import { getArticles, getCategories } from "../../api/article";
 import { getTalks, likeTalk } from "../../api/talk";
@@ -17,11 +17,11 @@ import { extractList } from "../../api/request";
 import { useGithubProjects, LANG_COLORS } from "../../hooks/useGithubProjects";
 import MusicPlayer from "../../components/MusicPlayer";
 import TodoCard from "../../components/Tools/TodoCard";
-import PomodoroCard from "../../components/Tools/PomodoroCard";
 import PaletteCard from "../../components/Tools/PaletteCard";
 import CountdownCard from "../../components/Tools/CountdownCard";
 import CheckinCard from "../../components/Tools/CheckinCard";
 import TiltCard from "../../components/TiltCard";
+import { QUOTES } from "../../data/quotes";
 import { useHomeLayout } from "../../store/homeLayoutStore";
 import useMusicStore from '../../store/musicStore';
 import useCountUp from "../../hooks/useCountUp";
@@ -35,9 +35,8 @@ const COMPONENT_META = {
   talks:     { name: "最新杂谈",  icon: MessageSquare },
   projects:  { name: "项目精选",  icon: Rocket },
   categories:{ name: "分类速览",  icon: FolderTree },
-  quote:     { name: "每日一言",  icon: Quote },
+  quote:     { name: "拾句",      icon: Quote },
   todo:      { name: "待办清单",  icon: Check },
-  pomodoro:  { name: "番茄钟",    icon: Timer },
   palette:   { name: "色板生成",  icon: LayoutGrid },
   countdown: { name: "纪念日",    icon: Calendar },
 };
@@ -348,22 +347,16 @@ export function LeetCodeCard() {
   return <CheckinCard />;
 }
 
-const QUOTES = [
-  { text: '代码是写给未来的情书，也是写给过去的自己的一封回信。', author: 'Kakuki' },
-  { text: '把复杂留给自己，把简单留给用户。', author: 'Kakuki' },
-  { text: '学习不是填满水桶，而是点燃火焰。', author: 'William Butler Yeats' },
-  { text: '最好的投资，是投资自己。', author: 'Benjamin Franklin' },
-  { text: '细节决定成败，但方向决定命运。', author: 'Kakuki' },
-  { text: '编程三分靠写，七分靠改。', author: '民间智慧' },
-  { text: '愿你眼里有光，心中有火，脚下有路。', author: 'Kakuki' },
-  { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
-];
-
+/**
+ * 拾句 —— 逐条摘录自 11 位音乐人的歌词与语录（数据见 data/quotes.js）
+ * 命名取「拾取句子」之意，替代原先泛化的「每日一言」。
+ */
 export function QuoteCard() {
+  const total = QUOTES.length;
   const [index, setIndex] = useState(() => {
     const saved = parseInt(localStorage.getItem('kakuki-quote-idx'), 10);
-    if (!Number.isNaN(saved) && saved >= 0) return saved % QUOTES.length;
-    return Math.floor(Math.random() * QUOTES.length);
+    if (!Number.isNaN(saved) && saved >= 0) return saved % total;
+    return Math.floor(Math.random() * total);
   });
   const [visible, setVisible] = useState(true);
 
@@ -372,7 +365,7 @@ export function QuoteCard() {
       setVisible(false);
       setTimeout(() => {
         setIndex((i) => {
-          const ni = (i + 1) % QUOTES.length;
+          const ni = (i + 1) % total;
           localStorage.setItem('kakuki-quote-idx', String(ni));
           return ni;
         });
@@ -380,14 +373,14 @@ export function QuoteCard() {
       }, 400);
     }, 8000);
     return () => clearInterval(t);
-  }, []);
+  }, [total]);
 
   const shuffle = () => {
     setVisible(false);
     setTimeout(() => {
       setIndex((i) => {
         let ni = i;
-        while (ni === i) ni = Math.floor(Math.random() * QUOTES.length);
+        if (total > 1) while (ni === i) ni = Math.floor(Math.random() * total);
         localStorage.setItem('kakuki-quote-idx', String(ni));
         return ni;
       });
@@ -395,13 +388,13 @@ export function QuoteCard() {
     }, 400);
   };
 
-  const q = QUOTES[index];
+  const q = QUOTES[index] || QUOTES[0];
 
   return (
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem 1.25rem 1rem', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Quote size={18} style={{ color: 'var(--accent)' }} /> 每日一言
+          <Quote size={18} style={{ color: 'var(--accent)' }} /> 拾句
         </h3>
         <button
           onClick={shuffle}
@@ -424,6 +417,9 @@ export function QuoteCard() {
       </div>
       <div style={{ marginTop: '0.5rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
         —— {q.author}
+        <span style={{ marginLeft: '0.35rem', opacity: 0.75 }}>
+          《{q.work}》
+        </span>
       </div>
     </div>
   );
@@ -652,7 +648,6 @@ export default function HomePage() {
       case 'categories': return <CategoriesCard categories={categories} />;
       case 'quote': return <QuoteCard />;
       case 'todo': return <TodoCard />;
-      case 'pomodoro': return <PomodoroCard />;
       case 'palette': return <PaletteCard />;
       case 'countdown': return <CountdownCard />;
       default: return null;

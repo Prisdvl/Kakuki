@@ -14,10 +14,18 @@ const DEFAULT_LAYOUT = [
   { id: 'categories', width: 'third', visible: true },
   { id: 'quote', width: 'full', visible: true },
   { id: 'todo', width: 'half', visible: true },
-  { id: 'pomodoro', width: 'half', visible: true },
   { id: 'palette', width: 'half', visible: true },
   { id: 'countdown', width: 'half', visible: true },
 ];
+
+// 已下线组件：番茄钟（专注计时统一交给本地 PrisTimer）。
+// 这里显式剔除，避免旧 localStorage 布局残留出空白卡片。
+const RETIRED_IDS = new Set(['pomodoro']);
+// 组件注册表里的全部 id（HomePage COMPONENT_META 为准），用于过滤历史脏数据
+const KNOWN_IDS = new Set([
+  'profile', 'music', 'leetcode', 'talks', 'projects',
+  'categories', 'quote', 'todo', 'palette', 'countdown',
+]);
 
 // 兼容旧数据：wide → full，half → two-thirds
 function normalizeWidth(w) {
@@ -32,7 +40,12 @@ function load() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) {
-        return parsed.map((x) => ({ id: x.id, width: normalizeWidth(x.width), visible: x.visible !== false }));
+        const seen = new Set();
+        const cleaned = parsed
+          .filter((x) => x && KNOWN_IDS.has(x.id) && !RETIRED_IDS.has(x.id))
+          .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
+          .map((x) => ({ id: x.id, width: normalizeWidth(x.width), visible: x.visible !== false }));
+        if (cleaned.length) return cleaned;
       }
     }
   } catch { /* ignore */ }

@@ -26,7 +26,7 @@ Kakuki 博客后端的 Cloudflare Workers 重写版：**Hono + TypeScript + D1**
 
 ```
 cloudflare/
-├── wrangler.jsonc        # Worker 配置（D1 绑定 + assets + run_worker_first）
+├── wrangler.jsonc        # Worker 配置（D1 + KV 绑定 + assets + run_worker_first）
 ├── schema.sql            # D1 表结构
 ├── seed/build-seed.mjs   # 演示数据生成器（输出 seed/seed.sql）
 └── src/
@@ -34,9 +34,21 @@ cloudflare/
     ├── util.ts           # 响应包装/分页/JWT/PBKDF2/时间/IP
     ├── auth.ts           # register/login/refresh/me/change-password
     ├── blog.ts           # 文章/分类/评论/点赞/杂谈/项目/归档/统计
+    ├── checkin.ts        # 每日打卡 + 专注时长（PrisTimer 令牌上报）
+    ├── media.ts          # 站内音频库：上传的音乐（KV 存储 + Range 流）
+    ├── audio.ts          # 内置示例音源同源代理（白名单）
     ├── proxy.ts          # LeetCode + 网易云代理
     └── ratelimit.ts      # D1 限流
 ```
+
+## 绑定
+
+| 绑定 | 类型 | 用途 |
+|------|------|------|
+| `DB` | D1 | 业务数据（文章 / 评论 / 打卡 / 专注……） |
+| `MEDIA` | KV | 站内音频库：`t:<id>` 音频、`m:<id>` 元数据、`c:<id>` 封面 |
+| `JWT_SECRET` | Secret | HS256 签名密钥（`wrangler secret put`） |
+| `SYNC_TOKEN` | Secret | PrisTimer 专注数据上报令牌 |
 
 ## 常用命令
 

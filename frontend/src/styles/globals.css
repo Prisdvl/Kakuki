@@ -4762,6 +4762,213 @@ a, button, .article-card, .contact-card, .social-links a,
   font-size: 0.78rem;
 }
 
+/* ===== 音乐页：标题行 + 上传面板 ===== */
+.music-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.music-upload-entry {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.82rem;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.music-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.4rem 0.5rem 0.4rem 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.music-upload-panel {
+  border-radius: 20px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.music-upload-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 1.5rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  text-align: center;
+}
+
+.music-upload-drop:hover,
+.music-upload-drop.dragging {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.music-upload-hint {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.music-upload-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 0.9rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.music-upload-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.music-upload-item input,
+.music-upload-meta input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+
+.music-upload-item input:focus,
+.music-upload-meta input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.music-upload-size {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.music-upload-meta {
+  margin-top: 0.75rem;
+}
+
+.music-upload-meta label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.music-upload-progress {
+  position: relative;
+  margin-top: 0.9rem;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+}
+
+.music-upload-progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  transition: width 0.25s ease;
+}
+
+.music-upload-progress > span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.music-upload-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.music-upload-msg.ok { color: #34d399; }
+.music-upload-msg.err { color: var(--error); }
+
+.music-upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.9rem;
+}
+
+.music-upload-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.music-upload-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 曲目行：显式 flex，保证 序号 / 封面 / 文本 / 操作 横向排布 */
+.music-playlist-row,
+.music-track-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+.music-track-del {
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+.music-track-row:hover .music-track-del,
+.music-track-row:focus-within .music-track-del {
+  opacity: 1;
+}
+
+.music-track-del:hover {
+  color: var(--error) !important;
+}
+
+/* 触屏无 hover：删除按钮常显 */
+@media (hover: none) {
+  .music-track-del { opacity: 1; }
+}
+
 .music-player-bar {
   position: fixed;
   bottom: 3.6rem;
@@ -5043,6 +5250,18 @@ a, button, .article-card, .contact-card, .social-links a,
   border-radius: 20px;
   padding: 2.25rem 2.5rem;
   min-width: 0;
+}
+
+/* 阅读场景：关掉玻璃的顶部镜面高光（::before）与斜向折射光带（::after）。
+   这两层在卡片列表里是质感，在长文正文上就是"炫光"，会压低文字对比度。
+   这里只保留磨砂底 + 边框，hover 也不再增强。 */
+.article-main::before,
+.article-main::after {
+  content: none;
+}
+
+.article-main:hover::after {
+  opacity: 0;
 }
 
 @media (max-width: 640px) {

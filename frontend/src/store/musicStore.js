@@ -1,10 +1,40 @@
 import { create } from 'zustand';
-import request from '../api/request';
+import request, { extractList } from '../api/request';
 import { STATIC_MUSIC } from '../data/musicStatic';
 import { FALLBACK_PLAYLIST } from '../data/musicFallback';
 
 // 同源音频流地址：经后端代理转发网易云 MP3，媒体 CORS-clean，频谱分析可正常输出
 const streamUrl = (songId) => `/api/v1/netease/song/${songId}/stream/`;
+
+/** 站内音频库（用户上传）的歌单标识 */
+export const UPLOAD_PLAYLIST_ID = 'kakuki-uploads';
+export const UPLOAD_PLAYLIST_NAME = '我的音乐';
+
+/** 后端曲目结构 → 播放器曲目结构 */
+export const toUploadTrack = (t) => ({
+  id: t.id,
+  name: t.name || '未命名',
+  artists: Array.isArray(t.artists) && t.artists.length ? t.artists : [{ name: '未知' }],
+  album: t.album || '',
+  cover: t.cover || '',
+  url: t.url || `/api/v1/media/stream/${t.id}/`,
+  duration: t.duration || 0,
+  isUpload: true,
+});
+
+/**
+ * 拉取站内音频库。
+ * 这是当前唯一稳定可播的音源：网易云外链已失效，
+ * 而自建音源同源，既能播也能输出频谱。
+ */
+async function fetchUploadTracks() {
+  try {
+    const res = await request.get('/media/tracks/', { timeout: 15000 });
+    return extractList(res).map(toUploadTrack);
+  } catch {
+    return [];
+  }
+}
 
 /**
  * 探测歌单前若干首是否真的可播。
@@ -77,6 +107,54 @@ const applyStaticPlaylist = (set, get) => {
     if (audio) audio.src = playlist.tracks[0].url;
   }
   return { success: true, playlist, demo: true };
+};
+
+/**
+ * 把站内音频库装载为当前歌单。
+ * 与网易云歌单/示例曲目的区别：这里的曲目一定可播（同源、无防盗链），
+ * 所以不做 hasPlayableTrack 探测，直接作为主音源。
+ */
+const applyUploadPlaylist = (set, get, tracks) => {
+  const playlist = {
+    id: UPLOAD_PLAYLIST_ID,
+    name: UPLOAD_PLAYLIST_NAME,
+    coverImgUrl: tracks[0]?.cover || '',
+    trackCount: tracks.length,
+    tracks,
+  };
+  const prevTrack = get().currentTrack;
+  const isSamePlaylist = prevTrack && get().currentPlaylist?.id === UPLOAD_PLAYLIST_ID;
+
+  set({
+    user: { nickname: 'Prisdvl', avatarUrl: '' },
+    playlists: [playlist],
+    playlistList: [{
+      id: playlist.id,
+      name: playlist.name,
+      coverImgUrl: playlist.coverImgUrl,
+      trackCount: playlist.trackCount,
+    }],
+    currentPlaylist: playlist,
+    sourceKind: 'uploads',
+    audioError: '',
+    badTracks: [],
+  });
+
+  if (!isSamePlaylist) {
+    const first = tracks[0] || null;
+    set({
+      currentTrack: first,
+      currentLyrics: [],
+      currentLyricIndex: -1,
+      isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+    });
+    const audio = getAudio();
+    if (audio && first) audio.src = first.url;
+  }
+
+  return { success: true, playlist, tracks };
 };
 
 // audio 实例作为模块级单例，不放入 React state，避免触发无意义重渲染
@@ -342,6 +420,12 @@ const useMusicStore = create((set, get) => ({
   },
 
   fetchBootstrapPlaylist: async () => {
+    // 1) 站内音频库优先：只要上传过歌，就以它作为主歌单（真实可播）
+    const uploads = await fetchUploadTracks();
+    if (uploads.length > 0) {
+      return applyUploadPlaylist(set, get, uploads);
+    }
+
     try {
       const res = await request.get('/netease/bootstrap/', { timeout: 30000 });
       if (res && res.playlist && res.playlist.tracks) {
@@ -423,6 +507,18 @@ const useMusicStore = create((set, get) => ({
       }
       return stat;
     }
+  },
+
+  /** 重新拉取站内音频库（上传/删除后调用），并把它切换为当前歌单 */
+  refreshUploads: async () => {
+    const tracks = await fetchUploadTracks();
+    if (tracks.length === 0) {
+      // 库清空：退回原有降级链路
+      const result = await get().fetchBootstrapPlaylist();
+      return { success: true, tracks: [], ...result };
+    }
+    const result = applyUploadPlaylist(set, get, tracks);
+    return { success: true, tracks, ...result };
   },
 
   playTrack: async (track) => {

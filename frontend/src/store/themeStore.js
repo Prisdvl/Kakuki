@@ -498,10 +498,14 @@ function buildThemeVars(palette, isDark) {
     surface1: isDark ? rgba(DarkMuted, 0.8) : '#ffffffcc',
     surface2: isDark ? rgba(DarkMuted, 0.6) : '#ffffff99',
     surface3: isDark ? rgba(DarkMuted, 0.4) : '#ffffff66',
-    heatEmpty: isDark ? rgba(LightVibrant, 0.2) : '#e8e5f0',
-    heatLevel1: isDark ? rgba(LightVibrant, 0.4) : '#c4b5fd',
-    heatLevel2: isDark ? rgba(accent, 0.6) : '#a78bfa',
-    heatLevel3: isDark ? rgba(accent, 0.8) : '#8b5cf6',
+    // 热力图色阶：空 → 满 必须**同色系递进**才读得出来。
+    // 原先 level0/level1 是同一色相只差透明度（0.2 → 0.4），肉眼几乎分不出，
+    // 导致"打了卡"和"没打卡"看起来一样。改为统一由 accent 派生 5 档，
+    // 同时让热力图跟随用户选的主题色。
+    heatEmpty: isDark ? rgba(LightVibrant, 0.14) : rgba(accent, 0.09),
+    heatLevel1: rgba(accent, isDark ? 0.34 : 0.28),
+    heatLevel2: rgba(accent, isDark ? 0.56 : 0.50),
+    heatLevel3: rgba(accent, isDark ? 0.78 : 0.74),
     heatLevel4: accent,
     leetcodeEasy: ensureContrast(isDark ? '#2dd4bf' : '#00b8a3', bgPrimary, 3, isDark),
     leetcodeMedium: ensureContrast(isDark ? '#fbbf24' : '#ffb700', bgPrimary, 3, isDark),

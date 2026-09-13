@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
+import { flushSync } from 'react-dom';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sun, Moon, Menu, X, ArrowUp, Timer, Activity } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
@@ -152,6 +153,7 @@ export default function AppLayout() {
   const [revealStyle, setRevealStyle] = useState({});
   const [scrollProgress, setScrollProgress] = useState(0);
   const themeBtnRef = useRef(null);
+  const themeOverlayRef = useRef(null);
 
   useEffect(() => { if (isLoggedIn) fetchUser(); }, [isLoggedIn, fetchUser]);
 
@@ -367,35 +369,47 @@ export default function AppLayout() {
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
+    // 精确算扩散半径：圆心到最远角的距离 × 1.12（留一点余量让铺满略早于动画结束）。
+    // 原先写死 160vmax —— 1440×900 下是 2304px，而实际只需约 1478px，
+    // 后半程半径增长完全落在屏幕外，看起来像"瞬间切换"而不是"扩散"。
+    const farX = Math.max(x, window.innerWidth - x);
+    const farY = Math.max(y, window.innerHeight - y);
+    const maxR = Math.ceil(Math.hypot(farX, farY) * 1.12);
+
     document.body.classList.add('theme-switching');
 
-    // 先把遮罩设为「新主题底色 + 半径 0」，再在下一帧扩散。
+    // 先把遮罩设为「新主题底色 + 半径 0 + 新圆心」，再同步切到扩散态。
     // 顺序很关键：遮罩一上来就必须是新主题色，扩散才会呈现"从按下点灌满"的效果。
     const nextIsDark = !isDark;
-    setRevealStyle({
-      '--rx': `${x}px`,
-      '--ry': `${y}px`,
-      // 与新主题 --bg-primary 保持一致（浅色 #f5f5f7 / 深色 #000000）
-      '--overlay-bg': nextIsDark ? '#000000' : '#f5f5f7',
+    flushSync(() => {
+      setRevealStyle({
+        '--rx': `${x}px`,
+        '--ry': `${y}px`,
+        '--r-max': `${maxR}px`,
+        // 与新主题 --bg-primary 保持一致（浅色 #f5f5f7 / 深色 #000000）
+        '--overlay-bg': nextIsDark ? '#000000' : '#f5f5f7',
+      });
+      setRevealState('pre');
     });
-    setRevealState('pre');
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setRevealState('active'));
-    });
+    // 读一次布局，强制浏览器落盘"半径 0 + 新圆心"这个起始状态；
+    // 否则起始值会被合并掉，clip-path 过渡整段丢失。
+    if (themeOverlayRef.current) void themeOverlayRef.current.offsetHeight;
+    // 用 flushSync 而非双 rAF：扩散能在点击后一帧内起跑
+    // （原先实测有 ~300ms 空档，观感是"按下后卡一下才变色"）。
+    flushSync(() => setRevealState('active'));
 
     // 扩散基本铺满时切换真实主题（此时遮罩已覆盖全屏，切换过程不可见）
     setTimeout(() => {
       toggleTheme();
       setRevealState('done');
-    }, 700);
+    }, 640);
 
     // 淡出结束 → 清理
     setTimeout(() => {
       setRevealState('idle');
       setRevealStyle({});
       document.body.classList.remove('theme-switching');
-    }, 1160);
+    }, 1080);
   }, [toggleTheme, revealState, isDark]);
 
   // 任意入口（导航栏按钮 / 设置面板）请求切换主题时，统一走扩散动画。
@@ -447,13 +461,14 @@ export default function AppLayout() {
         <ArrowUp size={18} />
       </button>
 
-      {/* 主题切换扩散遮罩：pre 阶段已就位（半径 0），active 阶段圆形扩满全屏 */}
-      {revealState !== 'idle' && (
-        <div
-          className={`theme-overlay ${revealState === 'active' ? 'active' : ''} ${revealState === 'done' ? 'done' : ''}`}
-          style={revealStyle}
-        />
-      )}
+      {/* 主题切换扩散遮罩：常驻挂载（空闲时半径 0 不可见）。
+          若按需挂载，浏览器往往来不及提交"半径 0"的初始值就开始过渡，
+          实测会丢掉约 300ms 的动画起点，表现为"按下后卡一下才切换"。 */}
+      <div
+        ref={themeOverlayRef}
+        className={`theme-overlay ${revealState === 'active' ? 'active' : ''} ${revealState === 'done' ? 'done' : ''}`}
+        style={revealStyle}
+      />
 
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="navbar-inner">

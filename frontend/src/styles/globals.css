@@ -110,23 +110,28 @@
   /* 扩散起点 */
   --rx: 50vw;
   --ry: 50vh;
-  /* clip-path 圆形：起点 + 半径 */
+  /* clip-path 圆形：起点 + 半径。常驻挂载，空闲时半径 0（不可见）。 */
   clip-path: circle(0px at var(--rx) var(--ry));
   opacity: 1;
-  will-change: clip-path, opacity;
+  /* 复位阶段不产生动画：否则上一轮的"done"会看到圆缩回去 */
+  transition: none;
 }
 
-/* 扩散阶段：半径 0 → 覆盖全屏（含对角线余量） */
+/* 扩散阶段：半径 0 → 刚好铺满全屏（--r-max 由 JS 按按下点到最远角的距离算） */
 .theme-overlay.active {
-  clip-path: circle(160vmax at var(--rx) var(--ry));
-  transition: clip-path 0.72s var(--ease-decelerate, cubic-bezier(0.22, 0.61, 0.36, 1));
+  clip-path: circle(var(--r-max, 160vmax) at var(--rx) var(--ry));
+  /* ease-in-out：起始慢一点，扩散过程才看得见。
+     原先前快后慢的曲线 + 半径过大，视觉上等同于瞬间切换。 */
+  transition: clip-path 0.62s cubic-bezier(0.36, 0.05, 0.24, 1);
+  will-change: clip-path;
 }
 
 /* 覆盖完成 → 淡出，露出已切换的主题 */
 .theme-overlay.done {
-  clip-path: circle(160vmax at var(--rx) var(--ry));
+  clip-path: circle(var(--r-max, 160vmax) at var(--rx) var(--ry));
   opacity: 0;
   transition: clip-path 0s, opacity 0.42s var(--ease-standard, ease);
+  will-change: opacity;
 }
 
 /* ===== 主题切换过渡：由 .theme-overlay 圆扩散承载，避免全局属性过渡触发渲染合成故障 ===== */

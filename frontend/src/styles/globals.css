@@ -2613,8 +2613,16 @@ body.snap-active {
   }
   .status-bar-inner {
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.5rem 0.75rem;
     font-size: 0.7rem;
+    padding: 0 0.75rem;
+    justify-content: center;
+  }
+  /* 窄屏下状态栏会换行到 83px 高，把底部顶上去。
+     版权与技术栈徽章属于装饰信息，手机上让位给时钟/运行时长/专注时长。 */
+  .status-bar .status-meta,
+  .status-bar .status-stack {
+    display: none;
   }
   .status-tech {
     margin-left: 0;
@@ -4971,7 +4979,9 @@ a, button, .article-card, .contact-card, .social-links a,
 
 .music-player-bar {
   position: fixed;
-  bottom: 3.6rem;
+  /* 跟随状态栏实测高度（AppLayout 写入 --status-bar-h）。
+     写死 3.6rem 时，390px 视口下状态栏换行到 83px，播放条会压住它 25px。 */
+  bottom: var(--status-bar-h, 3.6rem);
   left: 0;
   right: 0;
   z-index: 200;
@@ -5175,8 +5185,21 @@ a, button, .article-card, .contact-card, .social-links a,
   border-radius: 2px;
 }
 @media (max-width: 640px) {
-  .music-volume { padding-left: 0.4rem; }
-  .volume-slider { width: 60px; }
+  /* 窄屏（390px）实测：信息区 173px + 控制区 259px + 间距 16px = 448px，
+     而播放条可用宽度只有 350px —— 音量滑杆被裁到屏幕外。
+     这里隐藏滑杆（保留静音按钮，手机音量本就靠硬件键调），并整体压缩左右两侧。 */
+  .music-player-bar { padding: 0.5rem 0.75rem; }
+  .music-player-inner { gap: 0.5rem; }
+  .music-player-info { max-width: 84px; }
+  .music-player-cover { width: 36px; height: 36px; border-radius: 8px; }
+  .music-player-artist { display: none; }
+  .music-volume { padding-left: 0; margin-left: 0; border-left: none; }
+  .volume-slider { display: none; }
+  .music-player-controls { gap: 0.15rem; }
+  .music-ctrl-btn { width: 32px; height: 32px; }
+  .music-play-btn { width: 44px; height: 44px; }
+  /* 中间区只剩约 100px，歌词挤进去不可读，只留进度条 */
+  .music-player-bar .music-lyrics { display: none; }
 }
 
 /* ===== LeetCode Heatmap Performance ===== */

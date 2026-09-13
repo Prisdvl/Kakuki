@@ -168,6 +168,22 @@ export default function AppLayout() {
 
   useEffect(() => { if (isLoggedIn) fetchUser(); }, [isLoggedIn, fetchUser]);
 
+  // 状态栏高度会随视口换行（390px 下可到 83px，430px 只有 55px），
+  // 而底部播放条的 bottom 若是写死值就会与状态栏重叠。这里把实测高度
+  // 写进 CSS 变量 --status-bar-h，供 .music-player-bar 等固定定位元素使用。
+  useEffect(() => {
+    const el = document.querySelector('.status-bar');
+    if (!el) return undefined;
+    const apply = () => {
+      document.documentElement.style.setProperty('--status-bar-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    window.addEventListener('resize', apply);
+    return () => { ro.disconnect(); window.removeEventListener('resize', apply); };
+  }, []);
+
   // 路由切换时立即回到顶部，避免新页面停留在上一页的滚动位置
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });

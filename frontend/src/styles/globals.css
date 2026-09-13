@@ -95,40 +95,38 @@
   --leetcode-hard: #ff453a;
 }
 
-/* ===== Theme Transition Overlay：新主题色从按钮位置羽化晕开（固定圆 + scale，图层小、边缘柔和、流畅自然） ===== */
+/* ===== Theme Transition Overlay =====
+   从按下位置以圆形实色扩散，实时揭示新主题底色，形成"颜色灌满页面"的观感。
+   - 圆为固定大尺寸，用 clip-path 圆形半径做 0 → 100% 扩散（GPU 友好，无布局抖动）
+   - 圆内填新主题底色的实色渐变，扩散过程中颜色逐步覆盖全屏，随后整体淡出
+   关键：半径用 max(vw,vh) 对角线保证任何位置按下都能覆盖到最远角。 */
 .theme-overlay {
   position: fixed;
-  left: var(--rx, 50%);
-  top: var(--ry, 50%);
-  width: 160vmax;
-  height: 160vmax;
-  margin-left: -80vmax;
-  margin-top: -80vmax;
-  border-radius: 50%;
-  /* 柔光晕：仅 accent 淡光，无实色大圆硬边；颜色渐变由 @property 全局插值承担 */
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--accent) 15%, transparent) 0%,
-    color-mix(in srgb, var(--accent) 7%, transparent) 42%,
-    transparent 68%
-  );
-  transform: scale(0);
-  opacity: 0;
-  pointer-events: none;
+  inset: 0;
   z-index: 9998;
-  will-change: transform, opacity;
-  transition: transform 0.85s var(--ease-decelerate),
-              opacity 0.5s var(--ease-standard);
-}
-
-.theme-overlay.active {
-  transform: scale(2.4);
+  pointer-events: none;
+  /* 新主题底色：圆内实色，圆外透明 */
+  background: var(--overlay-bg, var(--bg-primary));
+  /* 扩散起点 */
+  --rx: 50vw;
+  --ry: 50vh;
+  /* clip-path 圆形：起点 + 半径 */
+  clip-path: circle(0px at var(--rx) var(--ry));
   opacity: 1;
+  will-change: clip-path, opacity;
 }
 
-/* 扩散完成后的渐隐阶段 */
+/* 扩散阶段：半径 0 → 覆盖全屏（含对角线余量） */
+.theme-overlay.active {
+  clip-path: circle(160vmax at var(--rx) var(--ry));
+  transition: clip-path 0.72s var(--ease-decelerate, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+
+/* 覆盖完成 → 淡出，露出已切换的主题 */
 .theme-overlay.done {
+  clip-path: circle(160vmax at var(--rx) var(--ry));
   opacity: 0;
+  transition: clip-path 0s, opacity 0.42s var(--ease-standard, ease);
 }
 
 /* ===== 主题切换过渡：由 .theme-overlay 圆扩散承载，避免全局属性过渡触发渲染合成故障 ===== */
@@ -576,7 +574,10 @@ body.theme-switching .glass-floating::after {
   opacity: 0.4;
 }
 
-/* ===== Mouse Tracking Glow ===== */
+/* ===== Mouse Tracking Glow —— 已按需求移除 =====
+   原实现会在卡片内跟随光标渲染一团 accent 径向光斑，视觉上像"炫光"，
+   与极简内敛的设计取向冲突，且多一层合成开销。这里保留类名与结构
+   （老代码仍在用 .mouse-glow），但不再产生任何光效。 */
 .mouse-glow {
   position: relative;
   overflow: hidden;
@@ -584,33 +585,12 @@ body.theme-switching .glass-floating::after {
 }
 
 .mouse-glow::before {
-  content: '';
-  position: absolute;
-  top: var(--mouse-y, 0);
-  left: var(--mouse-x, 0);
-  width: 250px;
-  height: 250px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 60%);
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  z-index: 0;
-}
-
-.mouse-glow:hover::before {
-  opacity: 0.6;
+  content: none;
 }
 
 .mouse-glow > * {
   position: relative;
   z-index: 1;
-}
-
-/* 触屏设备无 hover：光斑层直接移除，省一层合成 */
-@media (hover: none) {
-  .mouse-glow::before { display: none; }
 }
 
 /* ===== App Container ===== */
@@ -4552,6 +4532,18 @@ a, button, .article-card, .contact-card, .social-links a,
   color: var(--text-tertiary);
 }
 
+/* 音源降级提示：原歌单外链失效时告知原因，避免"没声音但不知为何" */
+.mp-source-notice {
+  margin: 0 0.25rem 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--warning, #d97706);
+  background: color-mix(in srgb, var(--warning, #d97706) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning, #d97706) 28%, transparent);
+}
+
 .mp-scroll-list {
   display: flex;
   flex-direction: column;
@@ -5027,6 +5019,10 @@ a, button, .article-card, .contact-card, .social-links a,
   max-width: 1080px;
   margin: 0 auto;
   padding-top: 2rem;
+  /* 长文阅读场景：把全局玻璃倾斜弱化到"轻微"。
+     全局默认 7deg/1.012，这里降到 1.6deg 且不放大 —— 保留互动感，不再干扰视线。 */
+  --tilt-max: 1.6;
+  --tilt-scale: 1;
 }
 
 @media (max-width: 1024px) {

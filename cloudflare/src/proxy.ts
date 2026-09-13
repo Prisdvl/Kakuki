@@ -372,26 +372,70 @@ export const proxyRoutes = new Hono<{ Bindings: Env }>()
 
   // 同源音频流：透传 Range，前端 <audio> 加载后 createMediaElementSource 可出频谱
   .get('/netease/song/:id/stream/', async (c) => {
+    const songId = c.req.param('id');
     const headers: Record<string, string> = {
       'User-Agent': NETEASE_HEADERS['User-Agent'],
       Referer: NETEASE_HEADERS.Referer,
     };
     const range = c.req.header('Range');
     if (range) headers.Range = range;
+
     let upstream: Response;
     try {
-      upstream = await fetch(outerUrl(c.req.param('id')), { headers, redirect: 'follow', signal: AbortSignal.timeout(20_000) });
+      upstream = await fetch(outerUrl(songId), { headers, redirect: 'follow', signal: AbortSignal.timeout(20_000) });
     } catch {
       return neteaseError('音频获取失败');
     }
-    if (upstream.status !== 200 && upstream.status !== 206) return neteaseError('音频不可用', upstream.status);
+
+    // 网易云对无版权 / 风控命中的曲目会返回 200 + text/html 的空体。
+    // 此时必须显式失败，否则 <audio> 收到 HTML 会静默无声（原"音乐没声音"的根因）。
+    const ctype = upstream.headers.get('Content-Type') ?? '';
+    const isHtml = ctype.includes('text/html');
+    if (isHtml || (upstream.status === 200 && !upstream.body)) {
+      void upstream.body?.cancel();
+      return neteaseError('该曲目暂不可播放（音源受限）', 404);
+    }
+    if (upstream.status !== 200 && upstream.status !== 206) {
+      void upstream.body?.cancel();
+      return neteaseError('音频不可用', upstream.status);
+    }
+
     const respHeaders = new Headers();
-    respHeaders.set('Content-Type', upstream.headers.get('Content-Type') ?? 'audio/mpeg');
+    respHeaders.set('Content-Type', ctype || 'audio/mpeg');
     respHeaders.set('Accept-Ranges', 'bytes');
-    respHeaders.set('Cache-Control', 'no-store');
+    // 音频内容不可变，允许边缘缓存以降低回源压力
+    respHeaders.set('Cache-Control', 'public, max-age=3600');
     const contentRange = upstream.headers.get('Content-Range');
     if (contentRange) respHeaders.set('Content-Range', contentRange);
     const contentLength = upstream.headers.get('Content-Length');
     if (contentLength) respHeaders.set('Content-Length', contentLength);
     return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
   });
+
+/**
+ * 音频可用性探测：HEAD 语义，仅返回是否可播 + Content-Type，不拉取正文。
+ * 前端用它跳过不可播放的曲目，避免用户点了播放却静默无声。
+ */
+export const audioProbeRoutes = new Hono<{ Bindings: Env }>()
+  .get('/netease/song/:id/available/', async (c) => {
+    const songId = c.req.param('id');
+    try {
+      const resp = await fetch(outerUrl(songId), {
+        method: 'GET',
+        headers: {
+          'User-Agent': NETEASE_HEADERS['User-Agent'],
+          Referer: NETEASE_HEADERS.Referer,
+          Range: 'bytes=0-1',
+        },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(10_000),
+      });
+      void resp.body?.cancel();
+      const ctype = resp.headers.get('Content-Type') ?? '';
+      const playable = (resp.status === 200 || resp.status === 206) && !ctype.includes('text/html');
+      return Response.json({ id: Number(songId), playable, content_type: ctype, status: resp.status });
+    } catch {
+      return Response.json({ id: Number(songId), playable: false, content_type: '', status: 0 });
+    }
+  });
+

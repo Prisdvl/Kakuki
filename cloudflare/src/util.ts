@@ -10,6 +10,8 @@ export type Env = {
   JWT_SECRET_DEV?: string;
   JWT_ISSUER?: string;
   JWT_SECRET?: string;
+  /** 本地 PrisTimer 同步脚本的上报令牌 */
+  SYNC_TOKEN?: string;
 };
 
 export interface JwtPayload {

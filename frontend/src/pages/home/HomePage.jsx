@@ -9,21 +9,21 @@ import {
   Play, Pause, SkipBack, SkipForward, Heart,
   Rocket, FolderTree, Quote, ThumbsUp, Shuffle, ArrowRight,
   LayoutGrid, GripVertical, ArrowUp, ArrowDown, Maximize2, Minimize2,
-  EyeOff, Plus, RotateCcw, Check, X, Timer,
+  EyeOff, Plus, RotateCcw, Check, X, Timer, CalendarCheck,
 } from "lucide-react";
 import { getArticles, getCategories } from "../../api/article";
 import { getTalks, likeTalk } from "../../api/talk";
-import { getProjects } from "../../api/project";
 import { extractList } from "../../api/request";
+import { useGithubProjects, LANG_COLORS } from "../../hooks/useGithubProjects";
 import MusicPlayer from "../../components/MusicPlayer";
 import TodoCard from "../../components/Tools/TodoCard";
 import PomodoroCard from "../../components/Tools/PomodoroCard";
 import PaletteCard from "../../components/Tools/PaletteCard";
 import CountdownCard from "../../components/Tools/CountdownCard";
+import CheckinCard from "../../components/Tools/CheckinCard";
 import TiltCard from "../../components/TiltCard";
 import { useHomeLayout } from "../../store/homeLayoutStore";
 import useMusicStore from '../../store/musicStore';
-import leetcodeApi from "../../api/leetcode";
 import useCountUp from "../../hooks/useCountUp";
 import useMagnetic from "../../hooks/useMagnetic";
 
@@ -31,7 +31,7 @@ import useMagnetic from "../../hooks/useMagnetic";
 const COMPONENT_META = {
   profile:   { name: "博主卡片",  icon: Sparkles },
   music:     { name: "音乐播放",  icon: Music },
-  leetcode:  { name: "LeetCode",  icon: BarChart3 },
+  leetcode:  { name: "每日打卡",  icon: CalendarCheck },
   talks:     { name: "最新杂谈",  icon: MessageSquare },
   projects:  { name: "项目精选",  icon: Rocket },
   categories:{ name: "分类速览",  icon: FolderTree },
@@ -41,8 +41,6 @@ const COMPONENT_META = {
   palette:   { name: "色板生成",  icon: LayoutGrid },
   countdown: { name: "纪念日",    icon: Calendar },
 };
-
-const LEETCODE_USERNAME = 'Likey-e';
 
 function AnimatedStatValue({ value }) {
   const animated = useCountUp(value);
@@ -130,7 +128,7 @@ export function PlayerBar() {
   const {
     currentTrack, currentLyrics, currentLyricIndex,
     isPlaying, togglePlay, nextTrack, prevTrack,
-    currentTime, duration, seekTo,
+    currentTime, duration, seekTo, audioError,
   } = useMusicStore(
     (state) => ({
       currentTrack: state.currentTrack,
@@ -143,6 +141,7 @@ export function PlayerBar() {
       currentTime: state.currentTime,
       duration: state.duration,
       seekTo: state.seekTo,
+      audioError: state.audioError,
     })
   );
 
@@ -172,7 +171,13 @@ export function PlayerBar() {
 
   let lyricText = '';
   let lyricKey = 'default-' + defIdx;
-  if (currentTrack && currentLyrics.length > 0 && currentLyricIndex >= 0) {
+  let lyricColor = currentTrack ? 'var(--accent)' : 'var(--text-tertiary)';
+  if (audioError) {
+    // 音源不可用 / 播放被拦截：把原因直接显示在歌词位，而非静默无声
+    lyricText = audioError;
+    lyricKey = 'err-' + audioError;
+    lyricColor = 'var(--warning)';
+  } else if (currentTrack && currentLyrics.length > 0 && currentLyricIndex >= 0) {
     lyricText = currentLyrics[currentLyricIndex]?.text || currentTrack.name;
     lyricKey = 'lyric-' + currentLyricIndex;
   } else if (currentTrack) {
@@ -237,7 +242,7 @@ export function PlayerBar() {
             className="lyric-fade"
             style={{
               fontSize: '0.82rem', fontWeight: 500,
-              color: currentTrack ? 'var(--accent)' : 'var(--text-tertiary)',
+              color: lyricColor,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               maxWidth: '100%',
             }}
@@ -334,365 +339,13 @@ export function PlayerBar() {
   );
 }
 
-const MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-
-function ProgressRing({ value, max, size = 120, stroke = 10, color = '#44b700', label, sublabel }) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = max > 0 ? (value / max) : 0;
-  const dashoffset = circumference * (1 - Math.min(progress, 1));
-  const center = size / 2;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle
-          cx={center} cy={center} r={radius}
-          fill="none"
-          stroke="var(--bg-tertiary)"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={center} cy={center} r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashoffset}
-          style={{ transition: 'stroke-dashoffset 1s ease', filter: `drop-shadow(0 0 6px ${color}40)` }}
-        />
-      </svg>
-      <div style={{ marginTop: -size / 2 - 8, position: 'relative', height: 0 }}>
-        <div style={{
-          fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)',
-          textAlign: 'center',
-        }}>
-          {value}
-        </div>
-        {sublabel && (
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            / {sublabel}
-          </div>
-        )}
-      </div>
-      {label && (
-        <div style={{ marginTop: size / 2 + 16, fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          {label}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SmallRing({ value, max, color, label }) {
-  const size = 64;
-  const stroke = 6;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = max > 0 ? (value / max) : 0;
-  const dashoffset = circumference * (1 - Math.min(progress, 1));
-  const center = size / 2;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <div style={{ position: 'relative' }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--bg-tertiary)" strokeWidth={stroke} />
-          <circle
-            cx={center} cy={center} r={radius}
-            fill="none" stroke={color} strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={dashoffset}
-            style={{ transition: 'stroke-dashoffset 1s ease' }}
-          />
-        </svg>
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)',
-        }}>
-          {value}
-        </div>
-      </div>
-      <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)' }}>
-        {label} {value}/{max}
-      </div>
-    </div>
-  );
-}
-
+/**
+ * 每日打卡卡（原 LeetCode 卡已改造，历史数据作为初始记录导入）
+ * 组件实现见 components/Tools/CheckinCard.jsx
+ * 注意：这里必须用 import 引入局部绑定，`export { x as Y }` 不会创建可用的本地变量。
+ */
 export function LeetCodeCard() {
-  const [lcData, setLcData] = useState(null);
-  const [lcLoading, setLcLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLcLoading(true);
-      try {
-        const result = await leetcodeApi.getAllData(LEETCODE_USERNAME);
-        if (result.profile?.matchedUser) {
-          setLcData(result);
-        } else {
-          setLcData({ profile: null, calendar: {}, recentSubmissions: [] });
-        }
-      } catch {
-        setLcData({ profile: null, calendar: {}, recentSubmissions: [] });
-      } finally {
-        setLcLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const HEATMAP_WEEKS = 26;
-  const DAYS = 7;
-
-  const profile = lcData?.profile;
-  const matchedUser = profile?.matchedUser;
-
-  const diffColors = { Easy: 'var(--leetcode-easy)', Medium: 'var(--leetcode-medium)', Hard: 'var(--leetcode-hard)' };
-  const diffs = useMemo(() => [
-    { label: '简单', difficulty: 'Easy', color: diffColors.Easy },
-    { label: '中等', difficulty: 'Medium', color: diffColors.Medium },
-    { label: '困难', difficulty: 'Hard', color: diffColors.Hard },
-  ].map((d) => {
-    const acNum = matchedUser?.submitStatsGlobal?.acSubmissionNum?.find(
-      (s) => s.difficulty === d.difficulty
-    );
-    const total = profile?.allQuestionsCount?.find(
-      (s) => s.difficulty === d.difficulty
-    );
-    return { ...d, solved: acNum?.count || 0, total: total?.count || 0 };
-  }), [matchedUser, profile]);
-
-  const totalAll = useMemo(() => diffs.reduce((s, d) => s + d.solved, 0), [diffs]);
-  const totalMax = useMemo(() => diffs.reduce((s, d) => s + d.total, 0), [diffs]);
-
-  const recentSubs = useMemo(() => lcData?.recentSubmissions || [], [lcData]);
-  // 优先使用后端返回的真实 streak/totalActiveDays，回退到前端计算
-  const streak = useMemo(() => {
-    if (lcData?.streak) return lcData.streak;
-    if (recentSubs.length === 0) return 0;
-    const days = Array.from(new Set(recentSubs.map((s) => {
-      const d = new Date(parseInt(s.timestamp) * 1000);
-      return d.toDateString();
-    }))).sort((a, b) => new Date(b) - new Date(a));
-    let count = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < days.length; i++) {
-      const d = new Date(days[i]);
-      d.setHours(0, 0, 0, 0);
-      const expectedDate = new Date(today);
-      expectedDate.setDate(today.getDate() - i);
-      if (d.getTime() === expectedDate.getTime()) count++;
-      else break;
-    }
-    return count;
-  }, [recentSubs, lcData]);
-  const activeDays = lcData?.totalActiveDays || useMemo(() => {
-    const uniqueDays = new Set(recentSubs.map((s) => {
-      const d = new Date(parseInt(s.timestamp) * 1000);
-      return d.toDateString();
-    }));
-    return uniqueDays.size;
-  }, [recentSubs, lcData]);
-
-  const heatmapData = useMemo(() => {
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - (HEATMAP_WEEKS * DAYS - 1));
-    startDate.setDate(startDate.getDate() - startDate.getDay());
-    const calendar = lcData?.calendar || {};
-    // 日历为空时，用最近提交记录按日期聚合出真实瓷砖（而非随机占位）
-    const calFromSubs = {};
-    if (Object.keys(calendar).length === 0 && recentSubs.length > 0) {
-      recentSubs.forEach((s) => {
-        if (!s.timestamp) return;
-        const d = new Date(parseInt(s.timestamp) * 1000);
-        if (Number.isNaN(d.getTime())) return;
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        calFromSubs[key] = (calFromSubs[key] || 0) + 1;
-      });
-    }
-    const activeCal = Object.keys(calendar).length > 0 ? calendar : calFromSubs;
-    const hasRealData = Object.keys(activeCal).length > 0;
-    const data = [];
-    for (let w = 0; w < HEATMAP_WEEKS; w++) {
-      const week = [];
-      for (let d = 0; d < DAYS; d++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + w * DAYS + d);
-        const isFuture = date > today;
-        if (isFuture) {
-          week.push({ date, count: -1 });
-        } else if (hasRealData) {
-          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-          const count = activeCal[dateStr] || 0;
-          const level = count === 0 ? 0 : Math.min(Math.ceil(count / 3), 4);
-          week.push({ date, count: level });
-        } else {
-          const seed = (date.getFullYear() * 1000 + date.getMonth() * 50 + date.getDate()) % 100;
-          let count = 0;
-          if (seed < 35) count = 0;
-          else if (seed < 60) count = 1;
-          else if (seed < 80) count = 2;
-          else if (seed < 92) count = 3;
-          else count = 4;
-          week.push({ date, count });
-        }
-      }
-      data.push(week);
-    }
-    return data;
-  }, [lcData, recentSubs]);
-
-  // 月份标签按实际跨越的周列数分配宽度（与瓷砖列对齐，而非 flex 均分）
-  const monthSpans = useMemo(() => {
-    const today = new Date();
-    const sDate = new Date(today);
-    sDate.setDate(sDate.getDate() - (HEATMAP_WEEKS * DAYS - 1));
-    sDate.setDate(sDate.getDate() - sDate.getDay());
-    const spans = [];
-    for (let w = 0; w < HEATMAP_WEEKS; w++) {
-      const date = new Date(sDate);
-      date.setDate(sDate.getDate() + w * DAYS + 3); // 取周中日期判断所属月
-      const m = date.getMonth();
-      const last = spans[spans.length - 1];
-      if (last && last.m === m) last.w += 1;
-      else spans.push({ m, w: 1 });
-    }
-    return spans;
-  }, []);
-
-  const cellColor = (count) => {
-    if (count < 0) return 'transparent';
-    const colors = ['var(--heat-empty)', 'var(--heat-level-1)', 'var(--heat-level-2)', 'var(--heat-level-3)', 'var(--heat-level-4)'];
-    return colors[Math.min(count, 4)];
-  };
-
-  return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Code2 size={18} style={{ color: 'var(--accent)' }} /> LeetCode
-        </h3>
-        <a href={`https://leetcode.cn/u/${LEETCODE_USERNAME}/`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem', textDecoration: 'none' }}>
-          查看 <ExternalLink size={12} />
-        </a>
-      </div>
-
-      {lcLoading ? (
-        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-tertiary)' }}>
-          <BarChart3 size={24} style={{ margin: '0 auto 0.5rem' }} />
-          <div style={{ fontSize: '0.8rem' }}>加载 LeetCode 数据...</div>
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '1.25rem', alignItems: 'center' }}>
-            <ProgressRing
-              value={totalAll}
-              max={totalMax}
-              size={110}
-              stroke={9}
-              color="var(--accent)"
-              label="已解答"
-              sublabel={`${totalAll}/${totalMax}`}
-            />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                {diffs.map((d) => (
-                  <SmallRing key={d.label} value={d.solved} max={d.total} color={d.color} label={d.label} />
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  <BarChart3 size={13} style={{ color: 'var(--accent)' }} />
-                  <strong style={{ color: 'var(--text-primary)' }}>{recentSubs.length}</strong> 次提交
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  <TrendingUp size={13} style={{ color: 'var(--success)' }} />
-                  <strong style={{ color: 'var(--text-primary)' }}>{activeDays}</strong> 天活跃
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  <Flame size={13} style={{ color: 'var(--warning)' }} />
-                  <strong style={{ color: 'var(--text-primary)' }}>{streak}</strong> 天连续
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: 12, border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                近半年提交记录
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>少</span>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: 2, background: ['var(--heat-empty)', 'var(--heat-level-1)', 'var(--heat-level-2)', 'var(--heat-level-3)', 'var(--heat-level-4)'][i] }} />
-                ))}
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>多</span>
-              </div>
-            </div>
-
-            <div className="lc-heatmap-wrapper">
-              <div style={{ display: 'inline-block', minWidth: '100%' }}>
-                <div style={{ display: 'flex', gap: 2, marginLeft: 22, marginBottom: 4 }}>
-                  {monthSpans.map((s, i) => (
-                    <span key={i} style={{
-                      flex: s.w,
-                      fontSize: '0.6rem',
-                      color: 'var(--text-tertiary)',
-                      textAlign: 'left',
-                      minWidth: 0,
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {MONTHS[s.m]}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginRight: 4, fontSize: '0.55rem', color: 'var(--text-tertiary)' }}>
-                    <span style={{ height: 10 }}></span>
-                    <span style={{ height: 10 }}>一</span>
-                    <span style={{ height: 10 }}></span>
-                    <span style={{ height: 10 }}>三</span>
-                    <span style={{ height: 10 }}></span>
-                    <span style={{ height: 10 }}>五</span>
-                    <span style={{ height: 10 }}></span>
-                  </div>
-                  {heatmapData.map((week, wi) => (
-                    <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {week.map((day, di) => (
-                        <div
-                          key={di}
-                          title={day.count >= 0 ? `${day.count} 次提交` : ''}
-                          style={{
-                            width: 10, height: 10, borderRadius: 2,
-                            background: cellColor(day.count),
-                            opacity: day.count < 0 ? 0.3 : 1,
-                            cursor: day.count >= 0 ? 'pointer' : 'default',
-                            transition: 'transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                          }}
-                          onMouseEnter={(e) => { if (day.count >= 0) e.currentTarget.style.transform = 'scale(1.45)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+  return <CheckinCard />;
 }
 
 const QUOTES = [
@@ -777,16 +430,9 @@ export function QuoteCard() {
 }
 
 export function ProjectsCard() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getProjects().then((res) => {
-      const list = extractList(res);
-      const sorted = [...list].sort((a, b) => ((b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0)) || ((a.order ?? 0) - (b.order ?? 0)));
-      setProjects(sorted.slice(0, 3));
-    }).catch(() => setProjects([])).finally(() => setLoading(false));
-  }, []);
+  // 真实项目来自 GitHub 仓库（排除 fork），不再读后台占位数据
+  const { projects: allProjects, loading } = useGithubProjects();
+  const projects = useMemo(() => allProjects.slice(0, 3), [allProjects]);
 
   return (
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
@@ -798,7 +444,7 @@ export function ProjectsCard() {
           更多 <ExternalLink size={12} />
         </Link>
       </div>
-      {loading ? (
+      {loading && projects.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '1.25rem 0', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>加载项目...</div>
       ) : projects.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', padding: '1rem 0', fontSize: '0.85rem' }}>还没有项目内容</p>
@@ -814,10 +460,13 @@ export function ProjectsCard() {
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                <a href={p.url || p.repo_url || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
-                  {p.name}
+                <a href={p.repo_url || p.url || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
+                  {p.language && (
+                    <i style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: LANG_COLORS[p.language] || '#8b949e' }} />
+                  )}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                 </a>
-                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexShrink: 0 }}>
                   {p.repo_url && (
                     <a href={p.repo_url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 仓库`} title="GitHub 仓库"
                       style={{ color: 'var(--text-tertiary)', display: 'flex', transition: 'color 0.2s' }}

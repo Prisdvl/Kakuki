@@ -56,7 +56,7 @@ function PlaylistSelector({ onSelect, loading }) {
 }
 
 function TrackList({ onPlay, currentTrack, onBack }) {
-  const { currentPlaylist, isPlaying } = useMusicStore();
+  const { currentPlaylist, isPlaying, sourceKind } = useMusicStore();
   const tracks = currentPlaylist?.tracks || [];
 
   return (
@@ -68,6 +68,11 @@ function TrackList({ onPlay, currentTrack, onBack }) {
         <span className="mp-section-title mp-truncate">{currentPlaylist?.name || 'Prisdvl 的喜欢音乐'}</span>
         <span className="mp-section-meta">{tracks.length} 首</span>
       </div>
+      {sourceKind === 'fallback' && (
+        <div className="mp-source-notice">
+          原歌单曲目的网易云外链已失效，当前播放示例曲目（可在 public/music/ 放置自己的音频恢复）
+        </div>
+      )}
       {tracks.length === 0 ? (
         <div className="mp-empty-text">歌单暂无歌曲</div>
       ) : (

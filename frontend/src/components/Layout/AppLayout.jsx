@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sun, Moon, Menu, X, ArrowUp, Timer, Activity } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 import useUserStore from '../../store/userStore';
+import checkinApi from '../../api/checkin';
 import FeatureMenu from '../FeatureMenu';
 import ParticleField from '../ParticleField';
 import InkWash from '../InkWash';
@@ -58,10 +59,12 @@ const FlipUnit = memo(function FlipUnit({ value, label }) {
   );
 });
 
-// 站点运行时长：以 GitHub Pages 上线时刻为基准累计（翻页天数/小时风格）
+// 站点运行时长：以 kakuki.top 首次部署时刻为基准累计（翻页天数/小时风格）
 const StatusUptime = memo(function StatusUptime() {
-  // 部署基准：2026-09-08 19:15 (UTC+8) = GitHub Pages 上线时刻
-  const DEPLOY_TS = new Date('2026-09-08T11:15:00Z').getTime();
+  // 部署基准：kakuki.top 的首次 Worker 部署时刻。
+  // 经 Cloudflare API 核验（workers/scripts/kakuki/deployments 最早一条）：
+  // 2026-09-12T14:51:01Z = 本地 UTC+8 2026-09-12 22:51:01
+  const DEPLOY_TS = new Date('2026-09-12T14:51:01Z').getTime();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -76,7 +79,7 @@ const StatusUptime = memo(function StatusUptime() {
   const seconds = Math.floor(diff / 1000) % 60;
 
   return (
-    <span className="status-item status-uptime" title="自 GitHub Pages 上线起的运行时长">
+    <span className="status-item status-uptime" title="自 kakuki.top 上线起的运行时长">
       <Activity size={11} />
       <FlipUnit value={days} label="天" />
       <FlipUnit value={hours} label="时" />
@@ -86,27 +89,37 @@ const StatusUptime = memo(function StatusUptime() {
   );
 });
 
-// 今日专注时长统计（跨组件监听番茄钟记录）
+// 今日专注时长：优先取后端（本地 PrisTimer 同步脚本上报），失败回退本地番茄钟记录
 const StatusFocus = memo(function StatusFocus() {
   const [minutes, setMinutes] = useState(0);
 
   const refresh = useCallback(() => {
-    const today = new Date().toDateString();
-    try {
-      const raw = localStorage.getItem('kakuki-focus-records');
-      const arr = raw ? JSON.parse(raw) : [];
-      const sum = (Array.isArray(arr) ? arr : [])
-        .filter((r) => r && new Date(r.ts).toDateString() === today)
-        .reduce((s, r) => s + (r.minutes || 0), 0);
-      setMinutes(sum);
-    } catch { setMinutes(0); }
+    const localSum = () => {
+      const today = new Date().toDateString();
+      try {
+        const raw = localStorage.getItem('kakuki-focus-records');
+        const arr = raw ? JSON.parse(raw) : [];
+        return (Array.isArray(arr) ? arr : [])
+          .filter((r) => r && new Date(r.ts).toDateString() === today)
+          .reduce((s, r) => s + (r.minutes || 0), 0);
+      } catch { return 0; }
+    };
+
+    checkinApi.focusSummary(7)
+      .then((res) => {
+        const d = res?.data;
+        // 后端有数据用后端（PrisTimer 真实专注时长），否则回退本地番茄钟
+        if (d && d.today_ms > 0) setMinutes(d.today_minutes);
+        else setMinutes(localSum());
+      })
+      .catch(() => setMinutes(localSum()));
   }, []);
 
   useEffect(() => {
     refresh();
     window.addEventListener('kakuki:focus-updated', refresh);
     window.addEventListener('storage', refresh);
-    const t = setInterval(refresh, 30000);
+    const t = setInterval(refresh, 60000);
     return () => {
       window.removeEventListener('kakuki:focus-updated', refresh);
       window.removeEventListener('storage', refresh);
@@ -116,7 +129,7 @@ const StatusFocus = memo(function StatusFocus() {
 
   if (minutes === 0) return null;
   return (
-    <span className="status-item status-focus" title="今日专注累计时长">
+    <span className="status-item status-focus" title="今日专注累计时长（同步自本地计时器）">
       <Timer size={11} />
       今日专注 {minutes} 分钟
     </span>
@@ -220,10 +233,13 @@ export default function AppLayout() {
   // 全局 3D 倾斜委托：统一所有内容区玻璃组件为首页 TiltCard 同款倾斜交互。
   // 对 main 内的 .glass / .glass-card / .glass-elevated（非 tilt-card 内部、非固定条/搜索框）
   // 绑定 mousemove 倾斜 + 光滑回弹；进入时解除一次性 glassMount 动画的 transform 锁定。
+  // 倾斜幅度由 CSS 变量 --tilt-max 控制：阅读类页面（文章详情）会把它调低，
+  // 因为大幅倾斜会干扰长文阅读。
   useEffect(() => {
     const SEL = 'main .glass, main .glass-card, main .glass-elevated';
     const EXCLUDE = '.search-center, .music-player-bar, .status-bar, .feature-menu-dropdown, .navbar, .tilt-card, .tilt-card *';
-    const TILT_MAX = 6;
+    const DEFAULT_TILT_MAX = 7;
+    const DEFAULT_TILT_SCALE = 1.012;
     const TILT_EASE = 'transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease';
 
     const bind = (el) => {
@@ -245,11 +261,15 @@ export default function AppLayout() {
       const onMove = (e) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) return;
+        // 逐元素读取倾斜强度：允许页面通过 --tilt-max / --tilt-scale 局部弱化
+        const cs = getComputedStyle(el);
+        const maxTilt = parseFloat(cs.getPropertyValue('--tilt-max')) || DEFAULT_TILT_MAX;
+        const scale = parseFloat(cs.getPropertyValue('--tilt-scale')) || DEFAULT_TILT_SCALE;
         const px = (e.clientX - r.left) / r.width;
         const py = (e.clientY - r.top) / r.height;
-        const rx = (0.5 - py) * TILT_MAX;
-        const ry = (px - 0.5) * TILT_MAX;
-        el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(1.012)`;
+        const rx = (0.5 - py) * maxTilt;
+        const ry = (px - 0.5) * maxTilt;
+        el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${scale})`;
       };
       const onLeave = () => {
         el.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)';
@@ -336,29 +356,60 @@ export default function AppLayout() {
     };
   }, []);
 
-  const handleToggleTheme = useCallback(() => {
-    const btn = themeBtnRef.current;
-    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+  // origin：实际被按下的元素。扩散圆心取它 —— 老大要求"从按下位置散开"，
+  // 所以导航栏按钮与设置面板分段控件各自作为各自的圆心。
+  const handleToggleTheme = useCallback((origin) => {
+    if (revealState !== 'idle') return;   // 动画进行中不重复触发
+    const el = origin && origin.getBoundingClientRect ? origin : themeBtnRef.current;
+    const rect = el
+      ? el.getBoundingClientRect()
+      : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    // 切换期间暂停背景动画层，降低合成负担
+
     document.body.classList.add('theme-switching');
-    // 下一帧切换变量：颜色经 @property 注册由容器级 transition 全局插值（丝滑渐变），
-    // 柔光晕从按钮处扩散淡出作为视觉衬托，无实色大圆遮盖
-    requestAnimationFrame(() => {
-      toggleTheme();
-      requestAnimationFrame(() => {
-        setRevealStyle({ '--rx': x + 'px', '--ry': y + 'px' });
-        setRevealState('active');
-      });
+
+    // 先把遮罩设为「新主题底色 + 半径 0」，再在下一帧扩散。
+    // 顺序很关键：遮罩一上来就必须是新主题色，扩散才会呈现"从按下点灌满"的效果。
+    const nextIsDark = !isDark;
+    setRevealStyle({
+      '--rx': `${x}px`,
+      '--ry': `${y}px`,
+      // 与新主题 --bg-primary 保持一致（浅色 #f5f5f7 / 深色 #000000）
+      '--overlay-bg': nextIsDark ? '#000000' : '#f5f5f7',
     });
-    // 扩散完成 → 渐隐 → 清理
-    setTimeout(() => setRevealState('done'), 650);
+    setRevealState('pre');
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setRevealState('active'));
+    });
+
+    // 扩散基本铺满时切换真实主题（此时遮罩已覆盖全屏，切换过程不可见）
+    setTimeout(() => {
+      toggleTheme();
+      setRevealState('done');
+    }, 700);
+
+    // 淡出结束 → 清理
     setTimeout(() => {
       setRevealState('idle');
+      setRevealStyle({});
       document.body.classList.remove('theme-switching');
-    }, 1250);
-  }, [toggleTheme]);
+    }, 1160);
+  }, [toggleTheme, revealState, isDark]);
+
+  // 任意入口（导航栏按钮 / 设置面板）请求切换主题时，统一走扩散动画。
+  // preventDefault 表示"已由动画接管"，请求方据此决定是否兜底直切。
+  useEffect(() => {
+    const onRequest = (e) => {
+      // 无论是否能接管，都要 preventDefault：请求方据此不做兜底直切
+      e.preventDefault();
+      if (revealState !== 'idle') return;
+      handleToggleTheme(e.detail && e.detail.origin);
+    };
+    window.addEventListener('kakuki:request-theme-toggle', onRequest);
+    return () => window.removeEventListener('kakuki:request-theme-toggle', onRequest);
+  }, [handleToggleTheme, revealState]);
 
   return (
     <>
@@ -396,8 +447,12 @@ export default function AppLayout() {
         <ArrowUp size={18} />
       </button>
 
+      {/* 主题切换扩散遮罩：pre 阶段已就位（半径 0），active 阶段圆形扩满全屏 */}
       {revealState !== 'idle' && (
-        <div className={`theme-overlay ${revealState === 'active' ? 'active' : ''} ${revealState === 'done' ? 'done' : ''}`} style={revealStyle} />
+        <div
+          className={`theme-overlay ${revealState === 'active' ? 'active' : ''} ${revealState === 'done' ? 'done' : ''}`}
+          style={revealStyle}
+        />
       )}
 
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
@@ -424,7 +479,7 @@ export default function AppLayout() {
             <button
               ref={themeBtnRef}
               className="theme-toggle"
-              onClick={handleToggleTheme}
+              onClick={(e) => handleToggleTheme(e.currentTarget)}
               aria-label={isDark ? '切换到浅色模式' : '切换到深色模式'}
               title={isDark ? '当前深色模式 · 点击切换为浅色' : '当前浅色模式 · 点击切换为深色'}
             >

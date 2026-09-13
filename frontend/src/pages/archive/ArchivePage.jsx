@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Row, Col, Pagination, Empty, Input } from "antd";
 import { Link, useSearchParams } from "react-router-dom";
-import { Calendar, ChevronRight, Search, ArrowLeft, FileSearch } from "lucide-react";
+import { ChevronRight, Search, ArrowLeft, FileSearch } from "lucide-react";
 import { getArchives, getArticles } from "../../api/article";
 import { extractList } from "../../api/request";
 
@@ -162,33 +162,54 @@ export default function ArchivePage() {
         ) : data.length === 0 ? (
           <Empty description="还没有文章" style={{ padding: "3rem 0" }} />
         ) : (
-          data.map((yearGroup, gi) => (
-            <div key={yearGroup.year} className="mb-8 reveal" style={{ '--reveal-i': gi }}>
-              <h3 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--accent)", marginBottom: "1rem" }}>
-                {yearGroup.year}
-              </h3>
-              {yearGroup.months?.map((monthGroup) => (
-                <div key={monthGroup.month} className="ml-6 mb-6">
-                  <h4 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.75rem" }}>
-                    {monthGroup.month} 月
-                  </h4>
-                  <div style={{ borderLeft: "2px solid var(--border)", paddingLeft: "1rem" }}>
-                    {monthGroup.articles?.map((article) => (
-                      <div key={article.id} className="mb-3" style={{ position: "relative" }}>
-                        <div style={{ position: "absolute", left: "-1.35rem", top: "0.5rem", width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", opacity: 0.5 }} />
-                        <Link to={`/article/${article.id}`} className="article-card" style={{ padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Calendar size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
-                          <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)", flexShrink: 0 }}>{article.created_at?.slice(5, 10)}</span>
-                          <span style={{ color: "var(--text-primary)", fontSize: "0.95rem" }}>{article.title}</span>
-                          <ChevronRight size={14} style={{ color: "var(--text-tertiary)", marginLeft: "auto", flexShrink: 0 }} />
-                        </Link>
+          <div className="tl-root">
+            {data.map((yearGroup, gi) => (
+              <section
+                key={yearGroup.year}
+                className="tl-year reveal"
+                style={{ '--reveal-i': gi }}
+              >
+                {/* 年份节点：轴线上的实心大点 + 年份 */}
+                <header className="tl-year-head">
+                  <span className="tl-node tl-node-year" aria-hidden="true" />
+                  <h3 className="tl-year-label">{yearGroup.year}</h3>
+                  <span className="tl-year-count">
+                    {yearGroup.months?.reduce((s, m) => s + (m.articles?.length || 0), 0) || 0} 篇
+                  </span>
+                </header>
+
+                <div className="tl-body">
+                  {yearGroup.months?.map((monthGroup) => (
+                    <div key={monthGroup.month} className="tl-month">
+                      <div className="tl-month-head">
+                        <span className="tl-node tl-node-month" aria-hidden="true" />
+                        <span className="tl-month-label">
+                          {String(monthGroup.month).padStart(2, "0")} 月
+                        </span>
+                        <span className="tl-month-count">{monthGroup.articles?.length || 0}</span>
                       </div>
-                    ))}
-                  </div>
+
+                      <ul className="tl-list">
+                        {monthGroup.articles?.map((article) => (
+                          <li key={article.id} className="tl-item">
+                            <span className="tl-node tl-node-dot" aria-hidden="true" />
+                            <Link to={`/article/${article.id}`} className="tl-link">
+                              <span className="tl-date">{article.created_at?.slice(5, 10)}</span>
+                              <span className="tl-title">{article.title}</span>
+                              {article.category?.name && (
+                                <span className="tl-tag">{article.category.name}</span>
+                              )}
+                              <ChevronRight size={14} className="tl-arrow" />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ))
+              </section>
+            ))}
+          </div>
         )}
       </Col>
     </Row>

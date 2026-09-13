@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  Palette,
   Upload,
   Image as ImageIcon,
   RotateCcw,
   Settings,
-  X,
   Sun,
   Moon,
+  Check,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 
@@ -22,22 +23,32 @@ const PRESET_COLORS = [
   { name: '曜石灰', color: '#2b3036' },
 ];
 
+export const OPEN_SETTINGS_EVENT = 'kakuki:open-settings';
+
 export default function FeatureMenu() {
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef(null);
   const containerRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [hexInput, setHexInput] = useState('');
+  const [toast, setToast] = useState(null);   // { type: 'ok' | 'err', text }
 
   const {
     isDark,
-    toggleTheme,
     bgImage,
     themeColor,
+    requestThemeToggle,
     uploadBackground,
     clearBackground,
     setThemeColor,
   } = useThemeStore();
+
+  // 外部（导航栏主题按钮等）可请求打开设置面板
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_SETTINGS_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -45,43 +56,52 @@ export default function FeatureMenu() {
         setOpen(false);
       }
     };
+    const onEsc = (e) => { if (e.key === 'Escape') setOpen(false); };
     if (open) {
       document.addEventListener('mousedown', onDocClick);
+      document.addEventListener('keydown', onEsc);
     }
-    return () => document.removeEventListener('mousedown', onDocClick);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onEsc);
+    };
   }, [open]);
+
+  // toast 自动消失
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  useEffect(() => {
+    if (themeColor) setHexInput(themeColor);
+  }, [themeColor]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('请选择图片文件');
+      setToast({ type: 'err', text: '请选择图片文件' });
       return;
     }
-
     if (file.size > 10 * 1024 * 1024) {
-      alert('图片大小不能超过 10MB');
+      setToast({ type: 'err', text: '图片不能超过 10MB' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     setUploading(true);
     try {
       await uploadBackground(file);
-      alert('主题色已自动提取并应用');
+      setToast({ type: 'ok', text: '背景已应用，主题色已自动提取' });
     } catch (err) {
-      console.error('Upload failed:', err);
-      alert('图片处理失败：' + (err?.message || '未知错误'));
+      setToast({ type: 'err', text: '图片处理失败：' + (err?.message || '未知错误') });
     } finally {
       setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  };
-
-  const handleClearBg = () => {
-    clearBackground();
   };
 
   // 校验并应用任意 hex 颜色（支持 #rgb / #rrggbb）
@@ -90,152 +110,139 @@ export default function FeatureMenu() {
     if (!val) return;
     if (!val.startsWith('#')) val = '#' + val;
     const m = val.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
-    if (!m) return;
-    let full = val;
-    if (m[1].length === 3) {
-      full = '#' + m[1].split('').map((c) => c + c).join('');
+    if (!m) {
+      setToast({ type: 'err', text: '颜色格式不对，例如 #7c3aed' });
+      return;
     }
+    const full = m[1].length === 3
+      ? '#' + m[1].split('').map((c) => c + c).join('')
+      : val;
     setThemeColor(full.toLowerCase());
     setHexInput(full.toLowerCase());
   };
 
-  const targetMode = isDark ? '浅色模式' : '深色模式';
+  const resetAll = () => {
+    clearBackground();
+    setThemeColor('#7c3aed');
+    setToast({ type: 'ok', text: '已恢复默认外观' });
+  };
 
   return (
-    <div className="feature-menu" ref={containerRef}>
+    <div className="settings-root" ref={containerRef}>
       <button
-        className="theme-toggle feature-menu-trigger"
-        onClick={() => setOpen(!open)}
-        aria-label="个性化设置"
-        title="个性化设置"
+        className="theme-toggle settings-trigger"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="设置"
+        aria-expanded={open}
+        title="设置"
       >
         <Settings size={18} />
       </button>
 
       {open && (
         <>
-          <div className="feature-menu-backdrop" onClick={() => setOpen(false)} />
-          <div className="feature-menu-dropdown">
-            <div className="feature-menu-header">
-              <div className="feature-menu-title-row">
-                <Palette size={16} />
-                <span className="feature-menu-title">个性化设置</span>
-              </div>
-              <button
-                className="feature-menu-close"
-                onClick={() => setOpen(false)}
-                aria-label="关闭"
-              >
-                <X size={14} />
-              </button>
+          <div className="settings-backdrop" onClick={() => setOpen(false)} />
+          <div className="settings-panel" role="dialog" aria-label="设置">
+            {/* 头部：标题 + 关闭 */}
+            <div className="settings-head">
+              <span className="settings-title">设置</span>
+              <button className="settings-done" onClick={() => setOpen(false)}>完成</button>
             </div>
 
-            <div className="feature-menu-body">
-              {/* 外观模式 */}
-              <div className="feature-section">
-                <button className="feature-item" onClick={() => toggleTheme()}>
-                  <div className="feature-item-icon">
-                    {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                  </div>
-                  <div className="feature-item-text">
-                    <span className="feature-item-label">
-                      {isDark ? '浅色模式' : '深色模式'}
-                    </span>
-                  </div>
-                  <div className="feature-item-toggle">
-                    <div className={`toggle-track ${isDark ? 'active' : ''}`}>
-                      <div className="toggle-thumb" />
-                    </div>
-                  </div>
-                </button>
+            <div className="settings-body">
+              {/* ---- 外观模式（分段控件，一眼看清当前态） ---- */}
+              <div className="settings-row settings-row-block">
+                <span className="settings-label">外观</span>
+                <div className="settings-seg" role="group" aria-label="外观模式">
+                  <button
+                    className={`settings-seg-btn ${!isDark ? 'active' : ''}`}
+                    onClick={(e) => { if (isDark) requestThemeToggle(e.currentTarget); }}
+                    aria-pressed={!isDark}
+                  >
+                    <Sun size={13} /> 浅色
+                  </button>
+                  <button
+                    className={`settings-seg-btn ${isDark ? 'active' : ''}`}
+                    onClick={(e) => { if (!isDark) requestThemeToggle(e.currentTarget); }}
+                    aria-pressed={isDark}
+                  >
+                    <Moon size={13} /> 深色
+                  </button>
+                </div>
               </div>
 
-              {/* 主题色 */}
-              <div className="feature-section">
-                <div className="feature-section-label">
-                  主题色
-                  <span className="feature-current-color-label">
-                    {themeColor?.toUpperCase()}
-                  </span>
+              {/* ---- 主题色 ---- */}
+              <div className="settings-row settings-row-block">
+                <div className="settings-label-line">
+                  <span className="settings-label">主题色</span>
+                  <span className="settings-hex-badge">{themeColor?.toUpperCase()}</span>
                 </div>
-                <div className="feature-color-grid">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c.color}
-                      className={`feature-color-swatch ${themeColor?.toLowerCase() === c.color ? 'active' : ''}`}
-                      style={{ background: c.color }}
-                      onClick={() => setThemeColor(c.color)}
-                      title={c.name}
-                    />
-                  ))}
+                <div className="settings-colors">
+                  {PRESET_COLORS.map((c) => {
+                    const active = themeColor?.toLowerCase() === c.color;
+                    return (
+                      <button
+                        key={c.color}
+                        className={`settings-swatch ${active ? 'active' : ''}`}
+                        style={{ background: c.color }}
+                        onClick={() => setThemeColor(c.color)}
+                        title={c.name}
+                        aria-label={c.name}
+                        aria-pressed={active}
+                      >
+                        {active && <Check size={13} strokeWidth={3} />}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="feature-custom-row">
+                <div className="settings-hex-row">
                   <input
                     type="color"
-                    value={themeColor}
-                    onChange={(e) => {
-                      setThemeColor(e.target.value);
-                      setHexInput(e.target.value);
-                    }}
-                    className="feature-color-input"
-                    aria-label="选择任意颜色"
+                    value={themeColor || '#7c3aed'}
+                    onChange={(e) => setThemeColor(e.target.value)}
+                    className="settings-color-picker"
+                    aria-label="取色器"
                   />
-                  <div className="feature-hex-input-wrap">
-                    <input
-                      type="text"
-                      className="feature-hex-input"
-                      value={hexInput}
-                      onChange={(e) => setHexInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleHexApply(); }}
-                      placeholder="#7c3aed"
-                      aria-label="输入十六进制颜色"
-                      spellCheck="false"
-                    />
-                    <button
-                      className="feature-hex-apply"
-                      onClick={handleHexApply}
-                      aria-label="应用颜色"
-                    >
-                      应用
-                    </button>
-                  </div>
+                  <input
+                    type="text"
+                    className="settings-hex-input"
+                    value={hexInput}
+                    onChange={(e) => setHexInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleHexApply(); }}
+                    placeholder="#7c3aed"
+                    aria-label="十六进制颜色"
+                    spellCheck="false"
+                  />
+                  <button className="settings-hex-apply" onClick={handleHexApply}>应用</button>
                 </div>
               </div>
 
-              {/* 背景图片 */}
-              <div className="feature-section">
-                <div className="feature-section-label">背景图片</div>
-                <div className="feature-bg-row">
-                  <div
-                    className={`feature-bg-preview ${bgImage ? 'has-bg' : ''}`}
-                    style={bgImage ? { backgroundImage: `url(${bgImage})` } : {}}
+              {/* ---- 背景图 ---- */}
+              <div className="settings-row">
+                <div
+                  className={`settings-bg-thumb ${bgImage ? 'has-bg' : ''}`}
+                  style={bgImage ? { backgroundImage: `url(${bgImage})` } : {}}
+                >
+                  {!bgImage && <ImageIcon size={15} />}
+                </div>
+                <div className="settings-bg-text">
+                  <span className="settings-label">背景图片</span>
+                  <span className="settings-hint">{bgImage ? '已自定义' : '使用默认'}</span>
+                </div>
+                <div className="settings-bg-actions">
+                  <button
+                    className="settings-btn primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
                   >
-                    {!bgImage && <ImageIcon size={18} />}
-                  </div>
-                  <div className="feature-bg-actions">
-                    <button
-                      className="feature-btn feature-btn-primary"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                    >
-                      {uploading ? (
-                        <div className="feature-spinner" />
-                      ) : (
-                        <Upload size={14} />
-                      )}
-                      <span>{bgImage ? '更换图片' : '上传图片'}</span>
+                    {uploading ? <Loader2 size={13} className="settings-spin" /> : <Upload size={13} />}
+                    {bgImage ? '更换' : '上传'}
+                  </button>
+                  {bgImage && (
+                    <button className="settings-btn" onClick={clearBackground} title="恢复默认背景">
+                      <RotateCcw size={13} /> 重置
                     </button>
-                    {bgImage && (
-                      <button
-                        className="feature-btn"
-                        onClick={handleClearBg}
-                        title="恢复默认"
-                      >
-                        <RotateCcw size={14} />
-                        <span>重置</span>
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
                 <input
                   ref={fileInputRef}
@@ -245,7 +252,22 @@ export default function FeatureMenu() {
                   onChange={handleFileSelect}
                 />
               </div>
+
+              {/* ---- 恢复默认 ---- */}
+              <div className="settings-foot">
+                <button className="settings-reset" onClick={resetAll}>
+                  <RotateCcw size={13} /> 恢复默认外观
+                </button>
+              </div>
             </div>
+
+            {/* 内联提示，替代 alert 弹窗 */}
+            {toast && (
+              <div className={`settings-toast ${toast.type}`}>
+                {toast.type === 'ok' ? <Check size={13} /> : <AlertCircle size={13} />}
+                {toast.text}
+              </div>
+            )}
           </div>
         </>
       )}

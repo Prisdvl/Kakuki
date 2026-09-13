@@ -8,7 +8,9 @@ import type { Env } from './util';
 import { fail } from './util';
 import { authRoutes, authUser } from './auth';
 import { blogRoutes } from './blog';
-import { proxyRoutes } from './proxy';
+import { checkinRoutes } from './checkin';
+import { proxyRoutes, audioProbeRoutes } from './proxy';
+import { audioRoutes } from './audio';
 import { checkRateLimit } from './ratelimit';
 
 type AppEnv = { Bindings: Env };
@@ -25,6 +27,7 @@ app.use('*', async (c, next) => {
 // 限流：音频流端点除外（Django 版该端点同样不受 DRF 限流）
 app.use('*', async (c, next) => {
   if (c.req.method === 'GET' && /\/netease\/song\/\d+\/stream\/$/.test(c.req.path)) return next();
+  if (c.req.method === 'GET' && /\/audio\/[^/]+\/stream\/$/.test(c.req.path)) return next();
   const limited = await checkRateLimit(c);
   if (limited) return limited;
   await next();
@@ -32,7 +35,10 @@ app.use('*', async (c, next) => {
 
 app.route('/', authRoutes);
 app.route('/', blogRoutes);
+app.route('/', checkinRoutes);
 app.route('/', proxyRoutes);
+app.route('/', audioProbeRoutes);
+app.route('/', audioRoutes);
 
 app.notFound((c) => fail(404, '未找到。'));
 

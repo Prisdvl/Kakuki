@@ -1,0 +1,199 @@
+/* ============================================================
+   归档时间线（ArchivePage）
+   设计约束：不使用玻璃材质。纯轴线 + 节点圆点，年月两级级联。
+   轴线分三档粗细/颜色，形成视觉层级：
+     年（主线，粗实线） → 月（支线，中等） → 文章（细线 + 小点）
+   ============================================================ */
+
+.tl-root {
+  position: relative;
+  padding-left: 4px;
+}
+
+/* ---------------- 年份 ---------------- */
+.tl-year {
+  position: relative;
+  padding-bottom: 2.25rem;
+}
+.tl-year:last-child { padding-bottom: 0.5rem; }
+
+.tl-year-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+/* 年份节点：轴线上的实心大点（带外环） */
+.tl-node {
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.tl-node-year {
+  width: 13px;
+  height: 13px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.tl-year-label {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+.tl-year-count {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+/* 年份下方的支线容器：一条竖线贯穿所有月份 */
+.tl-body {
+  position: relative;
+  margin-left: 6px;
+  padding-left: 1.5rem;
+  border-left: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
+/* ---------------- 月份 ---------------- */
+.tl-month {
+  position: relative;
+  padding-bottom: 1.1rem;
+}
+.tl-month:last-child { padding-bottom: 0; }
+
+.tl-month-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+}
+.tl-node-month {
+  width: 9px;
+  height: 9px;
+  background: var(--bg-primary);
+  border: 2px solid color-mix(in srgb, var(--accent) 65%, var(--border));
+}
+.tl-month-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.tl-month-count {
+  font-size: 0.66rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 文章列表 ---------------- */
+.tl-list {
+  position: relative;
+  margin-left: 4px;
+  padding-left: 1.15rem;
+  border-left: 1px dotted color-mix(in srgb, var(--border) 85%, transparent);
+  list-style: none;
+}
+
+.tl-item {
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+.tl-item:last-child { margin-bottom: 0; }
+
+.tl-node-dot {
+  position: absolute;
+  left: -1.43rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  background: var(--border);
+  transition: background 0.2s ease, transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
+}
+
+/* 文章行：无玻璃、无边框卡片，仅 hover 时浅底 */
+.tl-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.42rem 0.6rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+  transition: background 0.18s ease;
+}
+.tl-link:hover { background: var(--accent-soft); }
+.tl-item:hover .tl-node-dot {
+  background: var(--accent);
+  transform: translateY(-50%) scale(1.5);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.tl-date {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.tl-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+.tl-link:hover .tl-title { color: var(--accent); }
+
+.tl-tag {
+  flex-shrink: 0;
+  font-size: 0.66rem;
+  color: var(--text-tertiary);
+  padding: 0.08rem 0.44rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tl-arrow {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.tl-link:hover .tl-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ---------------- 响应式 ---------------- */
+@media (max-width: 640px) {
+  .tl-body { padding-left: 1.1rem; }
+  .tl-list { padding-left: 0.9rem; }
+  .tl-node-dot { left: -1.18rem; }
+  .tl-year-label { font-size: 1.3rem; }
+  .tl-tag { display: none; }
+  .tl-date { font-size: 0.7rem; }
+  .tl-title { font-size: 0.88rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-node-dot, .tl-arrow, .tl-title, .tl-link { transition: none; }
+}

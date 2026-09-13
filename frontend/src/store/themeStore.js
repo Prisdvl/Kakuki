@@ -649,6 +649,22 @@ const useThemeStore = create((set, get) => ({
       return { isDark: next };
     }),
 
+  /**
+   * 请求切换主题（带扩散动画）。
+   * 动画由 AppLayout 的遮罩承载（需要真实 DOM 坐标），因此这里只广播意图事件，
+   * 避免设置面板等任意入口绕过动画直接切换。AppLayout 未挂载时会兜底直接切换。
+   * @param {Element} [origin] 实际被按下的元素 —— 扩散圆心取它的中心，
+   *        这样无论从导航栏还是设置面板触发，颜色都从"按下位置"散开。
+   */
+  requestThemeToggle: (origin) => {
+    const evt = new CustomEvent('kakuki:request-theme-toggle', {
+      cancelable: true,
+      detail: { origin: origin || null },
+    });
+    const handled = !window.dispatchEvent(evt);
+    if (!handled) get().toggleTheme();
+  },
+
   setTheme: (isDark) => {
     localStorage.setItem('kakuki-theme', isDark ? 'dark' : 'light');
     applyTheme(isDark);

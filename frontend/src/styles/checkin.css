@@ -1,0 +1,227 @@
+/* ============================================================
+   每日打卡卡（CheckinCard）
+   设计：不使用玻璃材质，纯线条 + 点阵，与归档时间线保持同一视觉语言
+   ============================================================ */
+.checkin-card {
+  border-radius: 18px;
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.checkin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.checkin-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+.checkin-title svg { color: var(--accent); }
+
+.checkin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: transform 0.18s var(--ease-spring), background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.checkin-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.checkin-btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+.checkin-btn:disabled { opacity: 0.6; cursor: default; }
+.checkin-btn.done {
+  background: transparent;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.checkin-btn.done:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.checkin-btn .spin { animation: checkin-spin 0.9s linear infinite; }
+/* 未登录态：弱化为描边按钮，提示需登录后才能写入 */
+.checkin-btn.need-login {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.checkin-btn.need-login:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent-soft);
+}
+@keyframes checkin-spin { to { transform: rotate(360deg); } }
+
+/* ---- 统计 ---- */
+.checkin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.checkin-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  transition: border-color 0.2s ease;
+}
+.checkin-stat:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.checkin-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.checkin-stat-label {
+  font-size: 0.66rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+/* ---- 热力图 ---- */
+.checkin-heat {
+  padding: 0.8rem 0.85rem 0.7rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+.checkin-heat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.checkin-heat-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.checkin-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.64rem;
+  color: var(--text-tertiary);
+}
+
+.checkin-grid-wrap { overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
+.checkin-grid-inner { display: inline-block; min-width: 100%; }
+
+.checkin-months {
+  display: flex;
+  gap: 2px;
+  /* 与 .checkin-grid 首个周列对齐：星期列 12px + margin-right 4px + flex gap 2px = 18px */
+  margin-left: 18px;
+  margin-bottom: 4px;
+}
+/* 每格宽度必须与 .checkin-cell 完全一致（10px + 2px gap），
+   否则标签会随 flex 均分而漂移，和下方列对不齐。
+   宽度由 JS 按覆盖周数内联计算（w*10 + (w-1)*2）。 */
+.checkin-months span {
+  font-size: 0.58rem;
+  color: var(--text-tertiary);
+  flex: none;
+  overflow: visible;
+  white-space: nowrap;
+}
+.checkin-months span i {
+  font-style: normal;
+  display: inline-block;
+}
+
+.checkin-grid { display: flex; gap: 2px; }
+.checkin-weekdays {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 4px;
+  width: 12px;
+  flex: none;
+}
+.checkin-weekdays span {
+  height: 10px;
+  line-height: 10px;
+  font-size: 0.54rem;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.checkin-col { display: flex; flex-direction: column; gap: 2px; }
+
+.checkin-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--heat-empty, var(--bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  box-sizing: border-box;
+  transition: transform 0.16s var(--ease-spring), outline-color 0.16s ease;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+.checkin-cell:hover {
+  transform: scale(1.35);
+  outline-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.checkin-cell.lv0 { background: var(--heat-empty, var(--bg-secondary)); }
+.checkin-cell.lv1 { background: var(--heat-level-1); border-color: transparent; }
+.checkin-cell.lv2 { background: var(--heat-level-2); border-color: transparent; }
+.checkin-cell.lv3 { background: var(--heat-level-3); border-color: transparent; }
+.checkin-cell.lv4 { background: var(--heat-level-4); border-color: transparent; }
+.checkin-cell.lvfuture {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--border) 40%, transparent);
+  opacity: 0.4;
+}
+.checkin-cell.lvfuture:hover { transform: none; outline-color: transparent; }
+.checkin-cell.today { outline-color: var(--accent); }
+
+.checkin-error {
+  margin-top: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--danger, #d9534f);
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--danger, #d9534f) 35%, transparent);
+  background: color-mix(in srgb, var(--danger, #d9534f) 8%, transparent);
+}
+
+.checkin-foot {
+  margin-top: 0.7rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .checkin-stats { grid-template-columns: repeat(2, 1fr); }
+  .checkin-card { padding: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .checkin-cell { transition: none; }
+  .checkin-cell:hover { transform: none; }
+}

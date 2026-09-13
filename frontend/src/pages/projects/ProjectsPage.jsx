@@ -1,69 +1,116 @@
-import { useState, useEffect } from "react";
-import { ExternalLink, Code2, Rocket } from "lucide-react";
-import { getProjects } from "../../api/project";
-import { extractList } from "../../api/request";
+import { ExternalLink, Star, Rocket, GitBranch, Code2, Clock } from "lucide-react";
+import { useGithubProjects, LANG_COLORS } from "../../hooks/useGithubProjects";
+
+const GITHUB_URL = 'https://github.com/Prisdvl';
+const GITEE_URL = '';   // 待老大提供 Gitee 用户名后填入
+
+function relTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const d = Math.floor(diff / 86400000);
+  if (d < 1) return '今天更新';
+  if (d < 30) return `${d} 天前更新`;
+  const m = Math.floor(d / 30);
+  if (m < 12) return `${m} 个月前更新`;
+  return `${Math.floor(m / 12)} 年前更新`;
+}
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getProjects()
-      .then((res) => setProjects(extractList(res)))
-      .catch(() => setProjects([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { projects, loading, error, stale } = useGithubProjects();
 
   return (
-    <div style={{ paddingTop: "2rem", maxWidth: 1200, margin: "0 auto" }}>
-      <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>项目</h1>
-      <p style={{ color: "var(--text-secondary)", marginBottom: "2.5rem" }}>我参与和开发的一些有趣的项目。</p>
+    <div className="pj-page">
+      <header className="pj-head">
+        <h1 className="pj-title">项目</h1>
+        <p className="pj-sub">数据实时来自 GitHub 仓库，只列自有项目（不含 fork）。</p>
+        <div className="pj-links">
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="pj-link">
+            <GitBranch size={14} /> GitHub
+          </a>
+          {GITEE_URL && (
+            <a href={GITEE_URL} target="_blank" rel="noopener noreferrer" className="pj-link">
+              <Code2 size={14} /> Gitee
+            </a>
+          )}
+        </div>
+      </header>
 
-      {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "1.25rem" }}>
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="glass shimmer" style={{ height: 200, borderRadius: 20 }} />
+      {loading && projects.length === 0 ? (
+        <div className="pj-grid">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="pj-card shimmer" style={{ height: 186 }} />
           ))}
         </div>
       ) : projects.length === 0 ? (
-        <div className="glass" style={{ textAlign: "center", padding: "4rem 2rem", borderRadius: 20, color: "var(--text-tertiary)" }}>
-          <Rocket size={40} style={{ margin: "0 auto 1rem", opacity: 0.35 }} />
-          <p>暂无项目数据，可在 Django Admin 后台添加</p>
+        <div className="pj-empty">
+          <Rocket size={38} style={{ opacity: 0.35 }} />
+          <p>暂时拉不到项目数据</p>
+          {error && <span className="pj-empty-hint">原因：{error}</span>}
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="pj-link">
+            去 GitHub 看看 <ExternalLink size={13} />
+          </a>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "1.25rem" }}>
-          {projects.map((p, i) => (
-            <a
-              key={p.id}
-              href={p.url || p.repo_url || "#"}
-              target={p.url || p.repo_url ? "_blank" : undefined}
-              rel="noopener noreferrer"
-              className="project-card glass reveal"
-              style={{ transitionDelay: `${i * 70}ms` }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)" }}>
-                  <Code2 size={22} />
+        <>
+          <div className="pj-grid">
+            {projects.map((p, i) => (
+              <a
+                key={p.id}
+                href={p.repo_url || p.url || GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pj-card reveal"
+                style={{ '--reveal-i': i }}
+              >
+                <div className="pj-card-top">
+                  <span className="pj-card-icon">
+                    <Code2 size={18} />
+                  </span>
+                  <div className="pj-card-badges">
+                    {p.is_featured && <span className="pj-badge featured">精选</span>}
+                    {p.stars > 0 && (
+                      <span className="pj-badge star">
+                        <Star size={10} fill="currentColor" /> {p.stars}
+                      </span>
+                    )}
+                    <ExternalLink size={14} className="pj-card-ext" />
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  {p.is_featured && (
-                    <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--accent)", background: "var(--accent-soft)", padding: "0.15rem 0.55rem", borderRadius: 999 }}>
-                      精选
+
+                <h3 className="pj-card-name">{p.name}</h3>
+                <p className="pj-card-desc">{p.description || '暂无项目描述'}</p>
+
+                <div className="pj-card-foot">
+                  <div className="pj-card-tech">
+                    {p.language && (
+                      <span className="pj-lang">
+                        <i style={{ background: LANG_COLORS[p.language] || '#8b949e' }} />
+                        {p.language}
+                      </span>
+                    )}
+                    {p.tech_list
+                      .filter((t) => t !== p.language)
+                      .slice(0, 3)
+                      .map((t) => (
+                        <span key={t} className="pj-tag">{t}</span>
+                      ))}
+                  </div>
+                  {p.updated_at && (
+                    <span className="pj-time">
+                      <Clock size={10} /> {relTime(p.updated_at)}
                     </span>
                   )}
-                  {(p.url || p.repo_url) && <ExternalLink size={16} style={{ color: "var(--text-tertiary)" }} />}
                 </div>
-              </div>
-              <h3 style={{ fontSize: "1.15rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text-primary)" }}>{p.name}</h3>
-              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: "1.6", marginBottom: "1rem" }}>{p.description}</p>
-              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                {(p.tech_list || []).map((t) => (
-                  <span key={t} style={{ padding: "0.15rem 0.55rem", borderRadius: 6, fontSize: "0.75rem", fontWeight: 500, background: "var(--accent-soft)", color: "var(--accent)" }}>{t}</span>
-                ))}
-              </div>
-            </a>
-          ))}
-        </div>
+              </a>
+            ))}
+          </div>
+
+          {stale && (
+            <p className="pj-stale">
+              当前显示的是缓存快照（GitHub API 暂时不可达{error ? `：${error}` : ''}）
+            </p>
+          )}
+        </>
       )}
     </div>
   );

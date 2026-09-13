@@ -100,3 +100,28 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   count        INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (key, window_start)
 );
+
+-- ============================================================
+-- 每日打卡（替代 LeetCode 自动同步：历史数据导入为初始记录，之后手动打卡）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS checkins (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  date       TEXT    NOT NULL UNIQUE,        -- yyyy-MM-dd（本地日期）
+  count      INTEGER NOT NULL DEFAULT 1,     -- 当日完成题数（历史导入用，手动打卡默认 1）
+  note       TEXT    NOT NULL DEFAULT '',    -- 备注（如刷了什么题）
+  source     TEXT    NOT NULL DEFAULT 'manual', -- manual=手动打卡 / import=历史导入
+  created_at TEXT    NOT NULL                -- ISO 8601
+);
+CREATE INDEX IF NOT EXISTS idx_checkins_date ON checkins(date DESC);
+
+-- ============================================================
+-- 专注时长（由本地 PrisTimer 同步脚本上报，按日聚合）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS focus_stats (
+  date        TEXT    NOT NULL PRIMARY KEY,  -- yyyy-MM-dd（本地日期）
+  total_ms    INTEGER NOT NULL DEFAULT 0,    -- 当日专注总毫秒（仅 finished 会话 elapsed_ms 之和）
+  session_cnt INTEGER NOT NULL DEFAULT 0,    -- 当日会话数
+  tags        TEXT    NOT NULL DEFAULT '',   -- JSON 数组：当日涉及的专注标签
+  updated_at  TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_focus_stats_date ON focus_stats(date DESC);

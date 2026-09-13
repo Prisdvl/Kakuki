@@ -140,8 +140,8 @@
   --lg-bg: rgb(255 255 255 / 0.4);
   --lg-bg-hover: rgb(255 255 255 / 0.55);
 
-  /* 卡片通用 */
-  --card-bg: rgba(255, 255, 255, 0.6);
+  /* 卡片通用（0.82 近实底：透色残留 ≤18%，装饰层不再决定卡片色调） */
+  --card-bg: rgba(255, 255, 255, 0.82);
   --card-hover-border: rgba(0, 122, 255, 0.3);
   --hero-overlay: rgba(245, 245, 247, 0.6);
 
@@ -296,7 +296,7 @@
   --lg-bg: rgb(255 255 255 / 0.045);
   --lg-bg-hover: rgb(255 255 255 / 0.09);
 
-  --card-bg: rgba(28, 28, 30, 0.55);
+  --card-bg: rgba(26, 26, 30, 0.82);
   --card-hover-border: rgba(10, 132, 255, 0.3);
   --hero-overlay: rgba(0, 0, 0, 0.6);
 

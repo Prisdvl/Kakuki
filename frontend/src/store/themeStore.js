@@ -522,7 +522,7 @@ function buildThemeVars(palette, isDark) {
       : `0 16px 48px ${rgba(accent, 0.12)}`,
 
     bgPrimary,
-    bgSecondary: isDark ? rgba(DarkVibrant, 0.45) : rgba(LightVibrant, 0.3),
+    bgSecondary: rgba(accent, isDark ? 0.12 : 0.07),
     bgTertiary: rgba(accent, isDark ? 0.08 : 0.09),
 
     textPrimary,
@@ -535,7 +535,11 @@ function buildThemeVars(palette, isDark) {
     border: rgba(accent, isDark ? 0.22 : 0.28),
 
     heroOverlay: isDark ? rgba(DarkMuted, 0.6) : rgba(LightMuted, 0.6),
-    cardBg: isDark ? rgba(DarkVibrant, 0.45) : rgba(LightVibrant, 0.5),
+    // 统一卡面：全站所有卡片容器（tilt-card / .glass / article-card / toc /
+    // antd input…）共用这一张面。0.82 近实底——透色残留 ≤18%，装饰层位置
+    // 不再决定卡片色调（此前 Vibrant 0.45~0.5 透色让文章卡发紫、玻璃卡随
+    // 所处位置忽灰忽粉）；中性白/黑适配两套主题，氛围交给页面背景与 accent。
+    cardBg: isDark ? 'rgba(26, 26, 30, 0.82)' : 'rgba(255, 255, 255, 0.82)',
     cardHoverBorder: rgba(Vibrant, 0.3),
 
     success: ensureContrast(successColor, bgPrimary, 3, isDark),

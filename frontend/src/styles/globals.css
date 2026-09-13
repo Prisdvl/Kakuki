@@ -2087,15 +2087,14 @@ body.snap-active {
 
 /* ===== Music Player Card ===== */
 .music-card {
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 1.75rem;
   display: flex;
   flex-direction: column;
   transition: box-shadow 0.3s ease;
-  /* 音乐卡自身透明，玻璃在 .tilt-card 外层（0.4 alpha）—— blur 透出的是深色
-     页面装饰层，浅色主题下卡内 text-tertiary/meta 深字全部失效（2.2:1）。
-     给卡一个实底，文字对比度回到可控范围。 */
-  background: var(--glass-bg-strong-solid);
+  /* 统一卡面：tilt 内被 .tilt-card > .glass 置透明（外壳 tilt-card 提供
+     --card-bg），音乐页独立使用时自己持有同一张卡面。 */
+  background: var(--card-bg);
 }
 
 .music-card:hover {
@@ -2836,7 +2835,7 @@ body.snap-active {
 .ant-input,
 .ant-input-affix-wrapper,
 .ant-input-password .ant-input {
-  background: var(--glass-bg) !important;
+  background: var(--card-bg) !important;
   border-color: var(--border) !important;
   color: var(--text-primary) !important;
   border-radius: 12px !important;
@@ -2870,7 +2869,7 @@ body.snap-active {
 .ant-input-password .ant-input:focus {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px var(--accent-soft) !important;
-  background: var(--glass-bg) !important;
+  background: var(--card-bg) !important;
 }
 
 .ant-input-prefix,
@@ -4584,10 +4583,11 @@ a, button, .article-card, .contact-card, .social-links a,
   border-radius: 8px;
   font-size: 0.7rem;
   line-height: 1.5;
-  /* 同 .pj-badge.star：warning 原色压淡警示底只有 2.5:1，混 text-primary 修正 */
-  color: color-mix(in srgb, var(--warning) 55%, var(--text-primary));
-  background: color-mix(in srgb, var(--warning) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--warning, #d97706) 28%, transparent);
+  /* 警示语义保留但收敛色度：12% 米黄底在冷灰色调卡面上非常跳。
+     改 6% 极淡底 + text-secondary 字（5:1），语义靠边框的一点警示色传达。 */
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning, #d97706) 20%, transparent);
 }
 
 .mp-scroll-list {
@@ -6342,7 +6342,7 @@ a, button, .article-card, .contact-card, .social-links a,
 .tilt-card {
   position: relative;
   border-radius: 20px;
-  background: var(--glass-bg);
+  background: var(--card-bg);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
@@ -6360,6 +6360,13 @@ a, button, .article-card, .contact-card, .social-links a,
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+/* 同理：不带 .glass 类的内卡（如打卡卡的 --bg-secondary 残留底）也统一交给
+   底座 —— 否则同一屏出现「底座 0.82 + 内卡 0.3」的双层深浅不一。 */
+.tilt-card .checkin-card {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 /* ============================================================
@@ -6463,33 +6470,35 @@ a, button, .article-card, .contact-card, .social-links a,
   filter: brightness(1.08) !important;
   transform: translateY(-1px);
 }
-/* 深色下 antd 输入框背景贴合玻璃（默认/focus/autofill 全状态统一，避免输入框内部颜色不一致） */
-.ant-input,
-.ant-input-affix-wrapper,
-.ant-input-affix-wrapper .ant-input {
-  background: var(--glass-bg-strong) !important;
+/* 深色下 antd 输入框背景贴合玻璃（默认/focus/autofill 全状态统一，避免输入框内部颜色不一致）
+   注意：这组规则只该作用于深色——此前漏了 .dark 作用域，导致浅色主题的搜索框
+   被强玻璃灰(0.7)盖成深底。浅色态走 2836 行的 --card-bg 统一卡面。 */
+.dark .ant-input,
+.dark .ant-input-affix-wrapper,
+.dark .ant-input-affix-wrapper .ant-input {
+  background: var(--card-bg) !important;
   border-color: var(--glass-border) !important;
   color: var(--text-primary) !important;
   transition: border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard) !important;
 }
 .ant-input::placeholder { color: var(--text-tertiary) !important; }
-.ant-input:hover,
-.ant-input-affix-wrapper:hover { border-color: var(--accent) !important; }
-.ant-input:focus,
-.ant-input-focused,
-.ant-input-affix-wrapper:focus,
-.ant-input-affix-wrapper-focused,
-.ant-input-affix-wrapper:focus-within {
-  background: var(--glass-bg-strong) !important;
+.dark .ant-input:hover,
+.dark .ant-input-affix-wrapper:hover { border-color: var(--accent) !important; }
+.dark .ant-input:focus,
+.dark .ant-input-focused,
+.dark .ant-input-affix-wrapper:focus,
+.dark .ant-input-affix-wrapper-focused,
+.dark .ant-input-affix-wrapper:focus-within {
+  background: var(--card-bg) !important;
   box-shadow: 0 0 0 2px var(--accent-soft) !important;
   border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
 }
-/* 浏览器自动填充底色覆盖，保持与主题一致 */
+/* 浏览器自动填充底色覆盖（--card-bg 本身随主题切换，无需分作用域） */
 .ant-input:-webkit-autofill,
 .ant-input:-webkit-autofill:hover,
 .ant-input:-webkit-autofill:focus,
 .ant-input-affix-wrapper:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px var(--glass-bg-strong) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset !important;
   -webkit-text-fill-color: var(--text-primary) !important;
   caret-color: var(--text-primary);
   transition: background-color 9999s ease-out 0s !important;

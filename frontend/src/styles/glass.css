@@ -19,7 +19,10 @@
 
 /* ============ 基础玻璃 ============ */
 .glass {
-  background: var(--glass-bg);
+  /* 统一卡面：.glass 的实际使用者几乎全是卡片/面板容器，与 tilt-card、
+     article-card 共用 --card-bg（0.82 近实底），色调不再随装饰层位置漂移。
+     0.4 的轻玻璃保留给 --glass-bg 的显式用户（按钮/pill/输入框）。 */
+  background: var(--card-bg);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);

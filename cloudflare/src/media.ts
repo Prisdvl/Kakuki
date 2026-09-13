@@ -6,24 +6,26 @@
  *   自建后音源完全可控，且天然**同源** —— 播放器用 createMediaElementSource
  *   接入 Web Audio 做频谱，只有同源（或带 CORS 头）的媒体才不会被静音。
  *
- * 存储：Cloudflare KV
- *   t:<id>  音频二进制（单值上限 25 MiB，这里限 20 MiB 留余量）
- *   m:<id>  JSON 元数据
- *   c:<id>  封面图（可选，前端从音频内嵌封面解码后单独上传，非必需）
- * 免费额度（1 GB 存储 / 1000 写/天 / 10 万读/天）对个人博客足够。
+ * 存储（2026-09-13 三定：D1 元数据 + R2 二进制）：
+ *   DB      D1 —— 曲目元数据（media_tracks 表）。不用 KV 的原因：
+ *         KV list 有最长 60s 缓存，上传后列表不刷新；D1 强一致。
+ *   MEDIA_R2 R2 —— 音频二进制（audio/<id>）与封面（cover/<id>）
+ *   R2 免费额度 10 GB/月，**库总容量在业务层写死 ≤ 10 GiB**（LIBRARY_CAP_BYTES），
+ *   超限上传直接 413 拒绝，永远不会越出免费额度产生费用。
  *
  * 写入权限：仅登录且 is_staff 的用户；读取与播放公开。
- * 播放端点支持 Range，避免整轨加载，拖动进度条即时生效。
+ * 播放端点支持 Range（R2 原生 range get 流式返回），拖动进度条即时生效。
  */
 import { Hono } from 'hono';
 import type { Env } from './util';
 import { ok, ok201, ok204, fail, nowIso } from './util';
 import { authUser } from './auth';
 
-const MAX_BYTES = 20 * 1024 * 1024; // 20 MiB
-const META_PREFIX = 'm:';
-const BLOB_PREFIX = 't:';
-const COVER_PREFIX = 'c:';
+const MAX_BYTES = 60 * 1024 * 1024; // 单文件 60 MiB（放得下长曲 / 无损）
+/** 库总容量硬上限：10 GiB（R2 免费额度 10 GB/月，写死防超额计费） */
+const LIBRARY_CAP_BYTES = 10 * 1024 * 1024 * 1024;
+const AUDIO_KEY = (id: string) => `audio/${id}`;
+const COVER_KEY = (id: string) => `cover/${id}`;
 const ID_RE = /^[a-f0-9]{16}$/;
 
 type MediaMeta = {
@@ -68,25 +70,52 @@ const titleFromFilename = (filename: string) =>
     .replace(/\s{2,}/g, ' ')
     .trim() || '未命名';
 
+type MetaRow = {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  size: number;
+  type: string;
+  duration: number;
+  has_cover: number;
+  created_at: string;
+};
+
+const rowToMeta = (r: MetaRow): MediaMeta => ({
+  id: r.id,
+  name: r.name,
+  artist: r.artist,
+  album: r.album,
+  size: r.size,
+  type: r.type,
+  duration: r.duration,
+  hasCover: !!r.has_cover,
+  created_at: r.created_at,
+});
+
 export const mediaRoutes = new Hono<{ Bindings: Env }>()
 
-  /** 曲目列表（公开） */
+  /** 曲目列表（公开）；附库用量与上限，便于前端/站长核对 */
   .get('/media/tracks/', async (c) => {
-    if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
-    const listed = await c.env.MEDIA.list({ prefix: META_PREFIX, limit: 1000 });
-    const metas = await Promise.all(
-      listed.keys.map((k) => c.env.MEDIA!.get<MediaMeta>(k.name, 'json'))
-    );
-    const tracks = metas
-      .filter((m): m is MediaMeta => !!m)
-      .map(toTrack)
-      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
-    return ok({ count: tracks.length, results: tracks });
+    if (!c.env.DB) return fail(503, '数据库未绑定');
+    const { results } = await c.env.DB.prepare(
+      'SELECT id, name, artist, album, size, type, duration, has_cover, created_at FROM media_tracks ORDER BY created_at DESC'
+    ).all<MetaRow>();
+    const tracks = (results || []).map(rowToMeta).map(toTrack);
+    const total = tracks.reduce((s, t) => s + (t.size || 0), 0);
+    return ok({
+      count: tracks.length,
+      total_bytes: total,
+      cap_bytes: LIBRARY_CAP_BYTES,
+      results: tracks,
+    });
   })
 
   /** 上传（仅 staff）：支持 multipart/form-data（file + 可选 name/artist/album/duration） */
   .post('/media/upload/', async (c) => {
-    if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
+    if (!c.env.DB) return fail(503, '数据库未绑定');
+    if (!c.env.MEDIA_R2) return fail(503, '音频对象存储（R2）未绑定');
     const user = await authUser(c);
     if (!user) return fail(401, '请先登录');
     if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
@@ -125,8 +154,17 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     }
     if (!isAudio(file.type)) return fail(415, `不支持的格式：${file.type || '未知'}`);
 
+    // 10 GiB 硬上限：入库前核对全库用量，超限拒绝（写死，永不越出 R2 免费额度）
+    const sumRow = await c.env.DB.prepare('SELECT COALESCE(SUM(size), 0) AS total FROM media_tracks').first<{ total: number }>();
+    const used = sumRow?.total || 0;
+    if (used + file.size > LIBRARY_CAP_BYTES) {
+      return fail(
+        413,
+        `音频库容量已达上限：已用 ${fmtGiB(used)} GiB / ${fmtGiB(LIBRARY_CAP_BYTES)} GiB，剩余空间不足以容纳本文件（${(file.size / 1024 / 1024).toFixed(1)} MB）。请先删除部分曲目。`
+      );
+    }
+
     const id = newId();
-    const buf = await file.arrayBuffer();
     const meta: MediaMeta = {
       id,
       name: nameField.trim() || titleFromFilename(file.name || ''),
@@ -139,17 +177,22 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
       created_at: nowIso(),
     };
 
-    await c.env.MEDIA.put(`${BLOB_PREFIX}${id}`, buf, {
-      metadata: { type: meta.type, name: meta.name },
+    // 先写 R2 二进制，再写 D1 元数据（顺序保证：元数据存在则音频必在）
+    const buf = await file.arrayBuffer();
+    await c.env.MEDIA_R2.put(AUDIO_KEY(id), buf, {
+      httpMetadata: { contentType: meta.type },
     });
-    await c.env.MEDIA.put(`${META_PREFIX}${id}`, JSON.stringify(meta));
+    await c.env.DB.prepare(
+      'INSERT INTO media_tracks (id, name, artist, album, size, type, duration, has_cover, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8)'
+    ).bind(meta.id, meta.name, meta.artist, meta.album, meta.size, meta.type, meta.duration, meta.created_at).run();
 
     return ok201(toTrack(meta), '上传成功');
   })
 
-  /** 删除（仅 staff） */
+  /** 删除（仅 staff）：同时清 R2 音频/封面与 D1 元数据 */
   .delete('/media/tracks/:id/', async (c) => {
-    if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
+    if (!c.env.DB) return fail(503, '数据库未绑定');
+    if (!c.env.MEDIA_R2) return fail(503, '音频对象存储（R2）未绑定');
     const user = await authUser(c);
     if (!user) return fail(401, '请先登录');
     if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
@@ -157,26 +200,29 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     const id = c.req.param('id');
     if (!ID_RE.test(id)) return fail(400, '曲目 ID 非法');
 
-    const exists = await c.env.MEDIA.get(`${META_PREFIX}${id}`);
+    const exists = await c.env.DB.prepare('SELECT id FROM media_tracks WHERE id = ?1').bind(id).first();
     if (!exists) return fail(404, '曲目不存在');
 
-    await c.env.MEDIA.delete(`${BLOB_PREFIX}${id}`);
-    await c.env.MEDIA.delete(`${COVER_PREFIX}${id}`);
-    await c.env.MEDIA.delete(`${META_PREFIX}${id}`);
+    await c.env.MEDIA_R2.delete(AUDIO_KEY(id));
+    await c.env.MEDIA_R2.delete(COVER_KEY(id));
+    await c.env.DB.prepare('DELETE FROM media_tracks WHERE id = ?1').bind(id).run();
     return ok204('已删除');
   })
 
-  /** 播放流（公开，支持 Range） */
+  /** 播放流（公开，支持 Range）：R2 原生 range get，流式返回不整轨加载 */
   .get('/media/stream/:id/', async (c) => {
-    if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
+    if (!c.env.DB) return fail(503, '数据库未绑定');
+    if (!c.env.MEDIA_R2) return fail(503, '音频对象存储（R2）未绑定');
     const id = c.req.param('id');
     if (!ID_RE.test(id)) return fail(404, '曲目不存在');
 
-    const meta = await c.env.MEDIA.get<MediaMeta>(`${META_PREFIX}${id}`, 'json');
-    const buf = await c.env.MEDIA.get(`${BLOB_PREFIX}${id}`, 'arrayBuffer');
-    if (!buf || !meta) return fail(404, '曲目不存在');
+    const row = await c.env.DB.prepare(
+      'SELECT id, name, artist, album, size, type, duration, has_cover, created_at FROM media_tracks WHERE id = ?1'
+    ).bind(id).first<MetaRow>();
+    if (!row) return fail(404, '曲目不存在');
+    const meta = rowToMeta(row);
 
-    const total = buf.byteLength;
+    const total = meta.size || 0;
     const headers: Record<string, string> = {
       'Content-Type': meta.type || 'audio/mpeg',
       'Accept-Ranges': 'bytes',
@@ -185,7 +231,12 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
 
     const range = c.req.header('Range');
     if (!range) {
-      return new Response(buf, { status: 200, headers: { ...headers, 'Content-Length': String(total) } });
+      const obj = await c.env.MEDIA_R2.get(AUDIO_KEY(id));
+      if (!obj) return fail(404, '曲目不存在');
+      return new Response(obj.body, {
+        status: 200,
+        headers: { ...headers, 'Content-Length': String(total || obj.size) },
+      });
     }
 
     const m = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
@@ -193,40 +244,51 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
       return new Response(null, { status: 416, headers: { ...headers, 'Content-Range': `bytes */${total}` } });
     }
     const startStr = m[1], endStr = m[2];
-    let start: number, end: number;
+    let start: number, length: number;
     if (startStr === '') {
       // bytes=-N：最后 N 字节
       const suffix = Number(endStr);
       if (!Number.isFinite(suffix) || suffix <= 0) return new Response(null, { status: 416 });
       start = Math.max(0, total - suffix);
-      end = total - 1;
+      length = total - start;
     } else {
       start = Number(startStr);
-      end = endStr === '' ? total - 1 : Math.min(Number(endStr), total - 1);
+      const end = endStr === '' ? total - 1 : Math.min(Number(endStr), total - 1);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= total) {
+        return new Response(null, { status: 416, headers: { ...headers, 'Content-Range': `bytes */${total}` } });
+      }
+      length = end - start + 1;
     }
-    if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= total) {
+    if (start >= total) {
       return new Response(null, { status: 416, headers: { ...headers, 'Content-Range': `bytes */${total}` } });
     }
 
-    return new Response(buf.slice(start, end + 1), {
+    const obj = await c.env.MEDIA_R2.get(AUDIO_KEY(id), { range: { offset: start, length } });
+    if (!obj) return fail(404, '曲目不存在');
+    return new Response(obj.body, {
       status: 206,
       headers: {
         ...headers,
-        'Content-Range': `bytes ${start}-${end}/${total}`,
-        'Content-Length': String(end - start + 1),
+        'Content-Range': `bytes ${start}-${start + length - 1}/${total}`,
+        'Content-Length': String(length),
       },
     });
   })
 
   /** 封面（公开） */
   .get('/media/cover/:id/', async (c) => {
-    if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
+    if (!c.env.MEDIA_R2) return fail(503, '音频对象存储（R2）未绑定');
     const id = c.req.param('id');
     if (!ID_RE.test(id)) return fail(404, '封面不存在');
-    const cover = await c.env.MEDIA.get(`${COVER_PREFIX}${id}`, 'arrayBuffer');
+    const cover = await c.env.MEDIA_R2.get(COVER_KEY(id));
     if (!cover) return fail(404, '封面不存在');
-    return new Response(cover, {
+    return new Response(cover.body, {
       status: 200,
-      headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=604800' },
+      headers: {
+        'Content-Type': cover.httpMetadata?.contentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=604800',
+      },
     });
   });
+
+const fmtGiB = (n: number) => (n / 1024 / 1024 / 1024).toFixed(1);

@@ -23,12 +23,16 @@
     }
   ],
 
-  // 站内音频库：上传的音乐以 KV 值存储（单值 ≤ 25 MiB，业务侧限 20 MiB）；
-  // 播放走 /api/v1/media/stream/<id>/ 同源流接口，支持 Range。
-  "kv_namespaces": [
+  // 站内音频库（2026-09-13 三定）：
+  //   DB       D1 —— 曲目元数据（media_tracks 表，强一致，上传后列表即时刷新）
+  //   MEDIA_R2 R2 —— 音频二进制（audio/<id>，单文件 ≤ 60 MiB），
+  //              库总容量业务层写死 ≤ 10 GiB（R2 免费额度，超限上传 413）。
+  // 播放走 /api/v1/media/stream/<id>/ 同源流接口，支持 Range（R2 原生 range get）。
+  // 旧 KV 方案（MEDIA 绑定）已废弃，命名空间保留在账号中未删除。
+  "r2_buckets": [
     {
-      "binding": "MEDIA",
-      "id": "13b8a4ca29dd45ebae3f428886cfb182"
+      "binding": "MEDIA_R2",
+      "bucket_name": "kakuki-media"
     }
   ],
 

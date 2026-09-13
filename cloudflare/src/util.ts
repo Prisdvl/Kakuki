@@ -6,8 +6,8 @@ import type { Context } from 'hono';
 
 export type Env = {
   DB: D1Database;
-  /** 站内音频库（用户上传的音乐，KV 存储） */
-  MEDIA?: KVNamespace;
+  /** 站内音频库音频二进制（R2，audio/<id>；元数据在 D1 media_tracks；总容量业务层写死 ≤ 10 GiB） */
+  MEDIA_R2?: R2Bucket;
   ASSETS?: Fetcher;
   JWT_SECRET_DEV?: string;
   JWT_ISSUER?: string;

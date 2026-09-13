@@ -602,8 +602,8 @@ export default function AppLayout() {
           <StatusFocus />
           <div className="status-item status-stack">
             <span className="status-tech-badge">React</span>
-            <span className="status-tech-badge">Hono</span>
-            <span className="status-tech-badge">D1</span>
+            <span className="status-tech-badge">Django</span>
+            <span className="status-tech-badge">MySQL</span>
           </div>
           <div className="status-item status-meta">
             <span>Prisdvl © 2026 · v1.0.0</span>

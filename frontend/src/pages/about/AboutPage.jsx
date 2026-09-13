@@ -27,11 +27,11 @@ const TECH_STACK = [
   { name: "Ant Design", desc: "组件库" },
   { name: "Tailwind CSS", desc: "原子化样式" },
   { name: "Zustand", desc: "状态管理" },
-  { name: "Hono", desc: "边缘 Web 框架" },
-  { name: "Workers", desc: "边缘运行时" },
-  { name: "Cloudflare D1", desc: "SQLite 数据库" },
-  { name: "Cloudflare KV", desc: "音频对象存储" },
+  { name: "Django 4.2", desc: "后端框架" },
+  { name: "DRF", desc: "REST API" },
+  { name: "MySQL", desc: "数据库" },
   { name: "Web Audio API", desc: "频谱分析" },
+  { name: "Gitee Pages", desc: "站点部署" },
 ];
 
 export default function AboutPage() {
@@ -120,7 +120,7 @@ export default function AboutPage() {
 
           <div style={{ color: "var(--text-secondary)", lineHeight: 1.8, fontSize: "0.95rem" }}>
             <p style={{ marginBottom: "1rem" }}>欢迎来到 Kakuki！这是我的个人博客，在这里我会分享技术心得、生活感悟和各种有趣的内容。</p>
-            <p style={{ marginBottom: "1rem" }}>我是一名全栈开发者，热爱编程、阅读和创作。这个博客使用 React + Hono 构建，部署在 Cloudflare Workers 的边缘节点上。</p>
+            <p style={{ marginBottom: "1rem" }}>我是一名全栈开发者，热爱编程、阅读和创作。这个博客使用 React 18 + Vite + Django + DRF 构建，数据库采用 MySQL，包含在线音乐播放器、LeetCode 追踪与仪表盘工具。</p>
             <p style={{ marginBottom: "1rem" }}>如果你有任何问题或建议，欢迎通过以下方式联系我：</p>
             <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
               <a href="https://github.com/Prisdvl" target="_blank" rel="noopener noreferrer"

@@ -334,7 +334,7 @@ function GithubCard() {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{GITHUB_USERNAME}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {gh?.bio || 'No such thing as a life is better than yourz.'}
+            {gh?.bio || 'React · Django · 个人站 Kakuki 构建者'}
           </div>
         </div>
       </div>

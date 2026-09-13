@@ -74,7 +74,7 @@ function mockResolve(config) {
       data: {
         id: cur.id, username: cur.username, nickname: cur.nickname,
         avatar: `${import.meta.env.BASE_URL}github-avatar.jpg`,
-        bio: 'No such thing as a life is better than yourz.',
+        bio: '全栈开发者 · React + Vite + Django · 构建玻璃拟态个人站 Kakuki：博客 / 音乐播放器 / LeetCode 追踪 / 仪表盘工具',
       },
     });
   }

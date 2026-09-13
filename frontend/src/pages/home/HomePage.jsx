@@ -86,7 +86,7 @@ export function ProfileCard({ stats }) {
   // 头像：本地快照（unavatar 下载，与 GitHub 一致，网络受限环境零请求）→ GitHub 官方 → 首字母徽章
   const [avatarLevel, setAvatarLevel] = useState(0);
   const avatarSources = [`${import.meta.env.BASE_URL}github-avatar.jpg`, gh?.avatar_url || 'https://github.com/Prisdvl.png'];
-  const bio = gh?.bio || '全栈开发者 · 热爱代码与创造。在这里记录技术足迹与生活碎片。';
+  const bio = gh?.bio || '全栈开发者 · React + Vite + Django · 构建玻璃拟态个人站 Kakuki：博客 / 音乐播放器 / LeetCode 追踪 / 仪表盘工具';
   return (
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">

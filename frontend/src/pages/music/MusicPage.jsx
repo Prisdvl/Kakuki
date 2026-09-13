@@ -178,6 +178,7 @@ export default function MusicPage() {
   const toggleMute = useMusicStore((s) => s.toggleMute);
 
   const isLoggedIn = useUserStore((s) => s.isLoggedIn);
+  const isStaff = useUserStore((s) => s.user?.is_staff ?? false);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -275,13 +276,17 @@ export default function MusicPage() {
             {loading ? '正在加载...' : tracks.length > 0 ? `共 ${tracks.length} 首 · 站内音频库` : ''}
           </p>
         </div>
-        <button
-          className="glass-button music-upload-entry"
-          onClick={() => { if (!isLoggedIn) { navigate('/login'); return; } setShowUpload((v) => !v); }}
-          title={isLoggedIn ? '上传本地音频到站内音频库' : '登录后可上传'}
-        >
-          <Upload size={15} /> 上传歌曲
-        </button>
+        {isStaff ? (
+          <button
+            className="glass-button music-upload-entry"
+            onClick={() => { if (!isLoggedIn) { navigate('/login'); return; } setShowUpload((v) => !v); }}
+            title="上传本地音频到站内音频库"
+          >
+            <Upload size={15} /> 上传歌曲
+          </button>
+        ) : (
+          isLoggedIn && <span className="music-upload-hint" style={{ alignSelf: 'center' }}>仅站长账号可上传歌曲</span>
+        )}
       </div>
 
       {showUpload && (
@@ -320,12 +325,16 @@ export default function MusicPage() {
         <div className="glass music-empty-library">
           <Music size={28} style={{ color: 'var(--text-tertiary)' }} />
           <p>音频库还没有歌曲</p>
-          <button
-            className="glass-button-solid"
-            onClick={() => { if (!isLoggedIn) { navigate('/login'); return; } setShowUpload(true); }}
-          >
-            <Upload size={14} /> {isLoggedIn ? '上传第一首歌' : '登录后上传'}
-          </button>
+          {isStaff ? (
+            <button
+              className="glass-button-solid"
+              onClick={() => { if (!isLoggedIn) { navigate('/login'); return; } setShowUpload(true); }}
+            >
+              <Upload size={14} /> {isLoggedIn ? '上传第一首歌' : '登录后上传'}
+            </button>
+          ) : (
+            isLoggedIn && <p className="music-upload-hint">仅站长账号可上传歌曲</p>
+          )}
         </div>
       )}
 
@@ -373,7 +382,7 @@ export default function MusicPage() {
                       <Play size={18} style={{ color: isActive ? 'var(--accent)' : 'var(--text-tertiary)' }} />
                     )}
                   </div>
-                  {track.isUpload && isLoggedIn && (
+                  {track.isUpload && isStaff && (
                     <button
                       className="music-track-del icon-btn"
                       aria-label={`删除 ${track.name}`}

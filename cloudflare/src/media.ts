@@ -89,7 +89,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
     const user = await authUser(c);
     if (!user) return fail(401, '请先登录');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
 
     let file: File | null = null;
     let nameField = '';
@@ -152,7 +152,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     if (!c.env.MEDIA) return fail(503, '音频存储未绑定');
     const user = await authUser(c);
     if (!user) return fail(401, '请先登录');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
 
     const id = c.req.param('id');
     if (!ID_RE.test(id)) return fail(400, '曲目 ID 非法');

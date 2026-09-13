@@ -97,7 +97,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .get('/categories/manage/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const rows = await c.env.DB.prepare(
       `SELECT c.*, (SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id) AS article_count
        FROM categories c ORDER BY article_count DESC, c.id ASC`,
@@ -108,7 +108,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .post('/categories/manage/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const body = (await c.req.json().catch(() => ({}))) as Row;
     const name = str(body.name).trim();
     if (!name) return fail(400, 'Invalid input.', { name: ['该字段是必填项。'] });
@@ -128,7 +128,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .put('/categories/manage/:id/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const id = Number(c.req.param('id'));
     const body = (await c.req.json().catch(() => ({}))) as Row;
     const row = await c.env.DB.prepare('SELECT * FROM categories WHERE id = ?1').bind(id).first<Row>();
@@ -147,7 +147,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .delete('/categories/manage/:id/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const id = Number(c.req.param('id'));
     const res = await c.env.DB.prepare('DELETE FROM categories WHERE id = ?1').bind(id).run();
     if (!res.meta.changes) return fail(404, '未找到。');
@@ -246,7 +246,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .post('/articles/create/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const body = await readBodyLoose(c);
     const title = str(body.title).trim();
     const content = str(body.content);
@@ -277,7 +277,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .put('/articles/:id/edit/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const id = Number(c.req.param('id'));
     const row = await c.env.DB.prepare('SELECT * FROM articles WHERE id = ?1').bind(id).first<Row>();
     if (!row) return fail(404, '未找到。');
@@ -308,7 +308,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .delete('/articles/:id/delete/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const res = await c.env.DB.prepare('DELETE FROM articles WHERE id = ?1').bind(Number(c.req.param('id'))).run();
     if (!res.meta.changes) return fail(404, '未找到。');
     return ok204('删除成功');
@@ -472,7 +472,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .post('/talks/create/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const body = (await c.req.json().catch(() => ({}))) as Row;
     const content = str(body.content);
     if (!content) return fail(400, 'Invalid input.', { content: ['该字段是必填项。'] });
@@ -489,7 +489,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .delete('/talks/:id/delete/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const res = await c.env.DB.prepare('DELETE FROM talks WHERE id = ?1').bind(Number(c.req.param('id'))).run();
     if (!res.meta.changes) return fail(404, '未找到。');
     return ok204('删除成功');
@@ -507,7 +507,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .get('/projects/manage/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const rows = await c.env.DB.prepare('SELECT * FROM projects ORDER BY is_featured DESC, sort_order ASC, created_at DESC').all<Row>();
     return ok(rows.results.map(projectItem));
   })
@@ -515,7 +515,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .post('/projects/manage/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const body = (await c.req.json().catch(() => ({}))) as Row;
     const name = str(body.name).trim();
     const description = str(body.description);
@@ -543,7 +543,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .put('/projects/manage/:id/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const id = Number(c.req.param('id'));
     const row = await c.env.DB.prepare('SELECT * FROM projects WHERE id = ?1').bind(id).first<Row>();
     if (!row) return fail(404, '未找到。');
@@ -570,7 +570,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .delete('/projects/manage/:id/', async (c) => {
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
-    if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
     const res = await c.env.DB.prepare('DELETE FROM projects WHERE id = ?1').bind(Number(c.req.param('id'))).run();
     if (!res.meta.changes) return fail(404, '未找到。');
     return ok204('删除成功');

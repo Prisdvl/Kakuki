@@ -38,41 +38,10 @@
   animation: glassMount 0.7s var(--ease-spring) both;
 }
 
-/* 顶部镜面高光 + 受光折射带：单层 ::before 双渐变，模拟玻璃上沿受光 */
-.glass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(180deg, var(--glass-top-light) 0%, transparent 55%),
-    var(--glass-specular);
-  opacity: 0.55;
-  pointer-events: none;
-  mix-blend: overlay;
-  z-index: 0;
-}
-
-/* 斜向折射光带：模拟光线穿过玻璃产生的棱镜条纹（静态质感，hover 增强） */
-.glass::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    115deg,
-    transparent 22%,
-    var(--glass-prism) 40%,
-    transparent 58%
-  );
-  opacity: 0.65;
-  pointer-events: none;
-  mix-blend: soft-light;
-  transition: opacity var(--motion-base) var(--ease-standard);
-  z-index: 0;
-}
-
-.glass:hover::after { opacity: 1; }
+/* ============ 镜面高光 / 折射光带 —— 已按需求全站移除 ============
+   原 .glass::before（顶部高光）与 .glass::after（115° 折射光带）在
+   音乐页等界面上呈现为明显的"炫光"，与极简取向冲突。伪元素整体下线，
+   卡片质感只保留 blur + border + shadow。子内容 z-index 规则保留。 */
 
 /* 子内容浮于高光之上 */
 .glass > * {
@@ -99,36 +68,7 @@
   animation: glassMount 0.7s var(--ease-spring) both;
 }
 
-.glass-elevated::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(180deg, var(--glass-top-light) 0%, transparent 55%),
-    var(--glass-specular);
-  opacity: 0.55;
-  pointer-events: none;
-  mix-blend: overlay;
-  z-index: 0;
-}
-
-/* 折射光斑：跟随鼠标的微光，默认若有若无，hover 明显（光线穿透玻璃的聚焦点） */
-.glass-elevated::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle at var(--refraction-x, 50%) var(--refraction-y, 50%),
-    color-mix(in srgb, var(--accent) 10%, transparent) 0%,
-    transparent 50%
-  );
-  opacity: 0.14;
-  pointer-events: none;
-  transition: opacity var(--motion-base) var(--ease-standard);
-  z-index: 0;
-}
+/* 折射光斑 / 顶部高光 —— 已随全站去炫光移除 */
 
 .glass-elevated:hover {
   transform: translateY(-6px);
@@ -139,8 +79,6 @@
     0 8px 30px color-mix(in srgb, var(--accent) 10%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
-
-.glass-elevated:hover::after { opacity: 1; }
 
 .glass-elevated:active {
   transform: translateY(-3px) scale(0.995);
@@ -161,42 +99,7 @@
   will-change: transform, border-radius;
 }
 
-/* 动态边缘高光：跟随呼吸节奏 */
-.glass-floating::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: var(--glass-edge);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  opacity: 0.6;
-  pointer-events: none;
-  z-index: 2;
-  animation: glassEdgeShift 8s ease-in-out infinite;
-}
-
-.glass-floating::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at 30% 30%,
-    var(--glass-tint) 0%,
-    transparent 40%
-  );
-  opacity: 0.5;
-  pointer-events: none;
-  animation: glassRefraction 16s linear infinite;
-  z-index: 0;
-}
+/* 动态边缘高光 / 旋转折射光斑 —— 已随全站去炫光移除 */
 
 /* ============ 内容卡片玻璃 ============ */
 .glass-card {
@@ -218,38 +121,7 @@
   animation: glassMount 0.7s var(--ease-spring) both;
 }
 
-.glass-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(180deg, var(--glass-top-light) 0%, transparent 55%),
-    var(--glass-specular);
-  opacity: 0.5;
-  pointer-events: none;
-  mix-blend: overlay;
-  z-index: 0;
-}
-
-/* 卡片斜向折射光带 */
-.glass-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    115deg,
-    transparent 22%,
-    var(--glass-prism) 40%,
-    transparent 58%
-  );
-  opacity: 0.65;
-  pointer-events: none;
-  mix-blend: soft-light;
-  transition: opacity var(--motion-base) var(--ease-standard);
-  z-index: 0;
-}
+/* 卡片高光 / 折射光带 —— 已随全站去炫光移除 */
 
 .glass-card > * { position: relative; z-index: 1; }
 
@@ -258,8 +130,6 @@
   box-shadow: var(--glass-shadow-hover);
   border-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
-
-.glass-card:hover::after { opacity: 1; }
 
 /* ============ 胶囊玻璃（徽章/标签）============ */
 .glass-pill {
@@ -462,16 +332,6 @@
   50%      { border-radius: calc(var(--radius-2xl) + 4px); }
 }
 
-@keyframes glassEdgeShift {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 0.9; }
-}
-
-@keyframes glassRefraction {
-  0%   { transform: translate(0, 0)     rotate(0deg); }
-  100% { transform: translate(20%, 20%) rotate(360deg); }
-}
-
 /* ============ 兼容性补丁：旧类名复用新样式 ============ */
 .btn-glass { /* 旧别名 */
   display: inline-flex;
@@ -561,20 +421,9 @@
 /* ============ 移动端性能降级 ============
  * 移动 GPU 对 backdrop-filter + mix-blend-mode 的合成开销是桌面的数倍，
  * 大面积玻璃是移动端卡顿主因。触屏设备上：
- *   - 伪元素混合模式关闭（overlay/soft-light 最贵）
  *   - 挂载动画缩短，减少首帧弹簧合成压力
- *   - 折射光斑（无 hover 意义）直接隐藏
- * 全局 backdrop-filter 的通配降级见 globals.css 末尾移动端段落 */
+ *   - 玻璃伪元素光效已全站移除（见各变体注释） */
 @media (hover: none), (max-width: 768px) {
-  .glass::before,
-  .glass-elevated::before,
-  .glass-card::before,
-  .glass::after,
-  .glass-card::after {
-    mix-blend-mode: normal;
-    opacity: 0.35;
-  }
-  .glass-elevated::after { display: none; }
   .glass,
   .glass-elevated,
   .glass-card {

@@ -135,7 +135,9 @@ export default function ArticleDetailPage() {
         }
       })
       .catch((err) => {
-        setError(err?.response?.data?.message || err?.message || "加载失败");
+        // 404 = 文章不存在或已被删除；其余透传后端消息
+        const status = err?.response?.status;
+        setError(status === 404 ? "文章不存在或已被删除" : (err?.response?.data?.message || err?.message || "加载失败"));
       })
       .finally(() => setLoading(false));
   }, [id]);

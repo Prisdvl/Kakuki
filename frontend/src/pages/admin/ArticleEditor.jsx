@@ -6,6 +6,7 @@ import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { getArticleDetail, createArticle, updateArticle, getCategories } from "../../api/article";
 import { extractList } from "../../api/request";
+import useThemeStore from "../../store/themeStore";
 
 /**
  * 文章/杂谈写作页：@uiw/react-md-editor 富编辑器。
@@ -15,6 +16,7 @@ import { extractList } from "../../api/request";
 export default function ArticleEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isDark = useThemeStore((s) => s.isDark);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -87,7 +89,7 @@ export default function ArticleEditor() {
             label="正文（富编辑器，工具栏支持标题/加粗/引用/代码块/表格/图片）"
             required
           >
-            <div data-color-mode="light">
+            <div data-color-mode={isDark ? "dark" : "light"}>
               <MDEditor
                 value={content}
                 onChange={setContent}

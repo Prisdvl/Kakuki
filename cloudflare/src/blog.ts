@@ -14,6 +14,26 @@ type Row = Record<string, unknown>;
 
 const num = (v: unknown): number => (typeof v === 'number' ? v : 0);
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+/**
+ * 请求体解析：兼容 JSON 与 multipart/form-data。
+ * 前端编辑器用 FormData 提交（封面图字段），Workers 版此前只读 JSON，
+ * 导致管理端发布文章一律 400（E2E 链路测试暴露）。
+ * 文件部分（cover_image 的 File）暂不支持云端存储，忽略之——与迁移前行为一致。
+ */
+async function readBodyLoose(c: { req: { header: (k: string) => string | undefined; json: () => Promise<unknown>; formData: () => Promise<FormData> } }): Promise<Record<string, unknown>> {
+  const ct = c.req.header('content-type') || '';
+  if (ct.includes('multipart/form-data')) {
+    const fd = await c.req.formData().catch(() => null);
+    if (!fd) return {};
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of fd.entries()) {
+      if (typeof v === 'string') out[k] = v;
+    }
+    return out;
+  }
+  return (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+}
 // 匿名身份兜底：本地 dev 无 CF-Connecting-IP 时与 Django REMOTE_ADDR 行为对齐
 const anonIp = (c: Context): string => clientIp(c) ?? 'unknown';
 
@@ -227,7 +247,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
     const user = await authUser(c);
     if (!user) return fail(401, '身份认证信息未提供。');
     if (!user.is_staff) return fail(403, 'You do not have permission to perform this action.');
-    const body = (await c.req.json().catch(() => ({}))) as Row;
+    const body = await readBodyLoose(c);
     const title = str(body.title).trim();
     const content = str(body.content);
     const errors: Record<string, string[]> = {};
@@ -261,7 +281,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
     const id = Number(c.req.param('id'));
     const row = await c.env.DB.prepare('SELECT * FROM articles WHERE id = ?1').bind(id).first<Row>();
     if (!row) return fail(404, '未找到。');
-    const body = (await c.req.json().catch(() => ({}))) as Row;
+    const body = await readBodyLoose(c);
     const title = typeof body.title === 'string' && body.title.trim() ? body.title.trim() : str(row.title);
     const content = typeof body.content === 'string' ? body.content : str(row.content);
     const summary = typeof body.summary === 'string' ? body.summary.slice(0, 500) : str(row.summary);

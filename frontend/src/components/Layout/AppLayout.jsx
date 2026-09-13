@@ -62,11 +62,13 @@ const FlipUnit = memo(function FlipUnit({ value, label }) {
 
 // 站点运行时长：以 kakuki.top 首次 Worker 部署时刻为基准累计（翻页钟风格）
 const StatusUptime = memo(function StatusUptime() {
-  // 部署基准：kakuki.top 的首次 Worker 部署时刻（Cloudflare 记为 UTC）。
-  // 2026-09-12T14:51:01Z ≡ 北京时间 2026-09-12 22:51:01。
-  // 交叉核对：Cloudflare Workers 分析显示该脚本 9-12 之前零请求，
-  // 9-12 最早的一小时落在 14:00Z 时段（即首部署后立即产生的验证流量）。
-  const DEPLOY_ISO = '2026-09-12T14:51:01Z';
+  // 运行时长基准 = 站点首次公开发布时刻，不是最近一次部署时刻。
+  //
+  // 依据：git 中 gh-pages 分支首次部署提交
+  //   8755d3b  deploy: basename fix build   2026-09-08 19:15:00 +0800
+  // ≡ 2026-09-08T11:15:00Z。此后站点持续在线（先 GitHub Pages，9-12 起迁移到
+  // Cloudflare Workers），中间的技术栈迁移不应让「运行时长」归零。
+  const DEPLOY_ISO = '2026-09-08T11:15:00Z';
   const DEPLOY_TS = Date.parse(DEPLOY_ISO);
   const [now, setNow] = useState(() => Date.now());
 
@@ -88,7 +90,7 @@ const StatusUptime = memo(function StatusUptime() {
   });
 
   return (
-    <span className="status-item status-uptime" title={`kakuki.top 上线于 ${deployLocal}（北京时间），此处为自上线起的连续运行时长`}>
+    <span className="status-item status-uptime" title={`kakuki.top 于 ${deployLocal}（北京时间）首次公开发布，此处为自上线起的连续运行时长`}>
       <Activity size={11} />
       {/* 不足一天时不显示"天"，避免 0 天看着像故障 */}
       {days > 0 && <FlipUnit value={days} label="天" />}

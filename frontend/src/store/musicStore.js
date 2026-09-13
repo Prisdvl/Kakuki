@@ -36,26 +36,6 @@ async function fetchUploadTracks() {
   }
 }
 
-/**
- * 探测歌单前若干首是否真的可播。
- *
- * 必要性：网易云 outer/url 免费外链接口已关闭（边缘实测返回 HTML 而非音频），
- * 若不做探测，用户点播放只会看到「音源不可用」逐首跳过 —— 体验很差。
- * 这里只要首曲不可播就整体降级到示例曲目，保证有声音。
- */
-async function hasPlayableTrack(tracks, probeCount = 2) {
-  const n = Math.min(tracks.length, probeCount);
-  for (let i = 0; i < n; i += 1) {
-    try {
-      const r = await request.get(`/netease/song/${tracks[i].id}/available/`, { timeout: 12000 });
-      if (r && r.playable) return true;
-    } catch {
-      // 探测本身失败按不可播处理，继续试下一首
-    }
-  }
-  return false;
-}
-
 /** 降级到示例曲目歌单（保留原歌单在 playlists 中不丢） */
 const applyFallbackPlaylist = (set, get, extra = {}) => {
   const playlist = { ...FALLBACK_PLAYLIST, tracks: FALLBACK_PLAYLIST.tracks.map((t) => ({ ...t })) };
@@ -426,87 +406,13 @@ const useMusicStore = create((set, get) => ({
       return applyUploadPlaylist(set, get, uploads);
     }
 
-    try {
-      const res = await request.get('/netease/bootstrap/', { timeout: 30000 });
-      if (res && res.playlist && res.playlist.tracks) {
-        const allTracks = res.playlist.tracks || [];
-
-        const tracks = allTracks.map((t) => ({
-          id: t.id,
-          name: t.name,
-          artists: (t.ar || []).map((a) => ({ name: a.name })),
-          album: (t.al || {}).name || '',
-          cover: (t.al || {}).picUrl || '',
-          url: streamUrl(t.id),
-          duration: t.duration || 0,
-        })).filter((t) => t.id);
-
-        const playlist = {
-          id: res.playlist.id,
-          name: res.playlist.name || 'Prisdvl 的喜欢音乐',
-          coverImgUrl: res.playlist.coverImgUrl || '',
-          trackCount: tracks.length,
-          tracks,
-        };
-
-        // 原有歌单曲目全部不可播（网易云外链接口已关闭）→ 直接降级到示例曲目，
-        // 避免用户逐首点、逐首弹「音源不可用」。原歌单仍保留在 playlists 中。
-        if (tracks.length > 0 && !(await hasPlayableTrack(tracks))) {
-          return applyFallbackPlaylist(set, get, {
-            user: { nickname: 'Prisdvl', avatarUrl: playlist.coverImgUrl || '' },
-            playlists: [playlist],
-            playlistList: [{ id: playlist.id, name: playlist.name, coverImgUrl: playlist.coverImgUrl, trackCount: playlist.trackCount }],
-          });
-        }
-
-        // 已有正在播放的曲目且属于同一歌单：保持播放，不重置 currentTrack / audio.src。
-        // 否则（首次加载或切换歌单）才初始化第一首。
-        const prevTrack = get().currentTrack;
-        const isSamePlaylist = prevTrack && get().currentPlaylist?.id === playlist.id;
-
-        set({
-          user: { nickname: 'Prisdvl', avatarUrl: playlist.coverImgUrl || '' },
-          playlists: [playlist],
-          currentPlaylist: playlist,
-          sourceKind: 'netease',
-        });
-
-        if (tracks.length > 0 && !isSamePlaylist) {
-          const firstTrack = tracks[0];
-          try {
-            const lyricsRes = await request.get(`/netease/song/${firstTrack.id}/lyric/`);
-            const lyrics = parseLyric(lyricsRes.lrc);
-            set({
-              currentTrack: firstTrack,
-              currentLyrics: lyrics,
-              currentLyricIndex: -1,
-            });
-          } catch {
-            set({ currentTrack: firstTrack, currentLyrics: [], currentLyricIndex: -1 });
-          }
-
-          const audio = getAudio();
-          if (audio) {
-            audio.src = firstTrack.url;
-            // 不自动播放，等待用户点击播放按钮
-          }
-        }
-
-        return { success: true, playlist, tracks };
-      } else {
-        return { success: false, error: '未找到歌单数据' };
-      }
-    } catch (err) {
-      // 网易云歌单接口不可用（外链被风控）属预期降级：用 warn 级别，避免污染控制台错误流
-      console.warn('Fetch bootstrap failed, fallback to static playlist:', err?.message || err);
-      const stat = applyStaticPlaylist(set, get);
-      // 静态快照里的 url 同样是网易云外链（已失效），探测后再决定是否降级到示例曲目
-      const statTracks = stat?.playlist?.tracks || [];
-      if (statTracks.length && !(await hasPlayableTrack(statTracks))) {
-        return applyFallbackPlaylist(set, get, { playlistList: STATIC_LIST });
-      }
-      return stat;
-    }
+    // 2) 音频库为空 → 直接落到示例音源。
+    //
+    //    刻意不再请求 /netease/bootstrap/ 并逐首探测可播性：
+    //      · 该外链接口已确证失效（上游返回 HTML 而非音频，见 proxy.ts 的显式 404）；
+    //      · 探测是串行的，2 首最坏要等 2×12s，是首屏长期停在「正在加载」的根因。
+    //    原歌单仍保留在「切换歌单」列表中，需要时可用 fetchPlaylistById 主动加载。
+    return applyFallbackPlaylist(set, get, { playlistList: STATIC_LIST });
   },
 
   /** 重新拉取站内音频库（上传/删除后调用），并把它切换为当前歌单 */

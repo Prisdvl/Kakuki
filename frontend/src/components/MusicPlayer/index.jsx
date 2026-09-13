@@ -171,8 +171,7 @@ export default function MusicPlayer() {
       {loading ? (
         <div className="mp-empty">
           <Loader2 size={24} className="spin" style={{ margin: '0 auto', color: 'var(--accent)' }} />
-          <div className="mp-empty-text">正在加载 Prisdvl 的喜欢音乐...</div>
-          <div className="mp-empty-hint">首次加载可能需要几秒</div>
+          <div className="mp-empty-text">正在加载音乐…</div>
         </div>
       ) : loadError ? (
         <div className="mp-empty">

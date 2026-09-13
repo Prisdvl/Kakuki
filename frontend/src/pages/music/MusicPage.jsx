@@ -196,6 +196,7 @@ export default function MusicPage() {
   );
 
   const isLoggedIn = useUserStore((s) => s.isLoggedIn);
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -333,8 +334,7 @@ export default function MusicPage() {
       {loading && (
         <div className="glass music-loading">
           <Loader2 size={32} className="spin" style={{ margin: '0 auto', color: 'var(--accent)' }} />
-          <p className="music-loading-text">正在加载歌单...</p>
-          <p className="music-loading-hint">首次加载可能需要几秒</p>
+          <p className="music-loading-text">正在加载音乐…</p>
         </div>
       )}
 

@@ -58,14 +58,14 @@ scripts/.sync-token
 # Vite 临时配置产物（构建中断时残留）
 vite.config.js.timestamp-*.mjs
 
-# ===== 仓库收敛（2026-09-13）：仓库只保留前端与文档，以下仅本地保留 =====
+# ===== 仓库结构（2026-09-13）：前后端同仓（参考 lxpavilion），本地脚本不外传 =====
 backend/
-cloudflare/
 scripts/
 docker-compose.yml
 *.ps1
 *.bat
 *.cmd
 *.sql
+!cloudflare/schema.sql
 .github/
 .gitee/

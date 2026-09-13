@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Row, Col, Progress } from "antd";
-import { GithubOutlined, MailOutlined, CodeOutlined } from "@ant-design/icons";
+import { GithubOutlined, CodeOutlined } from "@ant-design/icons";
 import { BookOpen, FolderTree, MessageSquare, Eye, Flame, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getSiteStats } from "../../api/article";
+import checkinApi from "../../api/checkin";
 import leetcodeApi from "../../api/leetcode";
 import useCountUp from "../../hooks/useCountUp";
 
@@ -26,16 +27,17 @@ const TECH_STACK = [
   { name: "Ant Design", desc: "组件库" },
   { name: "Tailwind CSS", desc: "原子化样式" },
   { name: "Zustand", desc: "状态管理" },
-  { name: "Django 4.2", desc: "后端框架" },
-  { name: "DRF", desc: "REST API" },
-  { name: "MySQL / SQLite", desc: "数据库" },
-  { name: "SimpleJWT", desc: "认证" },
-  { name: "Swagger", desc: "API 文档" },
+  { name: "Hono", desc: "边缘 Web 框架" },
+  { name: "Workers", desc: "边缘运行时" },
+  { name: "Cloudflare D1", desc: "SQLite 数据库" },
+  { name: "Cloudflare KV", desc: "音频对象存储" },
+  { name: "Web Audio API", desc: "频谱分析" },
 ];
 
 export default function AboutPage() {
   const [stats, setStats] = useState(null);
   const [lcData, setLcData] = useState(null);
+  const [checkin, setCheckin] = useState(null);
 
   useEffect(() => {
     getSiteStats()
@@ -44,6 +46,11 @@ export default function AboutPage() {
     leetcodeApi.getAllData(LEETCODE_USERNAME)
       .then((res) => setLcData(res))
       .catch(() => setLcData(null));
+    // 打卡数据走自建接口（与首页打卡卡同源），
+    // 不再读 LeetCode 代理的 streak / totalActiveDays —— 该接口没有这两个字段，恒为 0。
+    checkinApi.summary(365)
+      .then((res) => setCheckin(res?.data ?? res ?? null))
+      .catch(() => setCheckin(null));
   }, []);
 
   // LeetCode 数据解析
@@ -58,9 +65,9 @@ export default function AboutPage() {
   const lcTotalEasy = allQuestions.find((s) => s.difficulty === 'Easy')?.count || 850;
   const lcTotalMedium = allQuestions.find((s) => s.difficulty === 'Medium')?.count || 1750;
   const lcTotalHard = allQuestions.find((s) => s.difficulty === 'Hard')?.count || 800;
-  const lcRanking = matchedUser?.profile?.ranking || 0;
-  const lcStreak = lcData?.streak || 0;
-  const lcTotalActive = lcData?.totalActiveDays || 0;
+  const lcMaxStreak = checkin?.max_streak ?? 0;
+  const lcActiveDays = checkin?.total_days ?? 0;
+  const lcTotalCount = checkin?.total_count ?? 0;
 
   return (
     <Row gutter={24} className="pt-8">
@@ -113,16 +120,12 @@ export default function AboutPage() {
 
           <div style={{ color: "var(--text-secondary)", lineHeight: 1.8, fontSize: "0.95rem" }}>
             <p style={{ marginBottom: "1rem" }}>欢迎来到 Kakuki！这是我的个人博客，在这里我会分享技术心得、生活感悟和各种有趣的内容。</p>
-            <p style={{ marginBottom: "1rem" }}>我是一名全栈开发者，热爱编程、阅读和创作。这个博客使用 Django + React 构建，采用现代化的前后端分离架构。</p>
+            <p style={{ marginBottom: "1rem" }}>我是一名全栈开发者，热爱编程、阅读和创作。这个博客使用 React + Hono 构建，部署在 Cloudflare Workers 的边缘节点上。</p>
             <p style={{ marginBottom: "1rem" }}>如果你有任何问题或建议，欢迎通过以下方式联系我：</p>
             <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+              <a href="https://github.com/Prisdvl" target="_blank" rel="noopener noreferrer"
                 style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <GithubOutlined /> github.com/kakuki
-              </a>
-              <a href="mailto:kakuki@example.com"
-                style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <MailOutlined /> kakuki@example.com
+                <GithubOutlined /> github.com/Prisdvl
               </a>
             </div>
           </div>
@@ -173,18 +176,18 @@ export default function AboutPage() {
             <div style={{ display: "flex", justifyContent: "space-around", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
               <div style={{ textAlign: "center" }}>
                 <Trophy size={14} style={{ color: "var(--accent)" }} />
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>排名</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>#{lcRanking.toLocaleString()}</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <Zap size={14} style={{ color: "var(--warning)" }} />
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>连续</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcStreak} 天</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>最长连续</div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcMaxStreak} 天</div>
               </div>
               <div style={{ textAlign: "center" }}>
                 <Flame size={14} style={{ color: "var(--success)" }} />
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>活跃</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcTotalActive} 天</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>打卡天数</div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcActiveDays} 天</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <Zap size={14} style={{ color: "var(--warning)" }} />
+                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>累计题数</div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcTotalCount} 题</div>
               </div>
             </div>
           </div>

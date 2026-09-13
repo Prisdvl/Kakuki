@@ -560,7 +560,7 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   .get('/stats/', async (c) => {
     const db = c.env.DB;
     const one = async (sql: string): Promise<number> => num((await db.prepare(sql).first<Row>())?.n);
-    const [articleCount, categoryCount, commentCount, talkCount, projectCount, articleLikeCount, talkLikeCount, userCount, totalViews, firstAt] =
+    const [articleCount, categoryCount, commentCount, talkCount, projectCount, articleLikeCount, talkLikeCount, userCount, totalViews] =
       await Promise.all([
         one('SELECT COUNT(*) AS n FROM articles'),
         one('SELECT COUNT(*) AS n FROM categories'),
@@ -571,13 +571,12 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
         one('SELECT COUNT(*) AS n FROM talk_likes'),
         one('SELECT COUNT(*) AS n FROM users'),
         one('SELECT COALESCE(SUM(views), 0) AS n FROM articles'),
-        db.prepare('SELECT MIN(created_at) AS n FROM articles').first<Row>(),
       ]);
-    let runningDays = 1;
-    if (firstAt?.n) {
-      const delta = Date.now() - new Date(str(firstAt.n)).getTime();
-      runningDays = Math.max(Math.floor(delta / 86_400_000), 1);
-    }
+    // 站点年龄基准 = 首次公开发布时刻，与前端状态栏 AppLayout.StatusUptime 的 DEPLOY_ISO 保持一致。
+    // （原实现取 MIN(articles.created_at)，那是"最早一篇文章距今天数"，与技术栈迁移无关，
+    //   会与状态栏的运行时长对不上。两处口径必须同源。）
+    const SITE_LAUNCH_MS = Date.parse('2026-09-08T11:15:00Z');
+    const runningDays = Math.max(Math.floor((Date.now() - SITE_LAUNCH_MS) / 86_400_000), 1);
     return ok({
       article_count: articleCount,
       category_count: categoryCount,

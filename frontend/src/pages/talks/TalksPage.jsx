@@ -100,8 +100,7 @@ export default function TalksPage() {
 
   return (
     <div style={{ paddingTop: "2rem", maxWidth: 760, margin: "0 auto" }}>
-      <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>杂谈</h1>
-      <p style={{ color: "var(--text-secondary)", marginBottom: "2rem" }}>一些零碎的思考和日常记录。</p>
+      <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "2rem" }}>杂谈</h1>
 
       {isLoggedIn && user?.is_staff && (
         <div className="glass talk-publish reveal">

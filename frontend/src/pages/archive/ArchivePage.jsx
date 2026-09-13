@@ -84,8 +84,7 @@ export default function ArchivePage() {
     return (
       <Row gutter={24} className="pt-8">
         <Col xs={24}>
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "0.5rem" }}>文章归档</h2>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "2rem" }}>按时间线回顾所有写过的东西。</p>
+          <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "1.25rem" }}>文章归档</h2>
         </Col>
       </Row>
     );
@@ -94,12 +93,14 @@ export default function ArchivePage() {
   return (
     <Row gutter={24} className="pt-8">
       <Col xs={24}>
-        <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+        <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: searching ? "0.5rem" : "1.25rem" }}>
           {searching ? "搜索文章" : "文章归档"}
         </h2>
-        <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
-          {searching ? `关键词「${q}」的搜索结果` : "按时间线回顾所有写过的东西。"}
-        </p>
+        {searching && (
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
+            关键词「{q}」的搜索结果
+          </p>
+        )}
 
         {/* 搜索框 */}
         <SearchInput

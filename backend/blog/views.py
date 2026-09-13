@@ -1,4 +1,5 @@
-﻿from django.db.models import Count, Q, F, Sum
+﻿from datetime import datetime, timezone as dt_timezone
+from django.db.models import Count, Q, F, Sum
 from django.utils import timezone
 from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
@@ -329,11 +330,11 @@ class SiteStatsView(APIView):
     def get(self, request):
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        first_article = Article.objects.order_by('created_at').first()
-        running_days = 1
-        if first_article:
-            delta = timezone.now() - first_article.created_at
-            running_days = max(delta.days, 1)
+        # 站点年龄基准 = 首次公开发布时刻，与 Workers 版 cloudflare/src/blog.ts 的
+        # SITE_LAUNCH_MS、前端 AppLayout.StatusUptime 的 DEPLOY_ISO 保持同源。
+        # （原实现取最早一篇文章的 created_at，那是"写作跨度"，会与状态栏运行时长对不上。）
+        site_launch = datetime(2026, 9, 8, 11, 15, 0, tzinfo=dt_timezone.utc)
+        running_days = max((timezone.now() - site_launch).days, 1)
         data = {
             'article_count': Article.objects.count(),
             'category_count': Category.objects.count(),

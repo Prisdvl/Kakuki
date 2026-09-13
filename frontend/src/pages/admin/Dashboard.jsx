@@ -8,6 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import { getSiteStats, getArticles } from "../../api/article";
 import { extractList } from "../../api/request";
+import checkinApi from "../../api/checkin";
 import leetcodeApi from "../../api/leetcode";
 
 const LEETCODE_USERNAME = 'Likey-e';
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [hot, setHot] = useState([]);
   const [lcData, setLcData] = useState(null);
   const [lcLoading, setLcLoading] = useState(true);
+  const [checkin, setCheckin] = useState(null);
 
   useEffect(() => {
     getSiteStats()
@@ -32,6 +34,9 @@ export default function Dashboard() {
     leetcodeApi.getAllData(LEETCODE_USERNAME)
       .then((res) => { setLcData(res); setLcLoading(false); })
       .catch(() => { setLcData(null); setLcLoading(false); });
+    checkinApi.summary(365)
+      .then((res) => setCheckin(res?.data ?? res ?? null))
+      .catch(() => setCheckin(null));
   }, []);
 
   const items = [
@@ -58,8 +63,10 @@ export default function Dashboard() {
   const lcTotalEasy = allQuestions.find((s) => s.difficulty === 'Easy')?.count || 850;
   const lcTotalMedium = allQuestions.find((s) => s.difficulty === 'Medium')?.count || 1750;
   const lcTotalHard = allQuestions.find((s) => s.difficulty === 'Hard')?.count || 800;
-  const lcRanking = matchedUser?.profile?.ranking || 0;
-  const lcStreak = lcData?.streak || 0;
+  // 打卡数据走自建接口：LeetCode 代理没有 streak / totalActiveDays 字段，
+  // ranking 也恒为 0，展示 "#0 排名" 属于假数据，故改用本地打卡统计。
+  const lcMaxStreak = checkin?.max_streak ?? 0;
+  const lcActiveDays = checkin?.total_days ?? 0;
 
   const lcBar = (solved, total, color) => {
     const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
@@ -153,15 +160,15 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <TrophyOutlined style={{ color: 'var(--accent)', fontSize: '1.1rem' }} />
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>全球排名</div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>#{lcRanking.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>最长连续</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{lcMaxStreak} 天</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FireOutlined style={{ color: 'var(--warning)', fontSize: '1.1rem' }} />
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>连续刷题</div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{lcStreak} 天</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>打卡天数</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{lcActiveDays} 天</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

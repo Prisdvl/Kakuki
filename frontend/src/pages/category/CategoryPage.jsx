@@ -24,8 +24,7 @@ export default function CategoryPage() {
 
   return (
     <div style={{ paddingTop: "2rem" }}>
-      <h2 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>分类</h2>
-      <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "2rem" }}>按分类浏览文章</p>
+      <h2 style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "1.5rem" }}>分类</h2>
 
       <div className="category-chip-container">
         <button

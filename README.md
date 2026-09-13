@@ -96,8 +96,6 @@ python manage.py runserver 8000
 
 | 角色 | 用户名 | 密码 | 权限 |
 |------|--------|------|------|
-| 管理员 | `admin` | `admin123456` | 后台管理、发文章、发杂谈 |
-| 普通用户 | `demo` | `demo123456` | 评论、点赞 |
 
 > API 文档：http://127.0.0.1:8000/api/v1/swagger/
 
@@ -138,7 +136,6 @@ docker compose up -d --build
 - Swagger 文档：http://localhost/api/v1/swagger/
 - 首次启动自动建表并生成演示数据（幂等，可重复执行）
 
-> 访问 `http://localhost` 即可看到完整博客；用 `admin / admin123456` 登录后台，`demo / demo123456` 体验评论点赞。
 
 ### 5. 运行测试
 

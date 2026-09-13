@@ -11,10 +11,10 @@ User = get_user_model()
 class BlogBaseTestCase(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_user(
-            username='admin', password='admin123456', nickname='管理员',
+            username='admin', password='test-only-placeholder-1', nickname='管理员',
             is_staff=True, is_superuser=True)
         self.user = User.objects.create_user(
-            username='demo', password='demo123456', nickname='演示用户')
+            username='demo', password='test-only-placeholder-2', nickname='演示用户')
         self.category = Category.objects.create(name='后端开发', description='服务端技术')
         self.article = Article.objects.create(
             title='测试文章', content='# 标题\n正文内容', summary='摘要',

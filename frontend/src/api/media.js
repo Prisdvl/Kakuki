@@ -18,7 +18,7 @@ const mediaApi = {
   /**
    * 上传音频
    * @param {File} file
-   * @param {{name?:string, artist?:string, album?:string, duration?:number}} meta
+   * @param {{name?:string, artist?:string, album?:string, duration?:number, cover?:Blob}} meta
    * @param {(percent:number)=>void} onProgress 0-100
    */
   upload: (file, meta = {}, onProgress) => {
@@ -28,6 +28,8 @@ const mediaApi = {
     if (meta.artist) form.append('artist', meta.artist);
     if (meta.album) form.append('album', meta.album);
     if (meta.duration) form.append('duration', String(Math.round(meta.duration)));
+    // 内嵌封面（本地解析出的 Blob），后端存 R2 并置 has_cover
+    if (meta.cover) form.append('cover', meta.cover, 'cover.jpg');
 
     return request.post('/media/upload/', form, {
       // 交给浏览器写 boundary，不手动指定 Content-Type

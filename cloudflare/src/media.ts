@@ -22,6 +22,7 @@ import { ok, ok201, ok204, fail, nowIso } from './util';
 import { authUser } from './auth';
 
 const MAX_BYTES = 60 * 1024 * 1024; // 单文件 60 MiB（放得下长曲 / 无损）
+const MAX_COVER_BYTES = 5 * 1024 * 1024; // 封面 5 MiB 上限（内嵌封面通常 < 1 MiB）
 /** 库总容量硬上限：10 GiB（R2 免费额度 10 GB/月，写死防超额计费） */
 const LIBRARY_CAP_BYTES = 10 * 1024 * 1024 * 1024;
 const AUDIO_KEY = (id: string) => `audio/${id}`;
@@ -121,6 +122,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
 
     let file: File | null = null;
+    let coverFile: File | null = null;
     let nameField = '';
     let artistField = '';
     let albumField = '';
@@ -132,6 +134,8 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
         const form = await c.req.formData();
         const f = form.get('file');
         if (f && typeof f === 'object' && 'arrayBuffer' in f) file = f as File;
+        const cv = form.get('cover');
+        if (cv && typeof cv === 'object' && 'arrayBuffer' in cv) coverFile = cv as File;
         nameField = String(form.get('name') || '');
         artistField = String(form.get('artist') || '');
         albumField = String(form.get('album') || '');
@@ -153,6 +157,12 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
       return fail(413, `单文件不得超过 ${Math.round(MAX_BYTES / 1024 / 1024)} MB（当前 ${(file.size / 1024 / 1024).toFixed(1)} MB）`);
     }
     if (!isAudio(file.type)) return fail(415, `不支持的格式：${file.type || '未知'}`);
+    if (coverFile && coverFile.size > MAX_COVER_BYTES) {
+      return fail(413, `封面不得超过 5 MB（当前 ${(coverFile.size / 1024 / 1024).toFixed(1)} MB）`);
+    }
+    if (coverFile && !/^image\//i.test(coverFile.type)) {
+      return fail(415, '封面必须是图片文件');
+    }
 
     // 10 GiB 硬上限：入库前核对全库用量，超限拒绝（写死，永不越出 R2 免费额度）
     const sumRow = await c.env.DB.prepare('SELECT COALESCE(SUM(size), 0) AS total FROM media_tracks').first<{ total: number }>();
@@ -173,18 +183,24 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
       size: file.size,
       type: file.type || 'audio/mpeg',
       duration: Number.isFinite(durationField) && durationField > 0 ? Math.round(durationField) : 0,
-      hasCover: false,
+      hasCover: !!coverFile,
       created_at: nowIso(),
     };
 
-    // 先写 R2 二进制，再写 D1 元数据（顺序保证：元数据存在则音频必在）
+    // 先写 R2 二进制（音频 + 可选封面），再写 D1 元数据（顺序保证：元数据存在则音频必在）
     const buf = await file.arrayBuffer();
     await c.env.MEDIA_R2.put(AUDIO_KEY(id), buf, {
       httpMetadata: { contentType: meta.type },
     });
+    if (coverFile) {
+      const coverBuf = await coverFile.arrayBuffer();
+      await c.env.MEDIA_R2.put(COVER_KEY(id), coverBuf, {
+        httpMetadata: { contentType: coverFile.type || 'image/jpeg' },
+      });
+    }
     await c.env.DB.prepare(
-      'INSERT INTO media_tracks (id, name, artist, album, size, type, duration, has_cover, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8)'
-    ).bind(meta.id, meta.name, meta.artist, meta.album, meta.size, meta.type, meta.duration, meta.created_at).run();
+      'INSERT INTO media_tracks (id, name, artist, album, size, type, duration, has_cover, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)'
+    ).bind(meta.id, meta.name, meta.artist, meta.album, meta.size, meta.type, meta.duration, meta.hasCover ? 1 : 0, meta.created_at).run();
 
     return ok201(toTrack(meta), '上传成功');
   })

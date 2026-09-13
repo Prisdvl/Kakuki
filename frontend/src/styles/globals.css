@@ -4856,6 +4856,19 @@ a, button, .article-card, .contact-card, .social-links a,
   white-space: nowrap;
 }
 
+.music-upload-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+  border: 1px solid var(--border);
+}
+
+.music-upload-thumb-empty {
+  background: var(--bg-tertiary);
+}
+
 .music-upload-meta {
   margin-top: 0.75rem;
 }

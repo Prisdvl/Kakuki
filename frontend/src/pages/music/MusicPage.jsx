@@ -5,6 +5,7 @@ import useMusicStore from '../../store/musicStore';
 import useUserStore from '../../store/userStore';
 import mediaApi from '../../api/media';
 import CoverParticles from '../../components/CoverParticles';
+import { extractEmbeddedCover } from '../../utils/embeddedCover';
 
 const ACCEPT = '.mp3,.m4a,.aac,.wav,.ogg,.flac,audio/*';
 const MAX_MB = 60;
@@ -12,7 +13,7 @@ const MAX_MB = 60;
 /** 上传面板：把本地音频收进站内音频库（D1 元数据 + R2 二进制），播放走同源流接口 */
 function UploadPanel({ onDone, onClose }) {
   const inputRef = useRef(null);
-  const [queue, setQueue] = useState([]);      // [{ file, name }]
+  const [queue, setQueue] = useState([]);      // [{ file, name, cover, thumb }]
   const [artist, setArtist] = useState('');
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -26,10 +27,20 @@ function UploadPanel({ onDone, onClose }) {
       setMsg({ type: 'err', text: `已跳过 ${tooBig.length} 个超过 ${MAX_MB} MB 的文件` });
     }
     if (!ok.length) return;
-    setQueue((q) => [
-      ...q,
-      ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, '') })),
-    ]);
+    setQueue((q) => [...q, ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, ''), cover: null, thumb: null }))]);
+    // 异步解析内嵌封面：不阻塞加入队列，解析到就回填缩略图
+    ok.forEach((file, idx) => {
+      const targetName = file.name.replace(/\.[^.]+$/, '');
+      extractEmbeddedCover(file)
+        .then((cover) => {
+          if (!cover) return;
+          const url = URL.createObjectURL(cover.blob);
+          setQueue((prev) =>
+            prev.map((x) => (x.file === file && x.name === targetName ? { ...x, cover, thumb: url } : x))
+          );
+        })
+        .catch(() => {});
+    });
   };
 
   const start = async () => {
@@ -41,7 +52,7 @@ function UploadPanel({ onDone, onClose }) {
       try {
         await mediaApi.upload(
           item.file,
-          { name: item.name, artist },
+          { name: item.name, artist, cover: item.cover || undefined },
           (p) => setProgress(Math.round(((done + p / 100) / queue.length) * 100))
         );
         done += 1;
@@ -100,6 +111,9 @@ function UploadPanel({ onDone, onClose }) {
         <div className="music-upload-queue">
           {queue.map((q, i) => (
             <div key={`${q.file.name}-${i}`} className="music-upload-item">
+              {q.thumb
+                ? <img className="music-upload-thumb" src={q.thumb} alt="" />
+                : <span className="music-upload-thumb music-upload-thumb-empty" aria-hidden="true" />}
               <input
                 value={q.name}
                 onChange={(e) => setQueue((prev) => prev.map((x, xi) => (xi === i ? { ...x, name: e.target.value } : x)))}

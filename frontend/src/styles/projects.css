@@ -105,12 +105,15 @@
   border-radius: 999px;
 }
 .pj-badge.featured {
-  color: var(--accent);
-  background: var(--accent-soft);
+  /* accent 字压 accent-soft 玻璃底在深色下仅 3.15:1；不透明混底双主题达标 */
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-primary) 82%, var(--accent));
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .pj-badge.star {
-  color: var(--warning);
+  /* warning 原色在浅色玻璃底上仅 2.6:1；混入 text-primary 后双主题 ≥ 4.5:1，
+     且保留警示色的色相倾向 */
+  color: color-mix(in srgb, var(--warning) 55%, var(--text-primary));
   background: color-mix(in srgb, var(--warning) 12%, transparent);
 }
 

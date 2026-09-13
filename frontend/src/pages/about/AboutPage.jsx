@@ -198,8 +198,9 @@ export default function AboutPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
             {TECH_STACK.map((t) => (
               <div key={t.name} style={{ padding: "0.55rem 0.75rem", borderRadius: 10, background: "var(--bg-tertiary)" }}>
-                <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent)" }}>{t.name}</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)" }}>{t.desc}</div>
+                {/* bg-tertiary 叠玻璃底偏暗，accent/tertiary 字都不达标，用 primary/secondary */}
+                <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{t.name}</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{t.desc}</div>
               </div>
             ))}
           </div>

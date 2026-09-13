@@ -2092,6 +2092,10 @@ body.snap-active {
   display: flex;
   flex-direction: column;
   transition: box-shadow 0.3s ease;
+  /* 音乐卡自身透明，玻璃在 .tilt-card 外层（0.4 alpha）—— blur 透出的是深色
+     页面装饰层，浅色主题下卡内 text-tertiary/meta 深字全部失效（2.2:1）。
+     给卡一个实底，文字对比度回到可控范围。 */
+  background: var(--glass-bg-strong-solid);
 }
 
 .music-card:hover {
@@ -2291,7 +2295,10 @@ body.snap-active {
   left: 0;
   right: 0;
   z-index: 90;
-  background: var(--glass-bg-strong);
+  /* 必须用实底（0.94+ 不透明）：强玻璃只有 0.58~0.7 的 alpha，
+     滚动时透出的内容不可控 —— 文章页底部滚过深色代码块时，
+     状态栏底色被拉到 rgb(100,111,125)，内部小字对比度直接跌破 3:1。 */
+  background: var(--glass-bg-strong-solid);
   backdrop-filter: blur(var(--blur-float)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-float)) saturate(180%);
   border-top: 1px solid var(--glass-border);
@@ -2315,7 +2322,10 @@ body.snap-active {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--accent);
+  /* 不用 var(--accent)：深色主题下 accent(111,125,139) 在实底上仅 4.06:1，
+     15.2px/600 不满足大字豁免，必须按正文 4.5:1 —— 用 primary 保证达标，
+     胶囊仍保留 accent-soft 底色的品牌感。 */
+  color: var(--text-primary);
   letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
   padding: 0.3rem 0.75rem;
@@ -2434,10 +2444,14 @@ body.snap-active {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
+  /* 封面占位本质是「一张图片的替身」，必须自带暗底：
+     上方浮层是白色文字，靠 overlay 之外的暗色托底。
+     早前用 var(--bg-tertiary)/var(--bg-secondary) 会随主题变亮，
+     浅色主题下白字直接被冲成 1.5:1（近乎不可见）。 */
+  color: rgba(255, 255, 255, 0.5);
   background:
-    radial-gradient(120% 90% at 15% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 55%),
-    linear-gradient(160deg, var(--bg-tertiary), color-mix(in srgb, var(--bg-secondary) 80%, var(--bg-tertiary)));
+    radial-gradient(120% 90% at 15% 0%, color-mix(in srgb, var(--accent-secondary) 42%, transparent), transparent 58%),
+    linear-gradient(160deg, #333b46, #16191f);
 }
 
 .hero-article-card:hover .hero-article-card-cover img {
@@ -2447,7 +2461,16 @@ body.snap-active {
 .hero-article-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.3) 40%, transparent 70%);
+  /* 白字浮层的可读性完全依赖这层压暗：底部 0.9 保证小字达标，
+     55% 处仍有 0.42，覆盖「日期 / 摘要」所在的中段。 */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.78) 26%,
+    rgba(0, 0, 0, 0.5) 52%,
+    rgba(0, 0, 0, 0.16) 78%,
+    transparent 100%
+  );
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -2460,7 +2483,13 @@ body.snap-active {
   gap: 0.35rem;
   padding: 0.2rem 0.65rem;
   border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  /* 徽章是 10.4px 小字，白字需 4.5:1。品牌色两端都要压暗：
+     深色主题下 --accent(111,125,139) 上白字仅 4.27:1，不够。 */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 78%, #000),
+    color-mix(in srgb, var(--accent-secondary) 72%, #000)
+  );
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
@@ -2472,7 +2501,7 @@ body.snap-active {
 
 .hero-article-card-date {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.86);
   margin-bottom: 0.4rem;
 }
 
@@ -2490,7 +2519,7 @@ body.snap-active {
 
 .hero-article-card-summary {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.84);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -3593,7 +3622,8 @@ input:autofill {
 
 .tag-chip.active,
 .category-chip.active {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 85%, white) 0%, var(--accent) 100%);
+  /* 两端都压暗 15%：深色主题下 accent(111,125,139) 系渐变上白字仅 3.6:1 */
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 85%, #000) 0%, color-mix(in srgb, var(--accent) 88%, #000) 100%);
   color: #fff;
   border-color: var(--accent);
   box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 40%, transparent),
@@ -3613,8 +3643,10 @@ input:autofill {
   border-radius: 10px;
   font-size: 0.7rem;
   font-weight: 700;
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--bg-primary) 82%, var(--accent));
+  /* accent 字压 accent 20% 玻璃底只有 2.7:1（chip 常驻玻璃面板上）；
+     改用不透明混底：浅色 ≈ #d3d5d8、深色 ≈ #1f2329，text-primary 双主题 ≥ 5.5:1 */
+  color: var(--text-primary);
   transition: all 0.25s ease;
   text-shadow: none;
 }
@@ -4552,8 +4584,9 @@ a, button, .article-card, .contact-card, .social-links a,
   border-radius: 8px;
   font-size: 0.7rem;
   line-height: 1.5;
-  color: var(--warning, #d97706);
-  background: color-mix(in srgb, var(--warning, #d97706) 12%, transparent);
+  /* 同 .pj-badge.star：warning 原色压淡警示底只有 2.5:1，混 text-primary 修正 */
+  color: color-mix(in srgb, var(--warning) 55%, var(--text-primary));
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--warning, #d97706) 28%, transparent);
 }
 
@@ -5492,8 +5525,10 @@ a, button, .article-card, .contact-card, .social-links a,
   border-radius: 6px;
   font-size: 0.85em;
   font-weight: 600;
-  background: var(--accent-soft);
-  color: var(--accent);
+  /* 原 accent-soft 半透明底 + accent 字，在玻璃合成底上只有 2.5~4:1；
+     不透明混底 + text-primary 双主题 ≥ 6:1 */
+  background: color-mix(in srgb, var(--bg-primary) 74%, var(--accent));
+  color: var(--text-primary);
 }
 
 .markdown-body hr {
@@ -5526,7 +5561,8 @@ a, button, .article-card, .contact-card, .social-links a,
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  /* 0.45 白在 #282c34 头部上仅 3.86:1 */
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .code-copy-btn {
@@ -6404,6 +6440,9 @@ a, button, .article-card, .contact-card, .social-links a,
 /* 归档/搜索页 Input.Search 按钮 */
 .ant-input-search .ant-input-search-button {
   background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 78%, #000 22%)) !important;
+  /* 新版 antd 按钮类名是 ant-btn-color-primary/ant-btn-variant-solid，不含 ant-btn-primary，
+     下方白字规则匹配不到它；底色被这里覆盖成 accent 深色后，默认深字只剩 1.43:1。 */
+  color: var(--on-accent) !important;
   border: none !important;
   box-shadow: 0 4px 14px var(--accent-glow) !important;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0 !important;
@@ -6501,7 +6540,8 @@ a, button, .article-card, .contact-card, .social-links a,
   100% { transform: rotateX(0deg); opacity: 1; }
 }
 .status-focus {
-  color: var(--accent);
+  /* 不用 accent：状态栏实底上深色主题的 accent 只有 4.2:1（11.5px 小字需 4.5） */
+  color: var(--text-secondary);
   font-weight: 600;
 }
 @media (max-width: 1080px) {

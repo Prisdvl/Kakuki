@@ -490,7 +490,9 @@ export function ProjectsCard() {
               {p.tech_list?.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
                   {p.tech_list.slice(0, 4).map((t) => (
-                    <span key={t} style={{ fontSize: '0.65rem', padding: '0.1rem 0.5rem', borderRadius: 8, background: 'var(--accent-soft)', color: 'var(--accent)' }}>{t}</span>
+                    // 字不用 var(--accent)：accent-soft 叠在玻璃卡上后底色偏暗，
+                    // accent 字只剩 3~4:1；text-primary 在同一底上 ≥ 5:1
+                    <span key={t} style={{ fontSize: '0.65rem', padding: '0.1rem 0.5rem', borderRadius: 8, background: 'var(--accent-soft)', color: 'var(--text-primary)' }}>{t}</span>
                   ))}
                 </div>
               )}

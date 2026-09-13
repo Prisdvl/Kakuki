@@ -145,7 +145,7 @@ export default function TalksPage() {
       )}
 
       <div style={{ marginTop: "2rem", textAlign: "center" }}>
-        <Link to="/" style={{ color: "var(--accent)", fontSize: "0.88rem" }}>&larr; 返回首页</Link>
+        <Link to="/" style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>&larr; 返回首页</Link>
       </div>
     </div>
   );

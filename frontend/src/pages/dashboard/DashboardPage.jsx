@@ -279,7 +279,7 @@ function LeetCodeProgressCard() {
                   </span>
                   <span style={{ color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                     {d.solved} / {d.total}
-                    <span style={{ marginLeft: '0.4rem', color: d.color, fontWeight: 600 }}>{p}%</span>
+                    <span style={{ marginLeft: '0.4rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{p}%</span>
                   </span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: 'var(--glass-border)', overflow: 'hidden' }}>

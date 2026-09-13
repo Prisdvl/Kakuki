@@ -120,6 +120,26 @@ function getContrastRatio(fgHex, bgHex) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+/** 把不透明色 overHex 以 alpha 压在 baseHex 之上，返回混色后的 hex */
+function compositeOver(baseHex, overHex, alpha) {
+  const [or_, og, ob] = hexToRgb(overHex);
+  const [br, bg, bb] = hexToRgb(baseHex);
+  const mix = (o, b) => Math.round(o * alpha + b * (1 - alpha));
+  return rgbToHex(mix(or_, br), mix(og, bg), mix(ob, bb));
+}
+
+/**
+ * 半透明前景压在背景上的**实际**对比度。
+ *
+ * WCAG 判定的是肉眼看到的颜色，所以必须先把 alpha 混进背景再算比值 ——
+ * 直接拿不透明原色算，会把 4.5:1 悄悄降成 2.9:1（浅色下 alpha 0.66 尤其严重）。
+ */
+function getBlendedContrastRatio(rgbTriple, alpha, bgHex) {
+  const [br, bg, bb] = hexToRgb(bgHex);
+  const mix = (o, b) => Math.round(o * alpha + b * (1 - alpha));
+  return getContrastRatio(rgbToHex(mix(rgbTriple[0], br), mix(rgbTriple[1], bg), mix(rgbTriple[2], bb)), bgHex);
+}
+
 function ensureContrast(fgHex, bgHex, minRatio, isDark) {
   const current = getContrastRatio(fgHex, bgHex);
   if (current >= minRatio) return fgHex;
@@ -160,15 +180,27 @@ function ensureAlphaContrast(fgColor, bgHex, minRatio, isDark) {
   if (fgColor.startsWith('#')) {
     return ensureContrast(fgColor, bgHex, minRatio, isDark);
   }
-  if (fgColor.startsWith('rgb(')) {
+  // 注意：必须用 'rgb' 而不是 'rgb(' —— rgba(...) 前四字符是 'rgba'，
+  // 与 'rgb(' 不匹配，会导致整条 alpha 分支被静默跳过。
+  if (fgColor.startsWith('rgb')) {
     const match = fgColor.match(/rgba?\(([^)]+)\)/);
     if (!match) return fgColor;
     const parts = match[1].split(',').map((p) => parseFloat(p.trim()));
     const [r, g, b] = parts;
-    const hex = rgbToHex(r, g, b);
-    const adjusted = ensureContrast(hex, bgHex, minRatio, isDark);
     const alpha = parts.length === 4 ? parts[3] : 1;
-    const [ar, ag, ab] = hexToRgb(adjusted);
+    if (alpha >= 0.999) return ensureContrast(rgbToHex(r, g, b), bgHex, minRatio, isDark);
+
+    // 不透明原色达标 ≠ 观感达标：alpha 会把前景往背景方向拉。
+    // 这里逐步抬高「不透明色目标」，直到**混色后**的比值真正满足 minRatio。
+    let base = rgbToHex(r, g, b);
+    let target = minRatio;
+    for (let i = 0; i < 10; i += 1) {
+      base = ensureContrast(rgbToHex(r, g, b), bgHex, target, isDark);
+      const triple = hexToRgb(base);
+      if (getBlendedContrastRatio(triple, alpha, bgHex) >= minRatio) break;
+      target += 1.5;
+    }
+    const [ar, ag, ab] = hexToRgb(base);
     return `rgba(${ar}, ${ag}, ${ab}, ${alpha})`;
   }
   return fgColor;
@@ -434,6 +466,16 @@ function buildThemeVars(palette, isDark) {
   // 页面底色跟随主题色、但比主题色淡（保留色相、压低饱和与明暗差）
   const bgPrimary = getTintedBackground(Vibrant, isDark);
 
+  // 文字实际绝大多数落在**玻璃**上，而不是页面底色上。
+  // 两层玻璃比单层更极端：浅色主题下叠出来更暗（#f4f5f6 → #a9b1bb）、
+  // 深色主题下换用强玻璃更亮（#0e0f11 → #282c30）。两个方向都会压低对比度，
+  // 所以标定基准取这个「最差底色」，否则状态栏 / 播放条 / 卡片内玻璃块上的小字会糊掉
+  // （实测浅色 --text-tertiary 只有 2.9:1、深色 3.18:1）。
+  const GLASS_ALPHA = isDark ? 0.42 : 0.4;
+  const GLASS_BASE = isDark ? DarkMuted : LightMuted;
+  const cardBg = compositeOver(bgPrimary, GLASS_BASE, GLASS_ALPHA);
+  const stackedBg = compositeOver(bgPrimary, GLASS_BASE, isDark ? 0.72 : 0.64);
+
   const textPrimaryRaw = isDark ? LightVibrant : DarkVibrant;
   const textSecondaryRaw = isDark ? Vibrant : Muted;
   const accentRaw = Vibrant;
@@ -441,9 +483,12 @@ function buildThemeVars(palette, isDark) {
   const accentSecondaryRaw = LightVibrant;
   const mutedRaw = Muted;
 
-  const textPrimary = ensureContrast(textPrimaryRaw, bgPrimary, 7, isDark);
-  const textSecondary = ensureContrast(textSecondaryRaw, bgPrimary, 4.5, isDark);
-  const accent = ensureContrast(accentRaw, bgPrimary, 4.5, isDark);
+  const textPrimary = ensureContrast(textPrimaryRaw, stackedBg, 7, isDark);
+  const textSecondary = ensureContrast(textSecondaryRaw, stackedBg, 5, isDark);
+  // accent 同样按 stackedBg 标定：accent 大量用作**文字色**（导航 active、链接、
+  // 徽章、active 行标题），而它实际落在玻璃底上 —— 只按 bgPrimary 标定时，
+  // 深色下 accent(111,125,139) 在玻璃底(45~54)上只有 2.9~4.4:1，成片边缘失达标。
+  const accent = ensureContrast(accentRaw, stackedBg, 4.5, isDark);
   const accentLight = ensureContrast(accentLightRaw, bgPrimary, 3, isDark);
   const accentSecondary = ensureContrast(accentSecondaryRaw, bgPrimary, 3, isDark);
   const muted = ensureContrast(mutedRaw, bgPrimary, 3, isDark);
@@ -465,6 +510,9 @@ function buildThemeVars(palette, isDark) {
 
     glassBg: isDark ? rgba(DarkMuted, 0.42) : rgba(LightMuted, 0.4),
     glassBgStrong: isDark ? rgba(DarkMuted, 0.72) : rgba(LightMuted, 0.7),
+    // 实底档：固定条（状态栏）专用。半透明玻璃叠在滚过的任意内容上，
+    // 文字对比度不可控，必须用 0.94+ 的不透明档（浅色偏白、深色偏黑）。
+    glassBgStrongSolid: isDark ? 'rgba(24, 24, 28, 0.95)' : 'rgba(255, 255, 255, 0.94)',
     glassBorder: isDark ? rgba(accent, 0.36) : rgba(accent, 0.32),
     glassShadow: isDark
       ? `0 8px 32px ${rgba(DarkVibrant, 0.4)}`
@@ -479,7 +527,11 @@ function buildThemeVars(palette, isDark) {
 
     textPrimary,
     textSecondary,
-    textTertiary: ensureAlphaContrast(rgba(accent, isDark ? 0.85 : 0.66), bgPrimary, 3, isDark),
+    // 3:1 是「大字号/装饰性文字」的下限；tertiary 大量用于 11~14px 的元信息，
+    // 必须按正文标准 4.5:1。目标设 5.2 留余量：实际底色偶尔比 stackedBg 估算亮
+    // （关于页标签玻璃 53~66、行内 code），4.5/4.8 都会在边缘差 0.03~0.2。
+    // alpha 也不能太低：浅色主题下 0.66 会把深色前景稀释回背景，吃掉近 1 个档位。
+    textTertiary: ensureAlphaContrast(rgba(accent, isDark ? 0.88 : 0.78), stackedBg, 5.2, isDark),
     border: rgba(accent, isDark ? 0.22 : 0.28),
 
     heroOverlay: isDark ? rgba(DarkMuted, 0.6) : rgba(LightMuted, 0.6),
@@ -533,6 +585,7 @@ function applyThemeVars(vars) {
 
   root.style.setProperty('--glass-bg', vars.glassBg);
   root.style.setProperty('--glass-bg-strong', vars.glassBgStrong);
+  root.style.setProperty('--glass-bg-strong-solid', vars.glassBgStrongSolid);
   root.style.setProperty('--glass-border', vars.glassBorder);
   root.style.setProperty('--glass-shadow', vars.glassShadow);
   root.style.setProperty('--glass-shadow-hover', vars.glassShadowHover);

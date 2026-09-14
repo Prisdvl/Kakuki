@@ -225,6 +225,46 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     return ok204('已删除');
   })
 
+  /** 上传 / 更换封面（仅 staff）：multipart cover 图片，覆盖 R2 并置 D1 has_cover=1 */
+  .post('/media/tracks/:id/cover/', async (c) => {
+    if (!c.env.DB) return fail(503, '数据库未绑定');
+    if (!c.env.MEDIA_R2) return fail(503, '音频对象存储（R2）未绑定');
+    const user = await authUser(c);
+    if (!user) return fail(401, '请先登录');
+    if (!user.is_staff) return fail(403, '仅站长账号可执行此操作');
+
+    const id = c.req.param('id');
+    if (!ID_RE.test(id)) return fail(400, '曲目 ID 非法');
+
+    const exists = await c.env.DB.prepare('SELECT id FROM media_tracks WHERE id = ?1').bind(id).first();
+    if (!exists) return fail(404, '曲目不存在');
+
+    const ctype = c.req.header('Content-Type') || '';
+    if (!/multipart\/form-data/i.test(ctype)) return fail(400, '请使用 multipart/form-data 提交封面');
+
+    let coverFile: File | null = null;
+    try {
+      const form = await c.req.formData();
+      const cv = form.get('cover');
+      if (cv && typeof cv === 'object' && 'arrayBuffer' in cv) coverFile = cv as File;
+    } catch {
+      return fail(400, '请求体解析失败');
+    }
+    if (!coverFile) return fail(400, '缺少 cover 图片字段');
+    if (coverFile.size === 0) return fail(400, '封面文件为空');
+    if (coverFile.size > MAX_COVER_BYTES) {
+      return fail(413, `封面不得超过 5 MB（当前 ${(coverFile.size / 1024 / 1024).toFixed(1)} MB）`);
+    }
+    if (!/^image\//i.test(coverFile.type)) return fail(415, '封面必须是图片文件');
+
+    const coverBuf = await coverFile.arrayBuffer();
+    await c.env.MEDIA_R2.put(COVER_KEY(id), coverBuf, {
+      httpMetadata: { contentType: coverFile.type || 'image/jpeg' },
+    });
+    await c.env.DB.prepare('UPDATE media_tracks SET has_cover = 1 WHERE id = ?1').bind(id).run();
+    return ok({ id, cover: `/api/v1/media/cover/${id}/` }, 200, '封面已更新');
+  })
+
   /** 播放流（公开，支持 Range）：R2 原生 range get，流式返回不整轨加载 */
   .get('/media/stream/:id/', async (c) => {
     if (!c.env.DB) return fail(503, '数据库未绑定');

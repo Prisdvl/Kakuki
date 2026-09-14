@@ -44,6 +44,17 @@ const mediaApi = {
   },
 
   remove: (id) => request.delete(`/media/tracks/${id}/`, { skipAuthRedirect: true }),
+
+  /**
+   * 上传 / 更换封面（仅管理员）：multipart 的 cover 字段 → R2 覆盖 + D1 has_cover=1
+   * @param {string} id 曲目 id
+   * @param {File} file 图片文件（≤ 5 MB，image/*）
+   */
+  setCover: (id, file) => {
+    const form = new FormData();
+    form.append('cover', file);
+    return request.post(`/media/tracks/${id}/cover/`, form, { timeout: 60000 });
+  },
 };
 
 export default mediaApi;

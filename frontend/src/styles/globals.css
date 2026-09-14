@@ -2545,35 +2545,31 @@ body.snap-active {
   color: var(--text-secondary);
 }
 
-/* ===== Search Bar (Center) ===== */
-.search-center {
-  max-width: 640px;
-  margin: 0 auto 2rem;
-  border-radius: 100px;
-  padding: 0.5rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: var(--glass-bg-strong);
+/* ===== 归档搜索框（液态玻璃）=====
+   搜索入口已从首页移除，搜索收敛到归档页（?q= 直达，见 ArchivePage）。
+   全局通配规则已给 .ant-input 系列加 .glass 轻玻璃背景，这里用液态玻璃
+   参数覆盖输入框外壳：低模糊高饱和 + 霓虹描边，与 .glass-liquid 同源。 */
+.archive-search.ant-input-affix-wrapper {
+  background: var(--lg-bg) !important;
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 12px;
+  box-shadow: var(--lg-shadow);
 }
-
-.search-center input {
-  flex: 1;
-  background: none;
-  border: none;
-  outline: none;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  font-family: inherit;
+.archive-search.ant-input-affix-wrapper:hover {
+  background: var(--lg-bg-hover) !important;
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
-
-.search-center input::placeholder {
+.archive-search .ant-input {
+  background: transparent !important;
+}
+.archive-search .ant-input::placeholder {
   color: var(--text-tertiary);
 }
-
-.search-center svg {
-  color: var(--text-tertiary);
-  flex-shrink: 0;
+.archive-search.ant-input-affix-wrapper-focused {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 0 4px var(--accent-soft), var(--lg-shadow);
 }
 
 /* ===== Responsive ===== */
@@ -4869,6 +4865,29 @@ a, button, .article-card, .contact-card, .social-links a,
   background: var(--bg-tertiary);
 }
 
+/* 上传队列项的封面选择：缩略图 + 右下角小徽章，点击换图 */
+.music-upload-cover {
+  position: relative;
+  flex: none;
+  line-height: 0;
+  cursor: pointer;
+}
+.music-upload-cover-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1.5px solid var(--card-bg);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+
 .music-upload-meta {
   margin-top: 0.75rem;
 }
@@ -4963,6 +4982,23 @@ a, button, .article-card, .contact-card, .social-links a,
 
 .music-track-del:hover {
   color: var(--error) !important;
+}
+
+/* 换封面按钮与删除按钮同位置体系，但 hover 用强调色而不是红色 */
+.music-track-cover {
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+.music-track-row:hover .music-track-cover,
+.music-track-row:focus-within .music-track-cover {
+  opacity: 1;
+}
+.music-track-cover:hover {
+  color: var(--accent) !important;
+}
+@media (hover: none) {
+  .music-track-cover { opacity: 1; }
 }
 
 /* 触屏无 hover：删除按钮常显 */
@@ -6031,16 +6067,6 @@ a, button, .article-card, .contact-card, .social-links a,
 .eq.paused span {
   animation-play-state: paused;
   height: 4px;
-}
-
-/* 搜索框聚焦光效 */
-.search-center {
-  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
-}
-.search-center:focus-within {
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  box-shadow: 0 0 0 4px var(--accent-soft), var(--glass-shadow);
-  transform: translateY(-1px);
 }
 
 /* 滚动入场动画方向变体（配合 AppLayout 的 IntersectionObserver） */

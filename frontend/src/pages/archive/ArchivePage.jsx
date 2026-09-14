@@ -144,8 +144,9 @@ export default function ArchivePage() {
           </p>
         )}
 
-        {/* 搜索框 */}
+        {/* 搜索框（液态玻璃样式；搜索入口已从首页收敛到此页） */}
         <SearchInput
+          className="archive-search"
           placeholder="搜索文章标题与内容..."
           allowClear
           enterButton={<><Search size={14} /> 搜索</>}

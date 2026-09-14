@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, Music, Disc3, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Music, Disc3, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2, ImagePlus } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
 import useUserStore from '../../store/userStore';
 import mediaApi from '../../api/media';
@@ -27,8 +27,8 @@ function UploadPanel({ onDone, onClose }) {
       setMsg({ type: 'err', text: `已跳过 ${tooBig.length} 个超过 ${MAX_MB} MB 的文件` });
     }
     if (!ok.length) return;
-    setQueue((q) => [...q, ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, ''), cover: null, thumb: null }))]);
-    // 异步解析内嵌封面：不阻塞加入队列，解析到就回填缩略图
+    setQueue((q) => [...q, ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, ''), cover: null, thumb: null, manual: false }))]);
+    // 异步解析内嵌封面：不阻塞加入队列，解析到就回填缩略图（手动选过封面则不覆盖）
     ok.forEach((file) => {
       const targetName = file.name.replace(/\.[^.]+$/, '');
       extractEmbeddedCover(file)
@@ -36,7 +36,7 @@ function UploadPanel({ onDone, onClose }) {
           if (!cover) return;
           const url = URL.createObjectURL(cover.blob);
           setQueue((prev) =>
-            prev.map((x) => (x.file === file && x.name === targetName ? { ...x, cover: cover.blob, thumb: url } : x))
+            prev.map((x) => (x.file === file && x.name === targetName && !x.manual ? { ...x, cover: cover.blob, thumb: url } : x))
           );
         })
         .catch(() => {});
@@ -111,9 +111,27 @@ function UploadPanel({ onDone, onClose }) {
         <div className="music-upload-queue">
           {queue.map((q, i) => (
             <div key={`${q.file.name}-${i}`} className="music-upload-item">
-              {q.thumb
-                ? <img className="music-upload-thumb" src={q.thumb} alt="" />
-                : <span className="music-upload-thumb music-upload-thumb-empty" aria-hidden="true" />}
+              {/* 封面：点一下可换图（手动选择会覆盖内嵌封面） */}
+              <label className="music-upload-cover" title="选择 / 更换封面">
+                {q.thumb
+                  ? <img className="music-upload-thumb" src={q.thumb} alt="" />
+                  : <span className="music-upload-thumb music-upload-thumb-empty" aria-hidden="true" />}
+                <span className="music-upload-cover-badge"><ImagePlus size={12} /></span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={busy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!f) return;
+                    if (q.thumb) URL.revokeObjectURL(q.thumb);
+                    const url = URL.createObjectURL(f);
+                    setQueue((prev) => prev.map((x, xi) => (xi === i ? { ...x, cover: f, thumb: url, manual: true } : x)));
+                  }}
+                />
+              </label>
               <input
                 value={q.name}
                 onChange={(e) => setQueue((prev) => prev.map((x, xi) => (xi === i ? { ...x, name: e.target.value } : x)))}
@@ -210,6 +228,21 @@ export default function MusicPage() {
       await refreshUploads();
     } catch (e) {
       setNotice(e?.response?.data?.message || '删除失败');
+    }
+  };
+
+  // 库内曲目换封面：每行一个隐藏的 file input，由封面按钮触发
+  const coverInputs = useRef({});
+  const handleSetCover = async (track, file) => {
+    const input = coverInputs.current[track.id];
+    if (input) input.value = '';
+    if (!file) return;
+    try {
+      await mediaApi.setCover(track.id, file);
+      setNotice(`已更新《${track.name}》封面`);
+      await refreshUploads();
+    } catch (e) {
+      setNotice(e?.response?.data?.message || e?.message || '封面更新失败');
     }
   };
 
@@ -396,6 +429,25 @@ export default function MusicPage() {
                       <Play size={18} style={{ color: isActive ? 'var(--accent)' : 'var(--text-tertiary)' }} />
                     )}
                   </div>
+                  {track.isUpload && isStaff && (
+                    <>
+                      <button
+                        className="music-track-del icon-btn music-track-cover"
+                        aria-label={`更换封面 ${track.name}`}
+                        title="更换封面"
+                        onClick={(e) => { e.stopPropagation(); coverInputs.current?.[track.id]?.click(); }}
+                      >
+                        <ImagePlus size={15} />
+                      </button>
+                      <input
+                        ref={(el) => { if (el) coverInputs.current[track.id] = el; }}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(e) => handleSetCover(track, e.target.files?.[0])}
+                      />
+                    </>
+                  )}
                   {track.isUpload && isStaff && (
                     <button
                       className="music-track-del icon-btn"

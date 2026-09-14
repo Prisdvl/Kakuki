@@ -1,8 +1,8 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Code2,
+  Code2,
   MessageSquare, BookOpen, Sparkles,
   Calendar, ExternalLink, Music,
   BarChart3, Flame, TrendingUp,
@@ -386,7 +386,6 @@ export function TalksCard() {
 }
 
 export default function HomePage() {
-  const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalArticles, setTotalArticles] = useState(0);
@@ -469,21 +468,9 @@ export default function HomePage() {
     setEditing(false);
   };
 
-  const onSearch = (e) => {
-    if (e.key === 'Enter' && e.target.value.trim()) {
-      navigate(`/archive?q=${encodeURIComponent(e.target.value.trim())}`);
-    }
-  };
-
   return (
     <section style={{ padding: '1.5rem 0 1rem' }}>
       <div className="app-container" style={{ maxWidth: 1200 }}>
-        {/* Search Bar */}
-        <div className="glass search-center">
-          <Search size={18} />
-          <input type="text" placeholder="搜索文章、分类..." onKeyDown={onSearch} />
-        </div>
-
         {/* Layout Toolbar */}
         <div className="home-layout-toolbar">
           {!editing ? (

@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6523,10 +6523,33 @@ a, button, .article-card, .contact-card, .social-links a,
   color: var(--text-secondary);
   font-weight: 600;
 }
+/* ===== 运行时长：任何宽度都完整显示 天/时/分/秒 =====
+   不截断翻页钟（原实现 ≤1080px 直接 .status-uptime{display:none}，天数整个消失）。
+   空间不够时按下面的顺序让位，而不是砍数字：
+     1) 装饰性技术栈徽章（≤1080px）
+     2) 页面名与版权（≤768px，沿用既有规则）
+     3) 今日专注（≤720px）
+     4) 仍不够就让 flex 换行 —— 状态栏高度由 ResizeObserver 写进 --status-bar-h，
+        底部播放条会跟着让位，不会重叠。 */
+.status-uptime {
+  flex: 0 0 auto;
+}
 @media (max-width: 1080px) {
-  .status-uptime { display: none; }
+  .status-bar-inner {
+    gap: 0.85rem;
+    padding: 0 1.25rem;
+  }
+  /* 徽章纯装饰，最先让位给运行时长 */
+  .status-bar .status-stack { display: none; }
 }
 @media (max-width: 720px) {
+  .status-bar-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.7rem;
+    font-size: 0.72rem;
+    padding: 0 0.75rem;
+  }
   .status-focus { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {

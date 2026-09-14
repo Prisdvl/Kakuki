@@ -308,7 +308,7 @@ function GithubCard() {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const cached = JSON.parse(raw);
-        if (Date.now() - cached.ts < 24 * 3600 * 1000) {
+        if (Date.now() - cached.ts < 60 * 60 * 1000) {
           setGh(cached.data);
           return;
         }

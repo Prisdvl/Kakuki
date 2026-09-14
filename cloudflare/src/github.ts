@@ -15,6 +15,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from './util';
+import { fail, ok } from './util';
 
 const GH_API = 'https://api.github.com';
 const TTL_MS = 60 * 60 * 1000; // 1h
@@ -61,6 +62,21 @@ const SNAPSHOT_REPOS = [
   },
 ];
 
+const GH_META_PREFIX = 'meta/github-';
+
+/** R2 里由本机 sync-all.ps1 定期推送的同步快照（优先于内置快照使用）。
+ *  Worker 数据中心访问 api.github.com 常被阻断，内置快照永远不会自更新；
+ *  本机网络可达时把真实 profile/repos 推到这里做运行时兜底。 */
+async function storedSnapshot(env: Env, kind: 'user' | 'repos'): Promise<unknown | null> {
+  if (!env.MEDIA_R2) return null;
+  try {
+    const obj = await env.MEDIA_R2.get(`${GH_META_PREFIX}${kind}.json`);
+    return obj ? await obj.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 let ghLastError = '';
 
 function ghHeaders(env: Env): Record<string, string> {
@@ -84,7 +100,8 @@ async function proxyGithub(
   env: Env,
   path: string,
   cacheKey: string,
-  snapshot: unknown
+  snapshot: unknown,
+  kind: 'user' | 'repos'
 ): Promise<Response> {
   const cache = caches.default;
   const key = new Request(`https://cache.internal/${cacheKey}`);
@@ -134,14 +151,21 @@ async function proxyGithub(
     console.warn(`[github] fetch failed for ${path}: ${ghLastError}`);
   }
 
-  // 上游不可用：过期缓存 → 内置快照
+  // 上游不可用：过期缓存 → 本机同步快照（R2）→ 内置快照
   if (stale) {
     try {
       return json(await stale.json(), 200, {
         'X-Kakuki-Cache': 'stale',
         'Cache-Control': 'public, max-age=60',
       });
-    } catch { /* 落到快照 */ }
+    } catch { /* 落到同步/内置快照 */ }
+  }
+  const stored = await storedSnapshot(env, kind);
+  if (stored) {
+    return json(stored, 200, {
+      'X-Kakuki-Cache': 'synced',
+      'Cache-Control': 'public, max-age=300',
+    });
   }
   return json(snapshot, 200, { 'X-Kakuki-Cache': 'snapshot' });
 }
@@ -149,7 +173,7 @@ async function proxyGithub(
 export const githubRoutes = new Hono<{ Bindings: Env }>()
   .get('/github/user/:login/', async (c) => {
     const login = c.req.param('login');
-    return proxyGithub(c.env, `/users/${login}`, `github/user/${login}`, SNAPSHOT_USER);
+    return proxyGithub(c.env, `/users/${login}`, `github/user/${login}`, SNAPSHOT_USER, 'user');
   })
   .get('/github/repos/:login/', async (c) => {
     const login = c.req.param('login');
@@ -157,6 +181,35 @@ export const githubRoutes = new Hono<{ Bindings: Env }>()
       c.env,
       `/users/${login}/repos?per_page=100&sort=updated`,
       `github/repos/${login}`,
-      SNAPSHOT_REPOS
+      SNAPSHOT_REPOS,
+      'repos'
     );
+  })
+
+  /** 上报 GitHub 资料/仓库同步快照（本机 sync-all.ps1 调用，需 SYNC_TOKEN）：
+   *  把真实数据写入 R2 meta/github-{user,repos}.json，作为 Worker 兜底快照。 */
+  .post('/github/snapshot/', async (c) => {
+    const token = c.env.SYNC_TOKEN;
+    const given = c.req.header('X-Sync-Token');
+    if (!token) return fail(503, 'SYNC_TOKEN 未配置，同步接口未启用');
+    if (!given || given !== token) return fail(401, '同步令牌无效');
+    if (!c.env.MEDIA_R2) return fail(503, '对象存储（R2）未绑定');
+
+    let body: { kind?: string; data?: unknown } = {};
+    try {
+      body = await c.req.json();
+    } catch {
+      return fail(400, '请求体应为 JSON');
+    }
+    if (body.kind !== 'user' && body.kind !== 'repos') {
+      return fail(400, 'kind 必须为 user 或 repos');
+    }
+    if (body.data === undefined || body.data === null) {
+      return fail(400, '缺少 data 字段');
+    }
+
+    await c.env.MEDIA_R2.put(`${GH_META_PREFIX}${body.kind}.json`, JSON.stringify(body.data), {
+      httpMetadata: { contentType: 'application/json' },
+    });
+    return ok({ kind: body.kind }, 200, 'GitHub 同步快照已更新');
   });

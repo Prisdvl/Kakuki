@@ -6,8 +6,6 @@ import { getArchives, getArticles, getCategories } from "../../api/article";
 import { extractList } from "../../api/request";
 import useUserStore from "../../store/userStore";
 
-const { Search: SearchInput } = Input;
-
 const PAGE_SIZE = 10;
 
 export default function ArchivePage() {
@@ -20,6 +18,10 @@ export default function ArchivePage() {
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // 搜索框输入态（搜索键已融合进框内，回车即搜）
+  const [kw, setKw] = useState(q);
+  useEffect(() => { setKw(q); }, [q]);
 
   // 分类（从分类页整合进归档：搜索、分类都在这一页完成）
   const [categories, setCategories] = useState([]);
@@ -144,14 +146,15 @@ export default function ArchivePage() {
           </p>
         )}
 
-        {/* 搜索框（液态玻璃样式；搜索入口已从首页收敛到此页） */}
-        <SearchInput
+        {/* 搜索框（液态玻璃；搜索入口已融合进框内，回车/点击右侧箭头即搜） */}
+        <Input
           className="archive-search"
           placeholder="搜索文章标题与内容..."
           allowClear
-          enterButton={<><Search size={14} /> 搜索</>}
-          defaultValue={q}
-          onSearch={handleSearch}
+          prefix={<Search size={15} style={{ color: "var(--text-tertiary)" }} />}
+          value={kw}
+          onChange={(e) => setKw(e.target.value)}
+          onPressEnter={() => handleSearch(kw)}
           style={{ maxWidth: 480, marginBottom: "1rem" }}
         />
 

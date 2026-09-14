@@ -1,11 +1,12 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Form, Input, Button, Select, Switch, Upload, message } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined, PlusOutlined } from "@ant-design/icons";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { getArticleDetail, createArticle, updateArticle, getCategories } from "../../api/article";
 import { extractList } from "../../api/request";
+import request from "../../api/request";
 import useThemeStore from "../../store/themeStore";
 
 /**
@@ -22,10 +23,28 @@ export default function ArticleEditor() {
   const [categories, setCategories] = useState([]);
   const [coverFile, setCoverFile] = useState(null);
   const [content, setContent] = useState("");
+  const [catSearch, setCatSearch] = useState("");   // 分类下拉里正在输入的新名称
 
   useEffect(() => {
     getCategories().then((res) => setCategories(extractList(res)));
   }, []);
+
+  /** 输入了一个新分类名 → 直接建分类并选中（分类可自定义，不必先跑去后台建） */
+  const handleCreateCategory = async (name) => {
+    try {
+      const res = await request.post("/categories/manage/", { name, description: "" });
+      const created = res?.data ?? res;
+      if (created?.id) {
+        setCategories((prev) => (prev.some((c) => c.id === created.id) ? prev : [...prev, created]));
+        form.setFieldValue("category", created.id);
+        message.success(`已创建分类「${name}」`);
+      }
+    } catch (err) {
+      message.error(err?.response?.data?.message || "创建分类失败");
+    } finally {
+      setCatSearch("");
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -73,8 +92,33 @@ export default function ArticleEditor() {
           </Form.Item>
           <div className="flex gap-4 flex-wrap">
             <Form.Item name="category" label="分类">
-              <Select placeholder="选择分类" allowClear style={{ width: 200 }}
-                options={categories.map((c) => ({ label: c.name, value: c.id }))} />
+              <Select
+                showSearch
+                allowClear
+                placeholder="选择已有分类，或输入新名称直接创建"
+                style={{ width: 280 }}
+                options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                onSearch={(v) => setCatSearch(v)}
+                onSelect={() => setCatSearch("")}
+                onClear={() => setCatSearch("")}
+                filterOption={(input, option) =>
+                  String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                }
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    {catSearch.trim() &&
+                      !categories.some((c) => c.name === catSearch.trim()) && (
+                        <div
+                          className="category-create-option"
+                          onMouseDown={(e) => { e.preventDefault(); handleCreateCategory(catSearch.trim()); }}
+                        >
+                          <PlusOutlined /> 新建分类「{catSearch.trim()}」
+                        </div>
+                      )}
+                  </>
+                )}
+              />
             </Form.Item>
             <Form.Item name="is_top" label="置顶" valuePropName="checked">
               <Switch />

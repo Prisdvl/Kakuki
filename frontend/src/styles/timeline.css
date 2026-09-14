@@ -161,10 +161,12 @@
 .tl-tag {
   flex-shrink: 0;
   font-size: 0.66rem;
-  color: var(--text-tertiary);
-  padding: 0.08rem 0.44rem;
+  color: var(--text-secondary);
+  padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  /* 玻璃胶囊：与归档分类 chips / 文章卡标签同一风格 */
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--glass-bg-strong) 80%, transparent);
   max-width: 8rem;
   overflow: hidden;
   text-overflow: ellipsis;

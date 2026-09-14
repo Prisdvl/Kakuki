@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Tag } from "antd";
 import { Eye, MessageCircle, Calendar } from "lucide-react";
 
 /**
@@ -50,11 +49,9 @@ export default function ArticleCard({ article }) {
 
       <div style={{ padding: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
-          {article.is_top && <Tag color="red" bordered={false}>置顶</Tag>}
+          {article.is_top && <span className="glass-pill card-tag card-tag-top">置顶</span>}
           {article.category && (
-            <span className="glass-pill" style={{ fontSize: "0.75rem" }}>
-              {article.category.name}
-            </span>
+            <span className="glass-pill card-tag card-tag-cat">{article.category.name}</span>
           )}
         </div>
 

@@ -2565,31 +2565,36 @@ body.snap-active {
 }
 
 /* ===== 归档搜索框（液态玻璃）=====
-   搜索入口已从首页移除，搜索收敛到归档页（?q= 直达，见 ArchivePage）。
-   antd Input.Search 的 className 落在最外层 .ant-input-group-wrapper 上，
-   液态玻璃作用到内层输入壳 .ant-input-affix-wrapper（低模糊高饱和 +
-   霓虹描边，与 .glass-liquid 同源）。选择器用 .archive-search.ant-input-search
-   双类提升优先级，压过 .dark .ant-input-affix-wrapper 的暗色背景规则。 */
-.archive-search.ant-input-search .ant-input-affix-wrapper {
+   搜索入口已从首页移除、搜索键融合进框内（回车即搜，见 ArchivePage）。
+   普通 Input 的 className 落在 .ant-input-affix-wrapper 上；低模糊高饱和 +
+   霓虹描边，与 .glass-liquid 同源。暗色模式追加 .dark 双类规则，
+   压过 .dark .ant-input-affix-wrapper 的通配背景。 */
+.archive-search.ant-input-affix-wrapper {
   background: var(--lg-bg) !important;
   backdrop-filter: var(--lg-filter);
   -webkit-backdrop-filter: var(--lg-filter);
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  border-radius: 12px;
+  border-radius: 999px;
   box-shadow: var(--lg-shadow);
 }
-.archive-search.ant-input-search .ant-input-affix-wrapper:hover {
+.archive-search.ant-input-affix-wrapper:hover {
   background: var(--lg-bg-hover) !important;
   border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
-.archive-search.ant-input-search .ant-input {
+.dark .archive-search.ant-input-affix-wrapper {
+  background: var(--lg-bg) !important;
+}
+.dark .archive-search.ant-input-affix-wrapper:hover {
+  background: var(--lg-bg-hover) !important;
+}
+.archive-search .ant-input {
   background: transparent !important;
 }
-.archive-search.ant-input-search .ant-input::placeholder {
+.archive-search .ant-input::placeholder {
   color: var(--text-tertiary);
 }
-.archive-search.ant-input-search .ant-input-affix-wrapper-focused,
-.archive-search.ant-input-search .ant-input-affix-wrapper:focus-within {
+.archive-search.ant-input-affix-wrapper-focused,
+.archive-search.ant-input-affix-wrapper:focus-within {
   border-color: color-mix(in srgb, var(--accent) 70%, transparent);
   box-shadow: 0 0 0 4px var(--accent-soft), var(--lg-shadow);
 }
@@ -3541,9 +3546,9 @@ input:autofill {
 .category-chip-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
-  padding: 1.5rem;
-  border-radius: 20px;
+  gap: 0.5rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: 18px;
   background: var(--card-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -3558,32 +3563,28 @@ input:autofill {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.35rem 0.9rem;
-  border-radius: 12px;
+  padding: 0.28rem 0.95rem;
+  border-radius: 999px;
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  color: var(--text-primary);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
+  background: color-mix(in srgb, var(--glass-bg-strong) 82%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  transition: border-color 0.22s ease, color 0.22s ease,
+              background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+  white-space: nowrap;
 }
 
 .tag-chip:hover,
 .category-chip:hover {
-  background: var(--glass-bg-strong);
   color: var(--accent);
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 25%, transparent);
-  text-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 30%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--glass-border));
+  background: color-mix(in srgb, var(--glass-bg-strong) 92%, var(--accent-soft) 8%);
+  transform: translateY(-1px);
 }
 
 .tag-chip.active,
@@ -3603,18 +3604,15 @@ input:autofill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 0.4rem;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--bg-primary) 82%, var(--accent));
-  /* accent 字压 accent 20% 玻璃底只有 2.7:1（chip 常驻玻璃面板上）；
-     改用不透明混底：浅色 ≈ #d3d5d8、深色 ≈ #1f2329，text-primary 双主题 ≥ 5.5:1 */
-  color: var(--text-primary);
-  transition: all 0.25s ease;
-  text-shadow: none;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--text-tertiary) 14%, transparent);
+  color: var(--text-tertiary);
+  transition: all 0.22s ease;
 }
 
 .tag-chip.active .tag-chip-count,
@@ -3626,6 +3624,25 @@ input:autofill {
 .tag-chip:not(.active):hover .tag-chip-count,
 .category-chip:not(.active):hover .category-chip-count {
   background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* ===== 文章卡：分类/置顶标签（统一玻璃胶囊，替代刺眼的红色 antd Tag） ===== */
+.glass-pill.card-tag {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  padding: 0.3rem 0.62rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.card-tag-top {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.card-tag-cat {
+  color: var(--text-secondary);
 }
 
 /* ===== Tag Page — Bubble Cloud ===== */
@@ -5830,6 +5847,103 @@ a, button, .article-card, .contact-card, .social-links a,
   display: flex;
   justify-content: flex-end;
   margin-top: 0.7rem;
+}
+
+/* ===== 富文本编辑器（@uiw/react-md-editor）主题化 =====
+   把库自带的浅/深色样式整体换成站内的玻璃 + 主题变量：
+   卡底、玻璃描边、accent 悬停、预览排版跟随 --text-* 。 */
+.w-md-editor {
+  --color-fg-default: var(--text-primary) !important;
+  --color-accent-fg: var(--accent) !important;
+  --color-danger-fg: var(--error) !important;
+  --color-neutral-muted: color-mix(in srgb, var(--text-tertiary) 60%, transparent) !important;
+  --md-editor-background-color: var(--card-bg) !important;
+  --md-editor-box-shadow-color: var(--glass-border) !important;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--glass-shadow), var(--glass-inner-shadow) !important;
+  color: var(--text-primary);
+  overflow: hidden;
+}
+.w-md-editor-toolbar {
+  background: color-mix(in srgb, var(--glass-bg) 75%, transparent) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+.w-md-editor-toolbar-divider {
+  background: var(--glass-border) !important;
+}
+.w-md-editor-toolbar li > button,
+.w-md-editor-toolbar li > span,
+.w-md-editor-toolbar ul li {
+  color: var(--text-secondary) !important;
+}
+.w-md-editor-toolbar li > button:hover,
+.w-md-editor-toolbar li > span:hover,
+.w-md-editor-toolbar li > button.active {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border-radius: 6px;
+}
+.w-md-editor-toolbar-child {
+  background: var(--glass-bg-strong) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+.w-md-editor-text-input {
+  caret-color: var(--accent);
+}
+.w-md-editor-text ::selection {
+  background: var(--accent-soft);
+}
+.w-md-editor-preview {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+.w-md-editor-preview .wmde-markdown,
+.w-md-editor-preview.wmde-markdown {
+  color: var(--text-primary);
+}
+.w-md-editor-preview .wmde-markdown p,
+.w-md-editor-preview .wmde-markdown li {
+  color: var(--text-secondary);
+}
+.w-md-editor-preview .wmde-markdown h1,
+.w-md-editor-preview .wmde-markdown h2,
+.w-md-editor-preview .wmde-markdown h3,
+.w-md-editor-preview .wmde-markdown h4,
+.w-md-editor-preview .wmde-markdown h5,
+.w-md-editor-preview .wmde-markdown h6 {
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+.w-md-editor-preview .wmde-markdown a {
+  color: var(--accent);
+}
+.w-md-editor-preview .wmde-markdown code,
+.w-md-editor-preview .wmde-markdown pre {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.w-md-editor-bar svg {
+  color: var(--text-tertiary);
+}
+.w-md-editor-fullscreen {
+  background: var(--bg-primary) !important;
+}
+
+/* 编辑器分类下拉：输入新名称时的「创建」入口 */
+.category-create-option {
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.category-create-option:hover {
+  background: var(--accent-soft);
 }
 
 .talk-card {

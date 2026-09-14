@@ -57,12 +57,15 @@ const FlipDigit = memo(function FlipDigit({ digit }) {
 
 const FlipUnit = memo(function FlipUnit({ value, label }) {
   const str = String(value).padStart(value >= 100 ? 3 : 2, '0');
+  // 数字在前、单位在后：读作「01天 12时 31分 02秒」。
+  // 反过来写成「天01 时12 …」时，01 会视觉上贴到后面的「时」上，
+  // 看起来像「天」没带数字、而开头是「1时」。
   return (
     <span className="flip-group">
-      {label && <span className="flip-label">{label}</span>}
       <span className="flip-unit">
         {str.split('').map((d, i) => <FlipDigit key={`${d}-${i}`} digit={d} />)}
       </span>
+      {label && <span className="flip-label">{label}</span>}
     </span>
   );
 });

@@ -6491,7 +6491,8 @@ a, button, .article-card, .contact-card, .social-links a,
 .flip-label {
   font-size: 0.62rem;
   color: var(--text-tertiary);
-  margin-right: 1px;
+  /* 单位跟在数字后面（01天 / 12时），靠左留白而不是靠右 */
+  margin-left: 1px;
 }
 .flip-unit {
   display: inline-flex;

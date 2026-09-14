@@ -103,9 +103,25 @@ function syntheticCoverCanvas() {
   return c;
 }
 
-/** 从封面 canvas 采样粒子集合：{ list, avgColor }，home 坐标 -1..1 */
+/** 从封面采样粒子集合：{ list, avgColor }，home 坐标 -1..1
+ *  source 可为 canvas 或 HTMLImageElement：后者先画到离屏 canvas（等比居中裁剪）再读像素 */
 function sampleParticles(source) {
-  const ctx = source.getContext('2d', { willReadFrequently: true });
+  let ctx;
+  if (source instanceof HTMLImageElement) {
+    const c = document.createElement('canvas');
+    c.width = SAMPLE;
+    c.height = SAMPLE;
+    const d = c.getContext('2d', { willReadFrequently: true });
+    // 等比居中裁剪（cover 模式）：铺满 64×64，避免拉伸变形
+    const iw = source.naturalWidth || SAMPLE;
+    const ih = source.naturalHeight || SAMPLE;
+    const sc = Math.max(SAMPLE / iw, SAMPLE / ih);
+    const dw = iw * sc, dh = ih * sc;
+    d.drawImage(source, (SAMPLE - dw) / 2, (SAMPLE - dh) / 2, dw, dh);
+    ctx = d;
+  } else {
+    ctx = source.getContext('2d', { willReadFrequently: true });
+  }
   const { data } = ctx.getImageData(0, 0, SAMPLE, SAMPLE);
   const raw = [];
   let ar = 0, ag = 0, ab = 0, n = 0;
@@ -263,7 +279,7 @@ export default function CoverParticles() {
       const spin = playing ? 0.10 : 0.045; // rad/s
       angle += spin * dt;
       t += dt;
-      const baseSize = Math.max(1.1, (scale / SAMPLE) * 1.15);
+      const baseSize = Math.max(0.7, (scale / SAMPLE) * 0.62);
       const jitterAmp = playing ? 0.02 : 0.008;
 
       // 背景氛围光：封面均色的超大径向渐变，克制到刚可感知

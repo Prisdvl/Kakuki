@@ -3540,6 +3540,8 @@ input:autofill {
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   color: var(--text-primary);
   cursor: pointer;
   font-weight: 600;
@@ -5918,7 +5920,12 @@ a, button, .article-card, .contact-card, .social-links a,
   gap: 0.2rem;
   padding: 0.85rem 0.5rem;
   border-radius: 14px;
-  background: var(--bg-tertiary);
+  /* 玻璃化：从实底浅色块升级为磨砂玻璃小块 */
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-shadow);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 

@@ -499,8 +499,8 @@ export default function AppLayout() {
             <feImage href={REFRACT_MAP_R} preserveAspectRatio="none" result="mr" />
             <feImage href={REFRACT_MAP_G} preserveAspectRatio="none" result="mg" />
             <feComposite in="mr" in2="mg" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="map" />
-            {/* 折射位移量：64 → 32（需求：液态玻璃折射率调低一半，网格形变更含蓄） */}
-            <feDisplacementMap in="SourceGraphic" in2="map" scale="32" xChannelSelector="R" yChannelSelector="G" />
+            {/* 折射位移量：64 → 32 → 16（两次下调，网格形变更含蓄） */}
+            <feDisplacementMap in="SourceGraphic" in2="map" scale="16" xChannelSelector="R" yChannelSelector="G" />
           </filter>
         </defs>
       </svg>

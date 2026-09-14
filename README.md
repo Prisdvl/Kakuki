@@ -102,6 +102,21 @@ cd cloudflare && npm run deploy
 
 首次部署的 D1 / R2 / Secret 配置步骤见 [cloudflare/README.md](cloudflare/README.md#-首次部署)。
 
+## 🔁 自动数据同步（本机运行）
+
+站点本身会实时拉取 GitHub / LeetCode 并缓存；以下三项需要本机定时任务（`scripts/` 为本地运维脚本，不入库）：
+
+1. **PrisTimer 专注时长** → `scripts/sync-pristimer.py`（只读本机库，按日聚合 `finished` 会话上报 `/api/v1/focus/sync/`）
+2. **LeetCode 数据快照** → 刷新 `frontend/src/data/leetcodeStatic.js`（从站点公开代理 `GET /api/v1/leetcode/:user/` 拉取，前端离线兜底用）
+3. **GitHub 头像快照** → 刷新 `frontend/public/github-avatar.jpg`（下载 GitHub 头像转 JPEG）
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\schedule-auto-sync.ps1   # 注册计划任务 Kakuki-AutoSync（每 4 小时一次）
+powershell -ExecutionPolicy Bypass -File scripts\sync-all.ps1             # 立即手动跑一次（幂等）
+```
+
+同步日志追加到 `logs/sync.log`（已 gitignore）。任一步失败不影响其余步骤，网络受限时快照保留旧文件。
+
 ## 📄 License
 
 MIT

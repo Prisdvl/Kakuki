@@ -29,7 +29,10 @@ const mediaApi = {
     if (meta.album) form.append('album', meta.album);
     if (meta.duration) form.append('duration', String(Math.round(meta.duration)));
     // 内嵌封面（本地解析出的 Blob），后端存 R2 并置 has_cover
-    if (meta.cover) form.append('cover', meta.cover, 'cover.jpg');
+    if (meta.cover) {
+      const ext = (meta.cover.type || '').includes('png') ? 'png' : 'jpg';
+      form.append('cover', meta.cover, `cover.${ext}`);
+    }
 
     return request.post('/media/upload/', form, {
       // 交给浏览器写 boundary，不手动指定 Content-Type

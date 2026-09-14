@@ -29,14 +29,14 @@ function UploadPanel({ onDone, onClose }) {
     if (!ok.length) return;
     setQueue((q) => [...q, ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, ''), cover: null, thumb: null }))]);
     // 异步解析内嵌封面：不阻塞加入队列，解析到就回填缩略图
-    ok.forEach((file, idx) => {
+    ok.forEach((file) => {
       const targetName = file.name.replace(/\.[^.]+$/, '');
       extractEmbeddedCover(file)
         .then((cover) => {
           if (!cover) return;
           const url = URL.createObjectURL(cover.blob);
           setQueue((prev) =>
-            prev.map((x) => (x.file === file && x.name === targetName ? { ...x, cover, thumb: url } : x))
+            prev.map((x) => (x.file === file && x.name === targetName ? { ...x, cover: cover.blob, thumb: url } : x))
           );
         })
         .catch(() => {});

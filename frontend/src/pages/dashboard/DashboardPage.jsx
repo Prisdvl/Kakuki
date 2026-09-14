@@ -9,6 +9,7 @@ import checkinApi from '../../api/checkin';
 import githubApi from '../../api/github';
 import TodoCard from '../../components/Tools/TodoCard';
 import CountdownCard from '../../components/Tools/CountdownCard';
+import TrafficSection from '../../components/Stats/TrafficSection';
 
 const GITHUB_USERNAME = 'Prisdvl';
 
@@ -359,7 +360,11 @@ function GithubCard() {
   );
 }
 
-/* ================= 仪表盘页面 ================= */
+/* ================= 仪表盘页面 =================
+ * 页面承载两组内容：
+ *   1) 个人状态卡（时钟 / 学习时长 / LeetCode / GitHub / 待办 / 倒计时）
+ *   2) 站点流量区块（原「数据」页 /stats 已并入此处，见 TrafficSection）
+ * ============================================== */
 export default function DashboardPage() {
   return (
     <div className="page-enter">
@@ -374,6 +379,9 @@ export default function DashboardPage() {
         <TiltCard><GithubCard /></TiltCard>
         <TiltCard><TodoCard /></TiltCard>
         <TiltCard><CountdownCard /></TiltCard>
+
+        {/* 站点流量：自带 span-3 / span-12 栅格子项 */}
+        <TrafficSection />
       </div>
 
       <style>{`
@@ -383,9 +391,21 @@ export default function DashboardPage() {
           gap: 1.1rem;
           align-items: stretch;
         }
-        .dashboard-grid > .tilt-card { grid-column: span 6; }
+        /* 默认：所有直接子项占半行（个人状态卡） */
+        .dashboard-grid > * { grid-column: span 6; }
+        /* 流量指标卡：一行四张 */
+        .dashboard-grid > .span-3 { grid-column: span 3; }
+        /* 区块标题行 / 趋势图 / 缓存提示：整行通铺 */
+        .dashboard-grid > .span-12,
+        .dashboard-grid > .stats-head-row,
+        .dashboard-grid > .stats-stale { grid-column: 1 / -1; }
+        @media (max-width: 1200px) {
+          .dashboard-grid > .span-3 { grid-column: span 6; }
+        }
         @media (max-width: 900px) {
-          .dashboard-grid > .tilt-card { grid-column: span 12; }
+          .dashboard-grid > *,
+          .dashboard-grid > .span-3,
+          .dashboard-grid > .span-12 { grid-column: 1 / -1; }
         }
         @keyframes clock-colon { 50% { opacity: 0.35; } }
       `}</style>

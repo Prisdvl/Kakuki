@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme as antdTheme } from 'antd';
 import { useEffect, Suspense, lazy, useState } from 'react';
 import AppLayout from './components/Layout/AppLayout';
@@ -216,6 +216,8 @@ export default function App() {
                   <Route path="category/:id" element={<Navigate to="/archive" replace />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="music" element={<MusicPage />} />
+                  {/* 数据统计已并入仪表盘（流量区块），旧路由重定向 */}
+                  <Route path="stats" element={<Navigate to="/dashboard" replace />} />
                   <Route path="talks" element={<TalksPage />} />
                   <Route path="about" element={<AboutPage />} />
                   <Route path="login" element={<LoginPage />} />

@@ -15,6 +15,7 @@ import "./styles/checkin.css";
 import "./styles/timeline.css";
 import "./styles/settings.css";
 import "./styles/projects.css";
+import "./styles/stats.css";
 import "highlight.js/styles/atom-one-dark.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(

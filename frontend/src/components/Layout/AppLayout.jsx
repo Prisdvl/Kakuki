@@ -13,6 +13,7 @@ import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const NAV_ITEMS = [
   { label: '首页', path: '/' },
+  // 仪表盘含个人状态卡 + 站点流量统计（原「数据」页已并入）
   { label: '仪表盘', path: '/dashboard' },
   { label: '归档', path: '/archive' },
   { label: '杂谈', path: '/talks' },
@@ -66,15 +67,18 @@ const FlipUnit = memo(function FlipUnit({ value, label }) {
   );
 });
 
-// 站点运行时长：以 kakuki.top 首次 Worker 部署时刻为基准累计（翻页钟风格）
+// 站点运行时长：以 kakuki.top 在 Cloudflare 上线的时刻为基准累计（翻页钟风格）
 const StatusUptime = memo(function StatusUptime() {
-  // 运行时长基准 = 站点首次公开发布时刻，不是最近一次部署时刻。
+  // 运行时长基准 = kakuki.top 这个域名真正开始对外服务的时刻，不是最近一次部署时刻。
   //
-  // 依据：git 中 gh-pages 分支首次部署提交
-  //   8755d3b  deploy: basename fix build   2026-09-08 19:15:00 +0800
-  // ≡ 2026-09-08T11:15:00Z。此后站点持续在线（先 GitHub Pages，9-12 起迁移到
-  // Cloudflare Workers），中间的技术栈迁移不应让「运行时长」归零。
-  const DEPLOY_ISO = '2026-09-08T11:15:00Z';
+  // 依据：Cloudflare API 中该 zone 的 activated_on = 2026-09-12T12:52:03Z
+  // ≡ 2026-09-12 20:52:03 +0800（北京时间）。此前 9-08 那次发布走的是
+  // prisdvl.github.io/Kakuki/ 子路径，域名本身 9-10 才加入 Cloudflare、9-12 才激活，
+  // 与 kakuki.top 不是同一个对外入口，所以运行时长从域名激活时刻算起。
+  //
+  // 该基准必须与 cloudflare/src/blog.ts 的 SITE_LAUNCH_MS 保持一致，
+  // 否则状态栏的「运行时长」与关于页的「运行天数」会各说各话。
+  const DEPLOY_ISO = '2026-09-12T12:52:03Z';
   const DEPLOY_TS = Date.parse(DEPLOY_ISO);
   const [now, setNow] = useState(() => Date.now());
 
@@ -96,7 +100,7 @@ const StatusUptime = memo(function StatusUptime() {
   });
 
   return (
-    <span className="status-item status-uptime" title={`kakuki.top 于 ${deployLocal}（北京时间）首次公开发布，此处为自上线起的连续运行时长`}>
+    <span className="status-item status-uptime" title={`kakuki.top 于 ${deployLocal}（北京时间）在 Cloudflare 上线，此处为自上线起的连续运行时长`}>
       <Activity size={11} />
       {/* 不足一天时不显示"天"，避免 0 天看着像故障 */}
       {days > 0 && <FlipUnit value={days} label="天" />}

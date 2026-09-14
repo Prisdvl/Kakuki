@@ -16,6 +16,9 @@ export type Env = {
   SYNC_TOKEN?: string;
   /** 可选：GitHub 代理用的 PAT，未配置时走匿名配额 + 缓存兜底 */
   GITHUB_TOKEN?: string;
+  /** Cloudflare Analytics 凭证（仪表盘「站点流量」区块；token 走 secret，zone id 走 vars） */
+  CF_API_TOKEN?: string;
+  CF_ZONE_ID?: string;
 };
 
 export interface JwtPayload {

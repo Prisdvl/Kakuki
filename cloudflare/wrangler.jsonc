@@ -39,7 +39,9 @@
   "vars": {
     "JWT_ISSUER": "kakuki",
     // 本地 dev 的默认密钥；生产用 `wrangler secret put JWT_SECRET` 覆盖
-    "JWT_SECRET_DEV": "kakuki-dev-secret-do-not-use-in-prod"
+    "JWT_SECRET_DEV": "kakuki-dev-secret-do-not-use-in-prod",
+    // 仪表盘「站点流量」区块：zone = kakuki.top（token 走 `wrangler secret put CF_API_TOKEN`，不落仓库）
+    "CF_ZONE_ID": "5df5f46272878adf615530b6864627cd"
   },
 
   "observability": {

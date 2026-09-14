@@ -35,6 +35,11 @@
 - 元数据存 D1、音频存 R2，同源流式播放（Range 206）
 - 封面粒子动效（真实音频频谱驱动）
 
+**仪表盘**（原独立的「数据」页已并入，`/stats` 会重定向到 `/dashboard`）
+- 个人状态：时钟 / 学习时长（PrisTimer 同步）/ LeetCode 进度 / GitHub 概览 / 待办 / 倒计时
+- 站点流量：Cloudflare Analytics 的总请求、独立访客、带宽与日粒度请求量趋势图
+- 卡片各自带兜底数据源，上游不可用时降级显示而不是白屏
+
 **界面**
 - 玻璃拟态 + 折射滤镜（SVG displacement map）
 - 深浅主题平滑切换（WCAG 对比度标定）
@@ -44,6 +49,7 @@
 - GitHub 用户 / 仓库数据（三级兜底：缓存 → 过期缓存 → 快照）
 - LeetCode 提交统计
 - 网易云歌单 / 歌词
+- Cloudflare Analytics 站点流量（Token 只留在 Worker，5 分钟边缘缓存）
 
 ## 🧰 技术栈
 
@@ -61,7 +67,7 @@
 Kakuki/
 ├── frontend/     # React SPA（详见 frontend/ 目录）
 └── cloudflare/   # Workers 后端（详见 cloudflare/README.md）
-    ├── src/      # auth / blog / checkin / media / proxy / ratelimit
+    ├── src/      # auth / blog / checkin / media / proxy / stats / ratelimit
     ├── schema.sql # D1 表结构
     └── wrangler.jsonc
 ```

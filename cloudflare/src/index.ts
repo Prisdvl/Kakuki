@@ -13,6 +13,7 @@ import { proxyRoutes, audioProbeRoutes } from './proxy';
 import { githubRoutes } from './github';
 import { audioRoutes } from './audio';
 import { mediaRoutes } from './media';
+import { statsRoutes } from './stats';
 import { checkRateLimit } from './ratelimit';
 
 type AppEnv = { Bindings: Env };
@@ -44,6 +45,7 @@ app.route('/', githubRoutes);
 app.route('/', audioProbeRoutes);
 app.route('/', audioRoutes);
 app.route('/', mediaRoutes);
+app.route('/', statsRoutes);
 
 app.notFound((c) => fail(404, '未找到。'));
 

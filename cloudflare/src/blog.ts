@@ -592,10 +592,11 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
         one('SELECT COUNT(*) AS n FROM users'),
         one('SELECT COALESCE(SUM(views), 0) AS n FROM articles'),
       ]);
-    // 站点年龄基准 = 首次公开发布时刻，与前端状态栏 AppLayout.StatusUptime 的 DEPLOY_ISO 保持一致。
-    // （原实现取 MIN(articles.created_at)，那是"最早一篇文章距今天数"，与技术栈迁移无关，
+    // 站点年龄基准 = kakuki.top 在 Cloudflare 激活的时刻，与前端状态栏
+    // AppLayout.StatusUptime 的 DEPLOY_ISO 保持一致（2026-09-12T12:52:03Z ≡ 北京时间 20:52:03）。
+    // （更早的实现取 MIN(articles.created_at)，那是"最早一篇文章距今天数"，与技术栈迁移无关，
     //   会与状态栏的运行时长对不上。两处口径必须同源。）
-    const SITE_LAUNCH_MS = Date.parse('2026-09-08T11:15:00Z');
+    const SITE_LAUNCH_MS = Date.parse('2026-09-12T12:52:03Z');
     const runningDays = Math.max(Math.floor((Date.now() - SITE_LAUNCH_MS) / 86_400_000), 1);
     return ok({
       article_count: articleCount,

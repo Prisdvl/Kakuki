@@ -14,7 +14,8 @@
 
 **Kakuki 个人博客的后端服务** — 基于 Cloudflare Workers 的全 Serverless 实现
 
-> Hono + TypeScript + Cloudflare Workers/D1/R2，驱动 [kakuki.top](https://kakuki.top) 的全部业务接口：>   
+> Hono + TypeScript + Cloudflare Workers/D1/R2，驱动 [kakuki.top](https://kakuki.top) 的全部业务接口：
+>   
 > 认证、博客、评论、点赞、归档、每日打卡、站内音频库、外部数据代理。免费额度内运行，24 小时在线、零本机依赖。
 
 ---
@@ -45,6 +46,14 @@
 - LeetCode（leetcode.cn GraphQL；WAF 拦截数据中心 IP 时返回真实数据快照）
 - 网易云音乐歌单 / 歌词 / 音频流（透传 Range）
 
+**站点流量统计**
+
+- `GET /stats/traffic/?days=7|30`：日粒度请求 / 带宽 / 独立访客 + 总量，公开读
+- Token 只存在于 Worker（`CF_API_TOKEN` secret），5 分钟边缘缓存；上游失败回退过期缓存，再无缓存则返回空数据而非报错
+- 数据源是两个 Analytics 数据集：`httpRequests1dGroups`（7~30 天日粒度序列）与 `httpRequestsAdaptiveGroups`（近 24h 热门路径）。
+  旧的 `httpRequests1hGroups` 没有 path 维度，写进查询会让整个 GraphQL 请求因 `unknown field` 全盘失败；
+  且 adaptive 数据集跨度上限为 1 天，所以热门路径窗口固定 24 小时，与总量序列窗口不同。两者分开发请求，互不拖累。
+
 **稳定性**
 
 - D1 固定窗口限流：匿名 120/min、认证 300/min
@@ -72,10 +81,11 @@ cloudflare/
 │   ├── index.ts          # 入口：限流中间件 + 路由挂载
 │   ├── util.ts           # 响应包装 / 分页 / JWT / PBKDF2 / 时间 / IP
 │   ├── auth.ts           # login / refresh / me / change-password
-│   ├── blog.ts           # 文章 / 分类 / 评论 / 点赞 / 杂谈 / 项目 / 归档 / 统计
+│   ├── blog.ts           # 文章 / 分类 / 评论 / 点赞 / 杂谈 / 项目 / 归档 / 站点统计
 │   ├── checkin.ts        # 每日打卡 + 专注时长
 │   ├── media.ts          # 站内音频库（R2 存储 + 10 GiB 容量守卫 + Range 流）
 │   ├── proxy.ts          # LeetCode + 网易云代理
+│   ├── stats.ts          # 站点流量统计（Cloudflare Analytics GraphQL）
 │   └── ratelimit.ts      # D1 限流
 └── package.json
 ```
@@ -105,6 +115,7 @@ npm run deploy
 4. `wrangler secret put JWT_SECRET`（强随机；本地 dev 用 `wrangler.jsonc` 里的占位密钥即可）
 5. `npm run db:schema:remote && npm run deploy`
 6. Cloudflare 控制台为 Worker 绑定自定义域名（或 `wrangler deploy --routes`）
+7. 可选（启用站点流量统计）：`wrangler secret put CF_API_TOKEN`，并把 `wrangler.jsonc` 的 `vars.CF_ZONE_ID` 换成自己的 zone id
 
 ## 🔑 配置与密钥
 
@@ -115,8 +126,12 @@ npm run deploy
 | `JWT_SECRET`   | Secret | HS256 签名密钥（`wrangler secret put`，勿写入仓库） |
 | `SYNC_TOKEN`   | Secret | PrisTimer 专注数据上报令牌                      |
 | `GITHUB_TOKEN` | Secret | 可选：GitHub 代理提额（5000 req/h）              |
+| `CF_API_TOKEN` | Secret | Cloudflare Analytics 读取令牌（需 Zone Analytics:Read），仅用于站点流量统计 |
+| `CF_ZONE_ID`   | Var    | 统计所用的 zone id（kakuki.top）               |
 
 > 所有密钥通过 `wrangler secret` 管理，仓库内只有占位值。`.dev.vars` 已被 gitignore。
+>
+> `CF_API_TOKEN` 未配置时 `/stats/traffic/` 返回 503，仪表盘的「站点流量」区块降级为空态，不影响其余功能。
 
 ## 📄 License
 

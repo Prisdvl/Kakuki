@@ -278,9 +278,12 @@ function LeetCodeProgressCard() {
                     <i style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, display: 'inline-block' }} />
                     {d.label}
                   </span>
-                  <span style={{ color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                    {d.solved} / {d.total}
-                    <span style={{ marginLeft: '0.4rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{p}%</span>
+                  <span style={{ color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'baseline' }}>
+                    {/* 固定列宽右对齐：三档数据的数字列、斜杠、百分号竖向对齐 */}
+                    <span style={{ display: 'inline-block', minWidth: 26, textAlign: 'right' }}>{d.solved}</span>
+                    <span style={{ opacity: 0.55, margin: '0 0.15rem' }}>/</span>
+                    <span style={{ display: 'inline-block', minWidth: 44, textAlign: 'right' }}>{d.total}</span>
+                    <span style={{ display: 'inline-block', minWidth: 38, textAlign: 'right', marginLeft: '0.45rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{p}%</span>
                   </span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: 'var(--glass-border)', overflow: 'hidden' }}>

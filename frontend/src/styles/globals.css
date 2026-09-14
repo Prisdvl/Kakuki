@@ -966,6 +966,25 @@ body.theme-switching .glass-floating::after {
   background: var(--glass-bg);
 }
 
+/* ===== 导航栏按钮：液态玻璃 =====
+   覆盖 .theme-toggle（主题/设置/退出/菜单）与 .btn-glass（登录/管理），
+   低模糊高饱和 + accent 霓虹描边，与 .glass-liquid 同源。 */
+.navbar .theme-toggle,
+.navbar .btn-glass {
+  background: var(--lg-bg);
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: var(--lg-shadow), 0 0 18px color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-secondary);
+}
+.navbar .theme-toggle:hover,
+.navbar .btn-glass:hover {
+  background: var(--lg-bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  color: var(--accent);
+}
+
 /* ===== Section Styles ===== */
 .section-header {
   text-align: center;
@@ -2547,9 +2566,11 @@ body.snap-active {
 
 /* ===== 归档搜索框（液态玻璃）=====
    搜索入口已从首页移除，搜索收敛到归档页（?q= 直达，见 ArchivePage）。
-   全局通配规则已给 .ant-input 系列加 .glass 轻玻璃背景，这里用液态玻璃
-   参数覆盖输入框外壳：低模糊高饱和 + 霓虹描边，与 .glass-liquid 同源。 */
-.archive-search.ant-input-affix-wrapper {
+   antd Input.Search 的 className 落在最外层 .ant-input-group-wrapper 上，
+   液态玻璃作用到内层输入壳 .ant-input-affix-wrapper（低模糊高饱和 +
+   霓虹描边，与 .glass-liquid 同源）。选择器用 .archive-search.ant-input-search
+   双类提升优先级，压过 .dark .ant-input-affix-wrapper 的暗色背景规则。 */
+.archive-search.ant-input-search .ant-input-affix-wrapper {
   background: var(--lg-bg) !important;
   backdrop-filter: var(--lg-filter);
   -webkit-backdrop-filter: var(--lg-filter);
@@ -2557,17 +2578,18 @@ body.snap-active {
   border-radius: 12px;
   box-shadow: var(--lg-shadow);
 }
-.archive-search.ant-input-affix-wrapper:hover {
+.archive-search.ant-input-search .ant-input-affix-wrapper:hover {
   background: var(--lg-bg-hover) !important;
   border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
-.archive-search .ant-input {
+.archive-search.ant-input-search .ant-input {
   background: transparent !important;
 }
-.archive-search .ant-input::placeholder {
+.archive-search.ant-input-search .ant-input::placeholder {
   color: var(--text-tertiary);
 }
-.archive-search.ant-input-affix-wrapper-focused {
+.archive-search.ant-input-search .ant-input-affix-wrapper-focused,
+.archive-search.ant-input-search .ant-input-affix-wrapper:focus-within {
   border-color: color-mix(in srgb, var(--accent) 70%, transparent);
   box-shadow: 0 0 0 4px var(--accent-soft), var(--lg-shadow);
 }
@@ -5782,6 +5804,32 @@ a, button, .article-card, .contact-card, .social-links a,
   border-radius: 16px;
   padding: 1.1rem 1.25rem;
   margin-bottom: 1.5rem;
+}
+
+/* 杂谈输入框优化：完整宽度 + 最小高度 + 字数统计不压正文 */
+.talk-publish .ant-input-textarea-show-count {
+  display: block;
+}
+.talk-publish .ant-input-textarea-show-count textarea.ant-input {
+  display: block;
+  width: 100% !important;
+  min-height: 84px;
+  padding-bottom: 26px !important; /* 给右下角 "x / 500" 让位，避免盖住下行文字 */
+  resize: vertical;
+}
+.talk-publish .ant-input-data-count {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+.talk-publish-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.7rem;
 }
 
 .talk-card {

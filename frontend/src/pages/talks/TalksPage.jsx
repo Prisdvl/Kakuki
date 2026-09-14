@@ -105,23 +105,23 @@ export default function TalksPage() {
       {isLoggedIn && user?.is_staff && (
         <div className="glass talk-publish reveal">
           <Input.TextArea
-            rows={2}
+            rows={3}
             maxLength={500}
             showCount
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="记录此刻的想法..."
-            className="rounded-xl"
           />
-          <Button
-            type="primary"
-            icon={<Send size={14} />}
-            loading={submitting}
-            onClick={handlePublish}
-            className="mt-2 !bg-[var(--accent)] hover:!bg-[var(--accent-hover)]"
-          >
-            发布杂谈
-          </Button>
+          <div className="talk-publish-actions">
+            <Button
+              type="primary"
+              icon={<Send size={14} />}
+              loading={submitting}
+              onClick={handlePublish}
+            >
+              发布杂谈
+            </Button>
+          </div>
         </div>
       )}
 

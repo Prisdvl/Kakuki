@@ -376,15 +376,22 @@ export default function CoverParticles() {
     };
 
     let last = performance.now();
+    let acc = 0;
+    const FRAME_INTERVAL = 33; // ~30fps：与 ParticleField 一致，降低与播放器抢 CPU 的概率
     const step = (now) => {
       // 世代守卫：本实例已卸载但旧 rAF 回调仍被调度时，自我终止，绝不续帧
       if (gen !== generation) {
         cancelAnimationFrame(rafRef.current);
         return;
       }
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const frameDt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      draw(dt);
+      acc += frameDt;
+      // 降频绘制：达到 30fps 间隔才真正画一帧；物理用真实流逝时间，动画速度不受影响
+      if (acc >= FRAME_INTERVAL / 1000) {
+        draw(Math.min(0.05, acc));
+        acc = 0;
+      }
       rafRef.current = requestAnimationFrame(step);
     };
 
@@ -409,6 +416,7 @@ export default function CoverParticles() {
     const startLoop = () => {
       if (!reduced && !rafRef.current) {
         last = performance.now();
+        acc = 0;
         rafRef.current = requestAnimationFrame(step);
       }
     };

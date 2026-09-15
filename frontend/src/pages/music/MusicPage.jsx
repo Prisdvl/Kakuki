@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, Music, Disc3, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2, ImagePlus } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Music, Disc3, Loader2, Volume2, VolumeX, Upload, Trash2, X, CheckCircle2, ImagePlus, Flame } from 'lucide-react';
 import useMusicStore from '../../store/musicStore';
 import useUserStore from '../../store/userStore';
 import mediaApi from '../../api/media';
@@ -476,6 +476,58 @@ export default function MusicPage() {
               );
             })}
           </div>
+
+          {/* 「最常听」播放统计：按累计播放次数取 Top5，行可点击直接播放 */}
+          {(() => {
+            const top = tracks
+              .filter((t) => (t.play_count || 0) > 0)
+              .slice()
+              .sort((a, b) => (b.play_count || 0) - (a.play_count || 0))
+              .slice(0, 5);
+            if (!top.length) return null;
+            return (
+              <div className="glass music-top-panel">
+                <div className="music-top-header">
+                  <span className="music-top-title">
+                    <Flame size={15} style={{ color: 'var(--accent)' }} /> 最常听
+                  </span>
+                  <span className="music-panel-meta">按累计播放次数 · Top {top.length}</span>
+                </div>
+                <div className="music-top-list">
+                  {top.map((track, i) => (
+                    <div
+                      key={track.id}
+                      role="button"
+                      tabIndex={0}
+                      className="music-top-row"
+                      aria-label={`播放 ${track.name}`}
+                      onClick={() => playTrack(track)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playTrack(track); } }}
+                    >
+                      <span className="music-top-rank">{i + 1}</span>
+                      {track.cover ? (
+                        <img src={track.cover} alt={track.name} className="mp-cover-sm" loading="lazy" decoding="async" />
+                      ) : (
+                        <div className="mp-cover-sm mp-cover-placeholder">
+                          <Music size={16} />
+                        </div>
+                      )}
+                      <div className="mp-row-body">
+                        <div className={`mp-row-title ${currentTrack?.id === track.id ? 'active' : ''}`}>
+                          {isPlaying && currentTrack?.id === track.id && <span className="playing-indicator">♪</span>}
+                          {track.name}
+                        </div>
+                        <div className="mp-row-meta">
+                          {(track.artists || []).map((a) => a.name).join(' / ')}
+                        </div>
+                      </div>
+                      <span className="music-top-count">{track.play_count || 0} 次</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 播放控制条：嵌在列表下方，与列表同宽对齐（不再悬浮全屏） */}
           {currentTrack && (

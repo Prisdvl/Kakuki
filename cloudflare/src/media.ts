@@ -38,6 +38,7 @@ type MediaMeta = {
   type: string;
   duration: number;
   hasCover: boolean;
+  playCount: number;
   created_at: string;
 };
 
@@ -54,6 +55,7 @@ const toTrack = (m: MediaMeta) => ({
   url: `/api/v1/media/stream/${m.id}/`,
   duration: m.duration || 0,
   size: m.size || 0,
+  play_count: m.playCount || 0,
   created_at: m.created_at,
   isUpload: true,
 });
@@ -80,6 +82,7 @@ type MetaRow = {
   type: string;
   duration: number;
   has_cover: number;
+  play_count: number;
   created_at: string;
 };
 
@@ -92,6 +95,7 @@ const rowToMeta = (r: MetaRow): MediaMeta => ({
   type: r.type,
   duration: r.duration,
   hasCover: !!r.has_cover,
+  playCount: r.play_count || 0,
   created_at: r.created_at,
 });
 
@@ -101,7 +105,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
   .get('/media/tracks/', async (c) => {
     if (!c.env.DB) return fail(503, '数据库未绑定');
     const { results } = await c.env.DB.prepare(
-      'SELECT id, name, artist, album, size, type, duration, has_cover, created_at FROM media_tracks ORDER BY created_at DESC'
+      'SELECT id, name, artist, album, size, type, duration, has_cover, play_count, created_at FROM media_tracks ORDER BY created_at DESC'
     ).all<MetaRow>();
     const tracks = (results || []).map(rowToMeta).map(toTrack);
     const total = tracks.reduce((s, t) => s + (t.size || 0), 0);
@@ -184,6 +188,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
       type: file.type || 'audio/mpeg',
       duration: Number.isFinite(durationField) && durationField > 0 ? Math.round(durationField) : 0,
       hasCover: !!coverFile,
+      playCount: 0,
       created_at: nowIso(),
     };
 
@@ -199,7 +204,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
       });
     }
     await c.env.DB.prepare(
-      'INSERT INTO media_tracks (id, name, artist, album, size, type, duration, has_cover, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)'
+      'INSERT INTO media_tracks (id, name, artist, album, size, type, duration, has_cover, play_count, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9)'
     ).bind(meta.id, meta.name, meta.artist, meta.album, meta.size, meta.type, meta.duration, meta.hasCover ? 1 : 0, meta.created_at).run();
 
     return ok201(toTrack(meta), '上传成功');
@@ -265,6 +270,21 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     return ok({ id, cover: `/api/v1/media/cover/${id}/` }, 200, '封面已更新');
   })
 
+  /** 播放计数（公开）：每次开始播放某曲目时前端调用，用于「最常听」统计 */
+  .post('/media/play/:id/', async (c) => {
+    if (!c.env.DB) return fail(503, '数据库未绑定');
+    const id = c.req.param('id');
+    if (!ID_RE.test(id)) return fail(400, '曲目 ID 非法');
+    try {
+      const res = await c.env.DB.prepare('UPDATE media_tracks SET play_count = play_count + 1 WHERE id = ?1').bind(id).run();
+      if (res.meta.changes === 0) return fail(404, '曲目不存在');
+      const row = await c.env.DB.prepare('SELECT play_count FROM media_tracks WHERE id = ?1').bind(id).first<{ play_count: number }>();
+      return ok({ id, play_count: row?.play_count ?? 0 }, 200, 'ok');
+    } catch {
+      return fail(500, '播放统计失败');
+    }
+  })
+
   /** 播放流（公开，支持 Range）：R2 原生 range get，流式返回不整轨加载 */
   .get('/media/stream/:id/', async (c) => {
     if (!c.env.DB) return fail(503, '数据库未绑定');
@@ -273,7 +293,7 @@ export const mediaRoutes = new Hono<{ Bindings: Env }>()
     if (!ID_RE.test(id)) return fail(404, '曲目不存在');
 
     const row = await c.env.DB.prepare(
-      'SELECT id, name, artist, album, size, type, duration, has_cover, created_at FROM media_tracks WHERE id = ?1'
+      'SELECT id, name, artist, album, size, type, duration, has_cover, play_count, created_at FROM media_tracks WHERE id = ?1'
     ).bind(id).first<MetaRow>();
     if (!row) return fail(404, '曲目不存在');
     const meta = rowToMeta(row);

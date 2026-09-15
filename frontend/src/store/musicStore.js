@@ -14,8 +14,25 @@ export const toUploadTrack = (t) => ({
   cover: t.cover || '',
   url: t.url || `/api/v1/media/stream/${t.id}/`,
   duration: t.duration || 0,
+  play_count: t.play_count ?? 0,
   isUpload: true,
 });
+
+/** 播放统计：乐观给本地歌单 +1 播放次数（「最常听」即时更新），并异步上报后端（失败静默） */
+function bumpPlayCount(trackId) {
+  if (!trackId) return;
+  const st = useMusicStore.getState();
+  const pl = st.currentPlaylist;
+  if (pl?.tracks?.length) {
+    useMusicStore.setState({
+      currentPlaylist: {
+        ...pl,
+        tracks: pl.tracks.map((t) => (t.id === trackId ? { ...t, play_count: (t.play_count || 0) + 1 } : t)),
+      },
+    });
+  }
+  request.post(`/media/play/${trackId}/`, { skipAuthRedirect: true }).catch(() => {});
+}
 
 /**
  * 拉取站内音频库（KV）。
@@ -141,7 +158,7 @@ export const ensureAudioContext = async () => {
 const getAudio = () => {
   if (!audioInstance) {
     audioInstance = new Audio();
-    audioInstance.preload = 'metadata';
+    audioInstance.preload = 'auto';
     // 音频统一走同源 /api 流接口，无需 crossOrigin，媒体 CORS-clean，
     // createMediaElementSource 可正常输出频谱数据。
     // 首次创建时从 store 同步持久化的音量与静音状态
@@ -159,7 +176,7 @@ const getAudio = () => {
 export const registerAudio = (audio) => {
   if (audio && audio !== audioInstance) {
     audioInstance = audio;
-    audioInstance.preload = 'metadata';
+    audioInstance.preload = 'auto';
     bindAudioListeners(audioInstance);
   }
 };
@@ -190,19 +207,24 @@ function bindAudioListeners(audio) {
     useMusicStore.setState({ isPlaying: false });
   };
 
-  // 音频加载失败处理：显式暴露错误（原实现仅 console.warn，导致用户看到"播放中"却无声）
+  // 音频加载失败处理：仅「音源真的不可用」才自动跳下一首，
+  // 网络类错误（code 2）可恢复，只提示不跳歌，避免切歌 bug 误伤
   const onError = () => {
     const err = audio.error;
     const code = err?.code ?? 0;
-    // MEDIA_ERR_SRC_NOT_SUPPORTED(4)：src 不可用 / 是 HTML 而非音频；
-    // MEDIA_ERR_NETWORK(2)：网络或代理错误
-    const msg = code === 4
-      ? '音源不可用，已自动跳过'
-      : code === 2
-        ? '网络错误，音频加载失败'
-        : '音频播放失败';
+    // MEDIA_ERR_SRC_NOT_SUPPORTED(4)：src 不可用 / 是 HTML 而非音频 → 标记并自动跳过；
+    // MEDIA_ERR_NETWORK(2)：网络或代理错误（可恢复）→ 提示，不跳歌
     console.warn('[music] 音频加载失败:', code, '| src:', audio.src);
-    useMusicStore.setState({ isPlaying: false, audioError: msg });
+    if (code === 4) {
+      const st = useMusicStore.getState();
+      useMusicStore.setState({ isPlaying: false });
+      const trackId = st.currentTrack?.id;
+      if (trackId) st.skipUnplayable(trackId);
+    } else if (code === 2) {
+      useMusicStore.setState({ isPlaying: false, audioError: '网络错误，音频加载失败，请重试' });
+    } else {
+      useMusicStore.setState({ isPlaying: false, audioError: '音频播放失败' });
+    }
   };
 
   const onPlaying = () => {
@@ -265,6 +287,9 @@ const useMusicStore = create((set, get) => ({
         audioError: '',
       });
 
+      // 「最常听」统计：乐观 +1 并异步上报
+      bumpPlayCount(track.id);
+
       const audio = getAudio();
       if (audio) {
         audio.src = url;
@@ -272,14 +297,16 @@ const useMusicStore = create((set, get) => ({
         try {
           await audio.play();
         } catch (err) {
-          // play() 被拒（自动播放策略 / 音源不可用）需显式反馈，而不是静默无声
           const name = err?.name || '';
           if (name === 'NotAllowedError') {
             set({ isPlaying: false, audioError: '浏览器拦截了自动播放，请再点一次播放' });
+          } else if (name === 'AbortError' || name === 'InterruptedError') {
+            // 被新的一次加载/播放打断 —— 不是音源问题，静默降级，绝不自动跳下一首
+            set({ isPlaying: false });
           } else {
-            console.warn('[music] play() 失败:', err);
-            set({ isPlaying: false, audioError: '音源不可用，已自动跳过' });
-            get().skipUnplayable(track.id);
+            // 其余交给 audio 的 error 事件判断；网络类错误可恢复，不自动跳歌
+            console.warn('[music] play() 失败:', name, err);
+            set({ isPlaying: false });
           }
         }
       }

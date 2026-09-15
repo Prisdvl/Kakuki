@@ -4889,6 +4889,79 @@ a, button, .article-card, .contact-card, .social-links a,
   font-size: 0.78rem;
 }
 
+/* ===== 音乐页：「最常听」播放统计（Top5）===== */
+.music-top-panel {
+  border-radius: 20px;
+  padding: 1rem 1.1rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.music-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.music-top-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.music-top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.music-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.music-top-row:hover {
+  background: var(--bg-tertiary);
+}
+
+.music-top-rank {
+  flex-shrink: 0;
+  width: 1.35rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.music-top-row:nth-child(1) .music-top-rank { color: var(--accent); }
+.music-top-row:nth-child(2) .music-top-rank { color: var(--text-secondary); }
+.music-top-row:nth-child(3) .music-top-rank { color: var(--text-secondary); }
+
+.music-top-count {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ===== 音乐页：标题行 + 上传面板 ===== */
 .music-page-head {
   display: flex;

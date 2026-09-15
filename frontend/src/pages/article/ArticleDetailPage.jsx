@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Calendar, Eye, FolderOpen, Heart, Copy, Check, ListTree, MessageCircle, BookOpen } from "lucide-react";
+import { Calendar, Eye, Heart, Copy, Check, ListTree, MessageCircle, BookOpen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -238,14 +238,6 @@ export default function ArticleDetailPage() {
           <span className="article-meta-item">
             <Heart size={14} /> {likeCount} 点赞
           </span>
-          {article.category && (
-            <Link
-              to={`/category/${article.category.id}`}
-              className="article-meta-item article-category-badge"
-            >
-              <FolderOpen size={14} /> {article.category.name}
-            </Link>
-          )}
         </div>
 
         {article.cover_image && (

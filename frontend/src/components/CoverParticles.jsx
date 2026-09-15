@@ -15,30 +15,33 @@ import useMusicStore, { getAnalyser } from '../store/musicStore';
  */
 
 const SAMPLE = 64;               // 封面采样分辨率
-const PARTICLE_CAP = 2400;       // 桌面端粒子上限（移动端按面积再降）
+const PARTICLE_CAP = 3600;       // 桌面端粒子上限（比原来更密集；采样 64² 最大 4096）
 
 const STYLES = `
 .cover-particles {
-  border-radius: 20px;
-  padding: 1rem 1rem 0.7rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
+  position: relative;
+  width: 100%;
 }
 .cp-canvas {
   width: 100%;
   height: 380px;
   display: block;
-  border-radius: 14px;
+  border-radius: 16px;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
+.cp-canvas.dragging { cursor: grabbing; }
 .cp-status {
   font-size: 0.7rem;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text-tertiary);
-  opacity: 0.85;
+  opacity: 0.7;
   user-select: none;
+  margin-top: 0.5rem;
+  text-align: center;
 }
 @media (max-width: 640px) {
   .cp-canvas { height: 300px; }
@@ -201,8 +204,44 @@ export default function CoverParticles() {
     let avgColor = [124, 58, 237];
     let swapFade = 1;          // 切歌交叉淡入淡出：→0 换集 →1
     let angle = 0;
+    let dragAngle = 0;         // 用户拖拽累积的方向偏移
     let t = 0;
     let eLow = 0, eHigh = 0;   // 平滑后的低/高频能量
+
+    // 拖拽旋转：按住 canvas 拖动即调整粒子封面的显示方向。
+    // 拖动期间暂停自动旋涡，松手后在用户所选方向上继续自转。
+    let dragging = false;
+    let dragPointer = null;
+    let lastPX = 0, lastPY = 0;
+    const onPointerDown = (e) => {
+      dragging = true;
+      dragPointer = e.pointerId;
+      lastPX = e.clientX;
+      lastPY = e.clientY;
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      canvas.classList.add('dragging');
+      e.preventDefault();
+    };
+    const onPointerMove = (e) => {
+      if (!dragging || e.pointerId !== dragPointer) return;
+      const dx = e.clientX - lastPX;
+      const dy = e.clientY - lastPY;
+      lastPX = e.clientX;
+      lastPY = e.clientY;
+      // 水平拖动旋转角度，纵向略加权让拖拽更跟手
+      dragAngle += dx * 0.008 + dy * 0.004;
+    };
+    const endDrag = (e) => {
+      if (e.pointerId === dragPointer) {
+        dragging = false;
+        dragPointer = null;
+        canvas.classList.remove('dragging');
+      }
+    };
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
 
     let analyser = getAnalyser();
     let freqData = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
@@ -277,7 +316,8 @@ export default function CoverParticles() {
       const cy = H / 2;
       const scale = Math.min(W, H) * 0.44;
       const spin = playing ? 0.10 : 0.045; // rad/s
-      angle += spin * dt;
+      // 拖动时锁定方向；松手后从拖到的基础角度继续自转
+      if (!dragging) angle += spin * dt;
       t += dt;
       const baseSize = Math.max(0.7, (scale / SAMPLE) * 0.62);
       const jitterAmp = playing ? 0.02 : 0.008;
@@ -295,8 +335,8 @@ export default function CoverParticles() {
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
-        // 差速旋涡：外侧转得稍快，制造流动感
-        const th = angle * (0.6 + 0.55 * p.band);
+        // 差速旋涡：外侧转得稍快，制造流动感（dragAngle 为用户拖拽的基础方向）
+        const th = (dragAngle + angle) * (0.6 + 0.55 * p.band);
         const ca2 = Math.cos(th), sa2 = Math.sin(th);
         const rx = p.hx * ca2 - p.hy * sa2;
         const ry = p.hx * sa2 + p.hy * ca2;
@@ -371,13 +411,17 @@ export default function CoverParticles() {
       clearInterval(pollHandle);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibility);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', endDrag);
+      canvas.removeEventListener('pointercancel', endDrag);
     };
   }, []);
 
   return (
-    <div className="cover-particles glass">
-      <canvas ref={canvasRef} className="cp-canvas" aria-label="封面粒子可视化" />
-      <div className="cp-status">{isPlaying ? 'Cover Particles · Live' : '已暂停 · Cover Particles'}</div>
+    <div className="cover-particles">
+      <canvas ref={canvasRef} className="cp-canvas" aria-label="封面粒子可视化（可拖动旋转方向）" />
+      <div className="cp-status">{isPlaying ? 'LIVE' : '已暂停'} · 拖动旋转</div>
     </div>
   );
 }

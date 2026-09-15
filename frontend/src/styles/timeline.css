@@ -158,21 +158,6 @@
 }
 .tl-link:hover .tl-title { color: var(--accent); }
 
-.tl-tag {
-  flex-shrink: 0;
-  font-size: 0.66rem;
-  color: var(--text-secondary);
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  /* 玻璃胶囊：与归档分类 chips / 文章卡标签同一风格 */
-  border: 1px solid var(--glass-border);
-  background: color-mix(in srgb, var(--glass-bg-strong) 80%, transparent);
-  max-width: 8rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .tl-arrow {
   flex-shrink: 0;
   color: var(--text-tertiary);
@@ -191,7 +176,6 @@
   .tl-list { padding-left: 0.9rem; }
   .tl-node-dot { left: -1.18rem; }
   .tl-year-label { font-size: 1.3rem; }
-  .tl-tag { display: none; }
   .tl-date { font-size: 0.7rem; }
   .tl-title { font-size: 0.88rem; }
 }

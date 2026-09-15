@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -610,12 +610,6 @@ export default function HomePage() {
                       </div>
                     )}
                     <div className="hero-article-card-overlay">
-                      {article.category?.name && (
-                        <span className="hero-article-card-badge">
-                          <Sparkles size={10} />
-                          {article.category.name}
-                        </span>
-                      )}
                       <div className="hero-article-card-date">
                         {article.created_at?.slice(0, 10)} · {article.views || 0} 阅读
                       </div>

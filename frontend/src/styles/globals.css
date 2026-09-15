@@ -2464,28 +2464,6 @@ body.snap-active {
   justify-content: flex-end;
 }
 
-.hero-article-card-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.65rem;
-  border-radius: 6px;
-  /* 徽章是 10.4px 小字，白字需 4.5:1。品牌色两端都要压暗：
-     深色主题下 --accent(111,125,139) 上白字仅 4.27:1，不够。 */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent) 78%, #000),
-    color-mix(in srgb, var(--accent-secondary) 72%, #000)
-  );
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-  align-self: flex-start;
-}
-
 .hero-article-card-date {
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.86);
@@ -2837,9 +2815,10 @@ body.snap-active {
 .ant-input-focused,
 .ant-input-password-focused,
 .ant-input-password .ant-input:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-soft) !important;
-  background: var(--card-bg) !important;
+  /* 输入时不再跳到不透明实底：保持磨砂玻璃透明底 + 柔和 accent 辉光，融入玻璃卡 */
+  border-color: color-mix(in srgb, var(--accent) 65%, transparent) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  background: var(--glass-bg-strong) !important;
 }
 
 .ant-input-prefix,
@@ -5931,21 +5910,6 @@ a, button, .article-card, .contact-card, .social-links a,
   background: var(--bg-primary) !important;
 }
 
-/* 编辑器分类下拉：输入新名称时的「创建」入口 */
-.category-create-option {
-  padding: 0.45rem 0.75rem;
-  cursor: pointer;
-  color: var(--accent);
-  font-size: 0.85rem;
-  border-top: 1px solid var(--glass-border);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.category-create-option:hover {
-  background: var(--accent-soft);
-}
-
 .talk-card {
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
@@ -6654,9 +6618,10 @@ a, button, .article-card, .contact-card, .social-links a,
 .dark .ant-input-affix-wrapper:focus,
 .dark .ant-input-affix-wrapper-focused,
 .dark .ant-input-affix-wrapper:focus-within {
-  background: var(--card-bg) !important;
-  box-shadow: 0 0 0 2px var(--accent-soft) !important;
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  /* 与浅色一致：聚焦也保持磨砂玻璃透明底，不做成突兀的实色块 */
+  background: var(--glass-bg-strong) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important;
 }
 /* 浏览器自动填充底色覆盖（--card-bg 本身随主题切换，无需分作用域） */
 .ant-input:-webkit-autofill,

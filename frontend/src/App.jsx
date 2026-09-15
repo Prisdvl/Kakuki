@@ -134,10 +134,10 @@ export default function App() {
           colorSuccess: '#22c55e',
           colorWarning: '#f59e0b',
           colorError: isDark ? '#c98a8a' : '#a33a3a',
-          // 与 design-tokens --radius-md 对齐（12px）
-          borderRadius: 12,
-          borderRadiusSM: 8,
-          borderRadiusLG: 16,
+          // 圆角提升（含输入框）：12/8/16 → 14/10/20
+          borderRadius: 14,
+          borderRadiusSM: 10,
+          borderRadiusLG: 20,
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
           colorBgContainer: bgContainer,
           colorBgElevated: bgElevated,
@@ -158,7 +158,7 @@ export default function App() {
           Button: {
             colorPrimary: accent,
             algorithm: true,
-            borderRadius: 12,
+            borderRadius: 14,
             controlHeight: 40,
             fontWeight: 500,
             primaryShadow: '0 4px 16px var(--accent-glow)',
@@ -166,7 +166,7 @@ export default function App() {
           Input: {
             colorPrimary: accent,
             algorithm: true,
-            borderRadius: 12,
+            borderRadius: 14,
             controlHeight: 40,
             activeBorderColor: accent,
             hoverBorderColor: accent,
@@ -175,15 +175,15 @@ export default function App() {
           Card: {
             headerBg: isDark ? bgContainer : '#ffffff',
             colorBorderSecondary: isDark ? accentGlow.replace('40', '26') : accentGlow.replace('40', '1f'),
-            borderRadiusLG: 16,
+            borderRadiusLG: 20,
           },
           Tag: {
             colorPrimary: accent,
-            borderRadiusSM: 8,
+            borderRadiusSM: 10,
           },
           Menu: {
             itemSelectedBg: accentSoft,
-            itemBorderRadius: 8,
+            itemBorderRadius: 10,
             motionDurationMid: '0.24s',
           },
           Modal: {

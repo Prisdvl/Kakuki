@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu, Button } from 'antd';
 import {
@@ -46,7 +46,7 @@ export default function AdminLayout() {
           borderRight: '1px solid var(--glass-border)',
         }}
       >
-        <div className='h-16 flex items-center justify-center font-bold text-lg' style={{ color: 'var(--accent)' }}>
+        <div className='admin-logo'>
           {collapsed ? 'K' : 'Kakuki Admin'}
         </div>
         <Menu
@@ -57,9 +57,7 @@ export default function AdminLayout() {
         />
       </Sider>
       <Layout style={{ background: 'var(--bg-primary)' }}>
-        <Header style={{
-          background: 'var(--glass-bg-strong)',
-          borderBottom: '1px solid var(--glass-border)',
+        <Header className='admin-header' style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -73,7 +71,7 @@ export default function AdminLayout() {
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{user?.nickname || user?.username}</span>
           </div>
         </Header>
-        <Content style={{ padding: '1.5rem', background: 'var(--bg-primary)' }}>
+        <Content className='admin-content'>
           <Outlet />
         </Content>
       </Layout>

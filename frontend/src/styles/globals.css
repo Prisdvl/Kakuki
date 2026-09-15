@@ -2786,7 +2786,7 @@ body.snap-active {
   background: var(--card-bg) !important;
   border-color: var(--border) !important;
   color: var(--text-primary) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;   /* 圆角提升：12 → 14 */
   transition: all 0.3s ease !important;
   backdrop-filter: blur(12px);
 }
@@ -2906,7 +2906,7 @@ input:autofill {
 .ant-btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-secondary)) !important;
   border: none !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   box-shadow: 0 4px 20px var(--accent-glow) !important;
   color: #fff !important;
   font-weight: 600 !important;
@@ -2940,7 +2940,7 @@ input:autofill {
   background: var(--glass-bg) !important;
   border-color: var(--border) !important;
   color: var(--text-primary) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   transition: all 0.3s ease !important;
 }
 
@@ -2955,7 +2955,7 @@ input:autofill {
   background: var(--glass-bg-strong) !important;
   backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   box-shadow: 0 8px 32px var(--glass-shadow) !important;
   color: var(--text-primary) !important;
 }
@@ -3067,7 +3067,7 @@ input:autofill {
 .ant-select-selector {
   background: var(--glass-bg) !important;
   border-color: var(--border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   color: var(--text-primary) !important;
 }
 
@@ -3198,7 +3198,7 @@ input:autofill {
   background: var(--glass-bg-strong) !important;
   backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   box-shadow: 0 8px 32px var(--glass-shadow) !important;
 }
 
@@ -3257,14 +3257,14 @@ input:autofill {
 .ant-alert {
   background: var(--glass-bg) !important;
   border-color: var(--glass-border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
 }
 
 /* Upload */
 .ant-upload-dragger {
   background: var(--glass-bg) !important;
   border-color: var(--border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
 }
 
 .ant-upload-dragger:hover {
@@ -3314,6 +3314,92 @@ input:autofill {
   color: var(--accent) !important;
 }
 
+/* ===== 后台管理（admin）— 前台玻璃风格对齐 ===== */
+.admin-sider {
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  overflow: hidden;
+}
+.admin-logo {
+  margin: 0.9rem 0.75rem 0.35rem;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent) !important;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.admin-sider .ant-menu {
+  background: transparent !important;
+  padding: 0.4rem 0.6rem;
+  border-inline-end: none !important;
+}
+.admin-sider .ant-menu-item {
+  border-radius: 12px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  margin: 0.2rem 0 !important;
+  color: var(--text-secondary) !important;
+}
+.admin-sider .ant-menu-item .anticon {
+  color: inherit !important;
+}
+.admin-sider .ant-menu-item:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+.admin-sider .ant-menu-item-selected {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+.admin-sider .ant-menu-item-selected::after {
+  display: none !important; /* 去掉 antd 默认右侧竖条 */
+}
+.admin-sider .ant-menu-title-content a {
+  color: inherit !important;
+}
+.admin-header {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+.admin-header .ant-btn-text {
+  color: var(--text-secondary) !important;
+  border-radius: 12px !important;
+}
+.admin-header .ant-btn-text:hover {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+}
+.admin-content {
+  padding: 1.5rem !important;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100% !important;
+}
+/* 后台卡片/表格圆角统一 */
+.admin-content .ant-card {
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+.admin-content .ant-table-wrapper .ant-table {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.admin-content .ant-table-thead > tr > th:first-child {
+  border-start-start-radius: 0 !important;
+}
+.admin-content .ant-table-thead > tr > th:last-child {
+  border-start-end-radius: 0 !important;
+}
+
 /* Statistic */
 .ant-statistic-title {
   color: var(--text-tertiary) !important;
@@ -3353,7 +3439,7 @@ input:autofill {
   background: var(--glass-bg-strong) !important;
   backdrop-filter: blur(var(--blur-float));
   border: 1px solid var(--glass-border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   box-shadow: 0 8px 32px var(--glass-shadow) !important;
 }
 
@@ -3385,7 +3471,7 @@ input:autofill {
 
 /* Avatar */
 .ant-avatar-square {
-  border-radius: 12px !important;
+  border-radius: 14px !important;
 }
 
 /* Button type text */
@@ -3420,7 +3506,7 @@ input:autofill {
 .ant-picker {
   background: var(--glass-bg) !important;
   border-color: var(--border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   color: var(--text-primary) !important;
 }
 
@@ -5908,6 +5994,21 @@ a, button, .article-card, .contact-card, .social-links a,
 }
 .w-md-editor-fullscreen {
   background: var(--bg-primary) !important;
+}
+
+/* 编辑器分类下拉：输入新名称时的「创建」入口 */
+.category-create-option {
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.category-create-option:hover {
+  background: var(--accent-soft);
 }
 
 .talk-card {

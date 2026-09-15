@@ -31,7 +31,7 @@ function bumpPlayCount(trackId) {
       },
     });
   }
-  request.post(`/media/play/${trackId}/`, { skipAuthRedirect: true }).catch(() => {});
+  request.post(`/media/play/${trackId}/`, null, { skipAuthRedirect: true }).catch(() => {});
 }
 
 /**

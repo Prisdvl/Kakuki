@@ -4962,6 +4962,15 @@ a, button, .article-card, .contact-card, .social-links a,
   white-space: nowrap;
 }
 
+.music-top-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
 /* ===== 音乐页：标题行 + 上传面板 ===== */
 .music-page-head {
   display: flex;

@@ -477,54 +477,63 @@ export default function MusicPage() {
             })}
           </div>
 
-          {/* 「最常听」播放统计：按累计播放次数取 Top5，行可点击直接播放 */}
+          {/* 「最常听」播放统计：按累计播放次数取 Top5，行可点击直接播放。
+            始终渲染（无记录时显示空态提示），保证组件可见、可感知。 */}
           {(() => {
             const top = tracks
               .filter((t) => (t.play_count || 0) > 0)
               .slice()
               .sort((a, b) => (b.play_count || 0) - (a.play_count || 0))
               .slice(0, 5);
-            if (!top.length) return null;
             return (
               <div className="glass music-top-panel">
                 <div className="music-top-header">
                   <span className="music-top-title">
                     <Flame size={15} style={{ color: 'var(--accent)' }} /> 最常听
                   </span>
-                  <span className="music-panel-meta">按累计播放次数 · Top {top.length}</span>
+                  <span className="music-panel-meta">
+                    {top.length ? `按累计播放次数 · Top ${top.length}` : '播放歌曲后自动统计'}
+                  </span>
                 </div>
-                <div className="music-top-list">
-                  {top.map((track, i) => (
-                    <div
-                      key={track.id}
-                      role="button"
-                      tabIndex={0}
-                      className="music-top-row"
-                      aria-label={`播放 ${track.name}`}
-                      onClick={() => playTrack(track)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playTrack(track); } }}
-                    >
-                      <span className="music-top-rank">{i + 1}</span>
-                      {track.cover ? (
-                        <img src={track.cover} alt={track.name} className="mp-cover-sm" loading="lazy" decoding="async" />
-                      ) : (
-                        <div className="mp-cover-sm mp-cover-placeholder">
-                          <Music size={16} />
+                {top.length ? (
+                  <div className="music-top-list">
+                    {top.map((track, i) => (
+                      <div
+                        key={track.id}
+                        role="button"
+                        tabIndex={0}
+                        className="music-top-row"
+                        aria-label={`播放 ${track.name}`}
+                        onClick={() => playTrack(track)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playTrack(track); } }}
+                      >
+                        <span className="music-top-rank">{i + 1}</span>
+                        {track.cover ? (
+                          <img src={track.cover} alt={track.name} className="mp-cover-sm" loading="lazy" decoding="async" />
+                        ) : (
+                          <div className="mp-cover-sm mp-cover-placeholder">
+                            <Music size={16} />
+                          </div>
+                        )}
+                        <div className="mp-row-body">
+                          <div className={`mp-row-title ${currentTrack?.id === track.id ? 'active' : ''}`}>
+                            {isPlaying && currentTrack?.id === track.id && <span className="playing-indicator">♪</span>}
+                            {track.name}
+                          </div>
+                          <div className="mp-row-meta">
+                            {(track.artists || []).map((a) => a.name).join(' / ')}
+                          </div>
                         </div>
-                      )}
-                      <div className="mp-row-body">
-                        <div className={`mp-row-title ${currentTrack?.id === track.id ? 'active' : ''}`}>
-                          {isPlaying && currentTrack?.id === track.id && <span className="playing-indicator">♪</span>}
-                          {track.name}
-                        </div>
-                        <div className="mp-row-meta">
-                          {(track.artists || []).map((a) => a.name).join(' / ')}
-                        </div>
+                        <span className="music-top-count">{track.play_count || 0} 次</span>
                       </div>
-                      <span className="music-top-count">{track.play_count || 0} 次</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="music-top-empty">
+                    <Flame size={16} style={{ color: 'var(--text-tertiary)' }} />
+                    <span>还没有播放记录，开始听歌后这里会按播放次数排出 Top 5</span>
+                  </div>
+                )}
               </div>
             );
           })()}

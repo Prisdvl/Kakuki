@@ -15,7 +15,7 @@ import useMusicStore, { getAnalyser } from '../store/musicStore';
  */
 
 const SAMPLE = 64;               // 封面采样分辨率
-const PARTICLE_CAP = 3600;       // 桌面端粒子上限（比原来更密集；采样 64² 最大 4096）
+const PARTICLE_CAP = 4096;       // 桌面端粒子上限（比原来更密集；采样 64² 最大 4096）
 
 /** 挂载世代号：新实例 ++generation；旧循环发现世代不匹配自我终止，
  *  防止反复进出音乐页时 rAF 循环残留累积把页面拖死。 */

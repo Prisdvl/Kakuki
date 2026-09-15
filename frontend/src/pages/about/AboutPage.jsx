@@ -123,7 +123,8 @@ export default function AboutPage() {
             <p style={{ marginBottom: "1rem" }}>如果你有任何问题或建议，欢迎通过以下方式联系我：</p>
             <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
               <a href="https://github.com/Prisdvl" target="_blank" rel="noopener noreferrer"
-                style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                className="glass-button"
+                style={{ padding: "0.5rem 1.2rem", fontSize: "0.85rem", textDecoration: "none" }}>
                 <GithubOutlined /> github.com/Prisdvl
               </a>
             </div>

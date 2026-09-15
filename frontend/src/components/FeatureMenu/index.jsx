@@ -13,8 +13,8 @@ import {
 import useThemeStore from '../../store/themeStore';
 
 const PRESET_COLORS = [
-  { name: '梦幻紫', color: '#7c3aed' },
   { name: '玫瑰粉', color: '#ec4899' },
+  { name: '梦幻紫', color: '#7c3aed' },
   { name: '海洋蓝', color: '#3b82f6' },
   { name: '薄荷绿', color: '#10b981' },
   { name: '日落橙', color: '#f97316' },

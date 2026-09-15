@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
  * design-tokens.css — 统一设计令牌（Design Tokens）
  *
  * 职责：集中定义颜色、磨砂玻璃、阴影、圆角、间距、动画时长、
@@ -83,7 +83,7 @@
      （质感来自 shadow 层次而不是把背景糊掉） */
   --glass-blur: 14px;
   --glass-blur-strong: 18px;
-  --glass-saturate: 170%;
+  --glass-saturate: 140%;
   /* 收敛散写 blur 用：浮层（导航/弹窗）与卡片两级 */
   --blur-float: 16px;
   --blur-card: 14px;
@@ -259,7 +259,7 @@
   --glass-bg-strong-solid: rgba(24, 24, 28, 0.95);
   --glass-border: rgba(255, 255, 255, 0.14);
   --glass-blur: 16px;
-  --glass-saturate: 180%;
+  --glass-saturate: 150%;
   --glass-tint: rgba(255, 255, 255, 0.06);
   --glass-specular: linear-gradient(
     135deg,

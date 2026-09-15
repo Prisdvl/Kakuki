@@ -31,12 +31,16 @@ export default function ParticleField() {
     if (!ctx) return;
 
     let raf = 0;
+    let lastFrame = 0;
     let particles = [];
     let mouse = { x: -9999, y: -9999 };
     let W = 0;
     let H = 0;
 
-    const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+    // 性能：DPR 封顶 1（连线+圆点是纯色，高 DPR 只是白白多画几倍像素），
+    // 帧率节流到 ~30fps（60fps 的满屏 O(n²) 连线在低配机上仍是主要开销）
+    const DPR = Math.min(window.devicePixelRatio || 1, 1);
+    const FRAME_INTERVAL = 33; // ms，≈30fps
 
     const resize = () => {
       W = window.innerWidth;
@@ -46,7 +50,7 @@ export default function ParticleField() {
       canvas.style.width = W + 'px';
       canvas.style.height = H + 'px';
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      const count = Math.min(60, Math.max(24, Math.floor((W * H) / 24000)));
+      const count = Math.min(40, Math.max(18, Math.floor((W * H) / 32000)));
       particles = Array.from({ length: count }, () => ({
         x: Math.random() * W,
         y: Math.random() * H,
@@ -77,7 +81,14 @@ export default function ParticleField() {
 
     let accentRGB = parseRGB(getAccent());
 
-    const draw = () => {
+    const draw = (now) => {
+      // 30fps 节流：低于间隔的帧直接进入下一帧，不做任何绘制
+      if (now - lastFrame < FRAME_INTERVAL) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrame = now;
+
       ctx.clearRect(0, 0, W, H);
       const LINK_DIST = 130;
       const LINK_DIST_SQ = LINK_DIST * LINK_DIST;

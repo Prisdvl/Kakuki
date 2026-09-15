@@ -24,11 +24,11 @@ export default function ProjectsPage() {
         <h1 className="pj-title">项目</h1>
         <p className="pj-sub">数据实时来自 GitHub 仓库，只列自有项目（不含 fork）。</p>
         <div className="pj-links">
-          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="pj-link">
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="pj-link glass-button" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
             <GitBranch size={14} /> GitHub
           </a>
           {GITEE_URL && (
-            <a href={GITEE_URL} target="_blank" rel="noopener noreferrer" className="pj-link">
+            <a href={GITEE_URL} target="_blank" rel="noopener noreferrer" className="pj-link glass-button" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
               <Code2 size={14} /> Gitee
             </a>
           )}
@@ -46,7 +46,7 @@ export default function ProjectsPage() {
           <Rocket size={38} style={{ opacity: 0.35 }} />
           <p>暂时拉不到项目数据</p>
           {error && <span className="pj-empty-hint">原因：{error}</span>}
-          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="pj-link">
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="pj-link glass-button" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
             去 GitHub 看看 <ExternalLink size={13} />
           </a>
         </div>

@@ -42,7 +42,7 @@ export default function TodoCard() {
     <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <ListTodo size={18} style={{ color: 'var(--accent)' }} /> 待办清单
+          <ListTodo size={18} style={{ color: 'var(--accent)' }} /> 待办
         </h3>
         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
           {doneCount}/{todos.length} 完成

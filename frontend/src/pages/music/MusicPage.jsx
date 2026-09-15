@@ -27,16 +27,25 @@ function UploadPanel({ onDone, onClose }) {
       setMsg({ type: 'err', text: `已跳过 ${tooBig.length} 个超过 ${MAX_MB} MB 的文件` });
     }
     if (!ok.length) return;
-    setQueue((q) => [...q, ...ok.map((file) => ({ file, name: file.name.replace(/\.[^.]+$/, ''), cover: null, thumb: null, manual: false }))]);
+    // 文件名自动识别「歌手 - 歌名」（支持 - / — / – 分隔）；识别不到整段作歌名
+    setQueue((q) => [...q, ...ok.map((file) => {
+      const base = file.name.replace(/\.[^.]+$/, '');
+      const m = /^\s*(.+?)\s*[-—–]\s*(.+?)\s*$/.exec(base);
+      return {
+        file,
+        name: m ? m[2] : base,
+        artist: m ? m[1] : '',
+        cover: null, thumb: null, manual: false,
+      };
+    })]);
     // 异步解析内嵌封面：不阻塞加入队列，解析到就回填缩略图（手动选过封面则不覆盖）
     ok.forEach((file) => {
-      const targetName = file.name.replace(/\.[^.]+$/, '');
       extractEmbeddedCover(file)
         .then((cover) => {
           if (!cover) return;
           const url = URL.createObjectURL(cover.blob);
           setQueue((prev) =>
-            prev.map((x) => (x.file === file && x.name === targetName && !x.manual ? { ...x, cover: cover.blob, thumb: url } : x))
+            prev.map((x) => (x.file === file && !x.manual ? { ...x, cover: cover.blob, thumb: url } : x))
           );
         })
         .catch(() => {});
@@ -52,7 +61,7 @@ function UploadPanel({ onDone, onClose }) {
       try {
         await mediaApi.upload(
           item.file,
-          { name: item.name, artist, cover: item.cover || undefined },
+          { name: item.name, artist: item.artist || artist, cover: item.cover || undefined },
           (p) => setProgress(Math.round(((done + p / 100) / queue.length) * 100))
         );
         done += 1;
@@ -132,12 +141,17 @@ function UploadPanel({ onDone, onClose }) {
                   }}
                 />
               </label>
-              <input
-                value={q.name}
-                onChange={(e) => setQueue((prev) => prev.map((x, xi) => (xi === i ? { ...x, name: e.target.value } : x)))}
-                disabled={busy}
-                aria-label="曲名"
-              />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <input
+                  value={q.name}
+                  onChange={(e) => setQueue((prev) => prev.map((x, xi) => (xi === i ? { ...x, name: e.target.value } : x)))}
+                  disabled={busy}
+                  aria-label="曲名"
+                />
+                {q.artist && (
+                  <span className="music-upload-artist" title="已从文件名自动识别「歌手 - 歌名」">歌手：{q.artist}</span>
+                )}
+              </div>
               <span className="music-upload-size">{(q.file.size / 1024 / 1024).toFixed(1)} MB</span>
               <button
                 className="icon-btn"
@@ -158,7 +172,7 @@ function UploadPanel({ onDone, onClose }) {
           <input
             value={artist}
             onChange={(e) => setArtist(e.target.value)}
-            placeholder="整批统一填写，可留空"
+            placeholder="整批统一填写；留空则使用文件名里识别的歌手"
             disabled={busy}
           />
         </label>

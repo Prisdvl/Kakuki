@@ -1,4 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Inter 改为自托管（原先是 @import 拉 Google Fonts）。
+   原因：fonts.googleapis.com 在国内被阻断（实测连接被 RST 快速失败），
+   结果是每次访问都白发一个必然失败的请求 + 拖慢 CSS 解析，字体永远拿不到。
+   现改为本地可变字体单文件：latin 子集、wght 轴覆盖 100–900，
+   一份 45KB 文件替代原先 7 个字重的多次请求。
+   注：Inter 不含中文字形，中文一直由下面的回退栈接管，与改动前行为一致。 */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2-variations'),
+       url('/fonts/inter-latin-wght-normal.woff2') format('woff2');
+}
 
 @tailwind base;
 @tailwind components;
@@ -149,6 +162,22 @@ table { table-layout: auto; }
 .card, .panel, .widget, .glass-card, .glass, .tilt-card > *,
 [class*="grid"], [class*="row"], [class*="list"] > * {
   min-width: 0;
+}
+
+/* ===== 全局内容默认不可选中（组件/卡片/按钮等大部分 UI），
+   白名单保留可选中：输入框/文本域/下拉、代码块、正文（markdown）===== */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+input, textarea, select,
+.ant-input, .ant-input-affix-wrapper,
+.ant-select-selector,
+[contenteditable="true"],
+pre, code,
+.markdown-body {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ===== Disable text selection on interactive hotspots ===== */
@@ -4964,6 +4993,22 @@ a, button, .article-card, .contact-card, .social-links a,
   font-size: 0.72rem;
   color: var(--text-tertiary);
   white-space: nowrap;
+}
+
+/* 上传队列项里从文件名识别的歌手提示 */
+.music-upload-artist {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  padding-left: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 队列项改成「曲名+歌手」竖排后，输入框不再用外层 flex:1 拉伸 */
+.music-upload-item > div input {
+  flex: none;
+  width: 100%;
 }
 
 .music-upload-thumb {

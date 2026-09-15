@@ -1,0 +1,28 @@
+# Kakuki 静态资源缓存策略
+#
+# 背景：Cloudflare Workers 静态资源默认回 public, max-age=0, must-revalidate，
+# 于是每次访问都要为全部 JS/CSS 发条件请求重新校验，首屏白白多等若干轮 RTT。
+#
+# 分两类处理：
+#   1. Vite 产物（/assets/*）文件名带内容哈希，内容一变文件名即变，
+#      可安全长缓存 immutable —— 重复访问零请求。
+#   2. 固定名文件（字体、头像、图标）用中等时长，兼顾性能与可更新性。
+#
+# 注意：index.html 与 SPA 路由刻意不加规则，保持默认 must-revalidate，
+# 否则发版后浏览器会拿旧 HTML 指向已删除的旧哈希资源，导致白屏。
+# 规则按最长前缀匹配，故 /assets/* 不会波及根路径的 index.html。
+
+/assets/*
+  Cache-Control: public, max-age=31556952, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31556952, immutable
+
+/avatar.jpg
+  Cache-Control: public, max-age=86400
+
+/github-avatar.jpg
+  Cache-Control: public, max-age=86400
+
+/favicon.png
+  Cache-Control: public, max-age=86400

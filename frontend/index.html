@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Kakuki · Prisdvl 的数字花园：文章、项目、音乐与拾句。" />
     <meta name="theme-color" content="#17181c" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Inter 已自托管，去掉指向 fonts.googleapis.com / gstatic.com 的 preconnect：
+         这两个域在国内被阻断，预连接只会白建一条必然失败的连接。
+         改为预加载本地字体，让它与 CSS 并行下载，减少字体切换闪烁。
+         字体请求始终走 CORS 模式，故同源 preload 也必须带 crossorigin，否则会重复下载。 -->
+    <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
     <title>Kakuki</title>
   </head>
   <body>

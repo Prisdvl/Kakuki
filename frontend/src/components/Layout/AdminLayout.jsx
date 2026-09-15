@@ -47,7 +47,8 @@ export default function AdminLayout() {
         }}
       >
         <div className='admin-logo'>
-          {collapsed ? 'K' : 'Kakuki Admin'}
+          <img src="/favicon.png" alt="" className="admin-logo-icon" />
+          {collapsed ? '' : 'Kakuki Admin'}
         </div>
         <Menu
           mode='inline'

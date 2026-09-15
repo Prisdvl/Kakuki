@@ -3332,8 +3332,16 @@ input:autofill {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   white-space: nowrap;
   overflow: hidden;
+}
+.admin-logo-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  object-fit: cover;
 }
 .admin-sider .ant-menu {
   background: transparent !important;

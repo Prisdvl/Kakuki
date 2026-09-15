@@ -17,6 +17,10 @@ import useMusicStore, { getAnalyser } from '../store/musicStore';
 const SAMPLE = 64;               // 封面采样分辨率
 const PARTICLE_CAP = 3600;       // 桌面端粒子上限（比原来更密集；采样 64² 最大 4096）
 
+/** 挂载世代号：新实例 ++generation；旧循环发现世代不匹配自我终止，
+ *  防止反复进出音乐页时 rAF 循环残留累积把页面拖死。 */
+let generation = 0;
+
 const STYLES = `
 .cover-particles {
   position: relative;
@@ -197,6 +201,7 @@ export default function CoverParticles() {
     const ctx = canvas && canvas.getContext('2d');
     if (!ctx) return;
 
+    const gen = ++generation;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let W = 0, H = 0;
@@ -291,12 +296,21 @@ export default function CoverParticles() {
 
       // 能量平滑：播放取真实数据，暂停衰减为微呼吸
       if (playing) {
-        analyser.getByteFrequencyData(freqData);
-        const binCount = freqData.length;
-        const tLow = binAvg(2, Math.max(4, binCount * 0.06));
-        const tHigh = binAvg(binCount * 0.45, binCount * 0.9);
-        eLow += (tLow - eLow) * 0.18;
-        eHigh += (tHigh - eHigh) * 0.18;
+        // 分析器失效防护：重建链路/切歌后 getAnalyser 可能指向已断开的节点，
+        // 直接读会每帧抛错拖垮渲染循环，这里捕获并降级为呼吸动画。
+        try {
+          analyser.getByteFrequencyData(freqData);
+          const binCount = freqData.length;
+          const tLow = binAvg(2, Math.max(4, binCount * 0.06));
+          const tHigh = binAvg(binCount * 0.45, binCount * 0.9);
+          eLow += (tLow - eLow) * 0.18;
+          eHigh += (tHigh - eHigh) * 0.18;
+        } catch {
+          analyser = null;
+          freqData = null;
+          eLow = 0;
+          eHigh = 0;
+        }
       } else {
         eLow += (0.03 + 0.03 * Math.sin(t * 1.1) - eLow) * 0.05;
         eHigh += (0.02 - eHigh) * 0.05;
@@ -363,6 +377,11 @@ export default function CoverParticles() {
 
     let last = performance.now();
     const step = (now) => {
+      // 世代守卫：本实例已卸载但旧 rAF 回调仍被调度时，自我终止，绝不续帧
+      if (gen !== generation) {
+        cancelAnimationFrame(rafRef.current);
+        return;
+      }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       draw(dt);

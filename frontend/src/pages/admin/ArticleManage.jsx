@@ -30,7 +30,7 @@ export default function ArticleManage() {
     { title: "ID", dataIndex: "id", key: "id", width: 60 },
     { title: "标题", dataIndex: "title", key: "title", ellipsis: true,
       render: (text, record) => (
-        <Link to={`/article/${record.id}`} className="text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">{text}</Link>
+        <Link to={`/article/${record.id}`} className="text-[var(--accent)] hover:text-[var(--accent-dark)] transition-colors">{text}</Link>
       ),
     },
     { title: "分类", dataIndex: ["category", "name"], key: "category", render: (v) => v && <Tag>{v}</Tag> },
@@ -51,10 +51,10 @@ export default function ArticleManage() {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">文章管理</h2>
-        <Link to="/admin/articles/create"><Button type="primary" icon={<PlusOutlined />}>发布文章</Button></Link>
+    <div className="admin-page">
+      <div className="admin-page-head">
+        <h2 className="admin-page-title">文章管理</h2>
+        <Link to="/admin/articles/new"><Button type="primary" icon={<PlusOutlined />}>发布文章</Button></Link>
       </div>
       <Table columns={columns} dataSource={articles} rowKey="id" loading={loading} />
     </div>

@@ -81,8 +81,8 @@ export default function ArticleEditor() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">{id ? "编辑文章" : "写文章"}</h2>
+    <div className="max-w-4xl mx-auto admin-page">
+      <h2 className="admin-page-title">{id ? "编辑文章" : "写文章"}</h2>
       <Card>
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Form.Item name="title" label="标题" rules={[{ required: true, message: "请输入标题" }]}>

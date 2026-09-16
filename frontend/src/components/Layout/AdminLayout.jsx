@@ -41,10 +41,6 @@ export default function AdminLayout() {
         onCollapse={setCollapsed}
         className='admin-sider'
         theme={isDark ? 'dark' : 'light'}
-        style={{
-          background: 'var(--glass-bg-strong)',
-          borderRight: '1px solid var(--glass-border)',
-        }}
       >
         <div className='admin-logo'>
           <img src="/favicon.png" alt="" className="admin-logo-icon" />
@@ -58,18 +54,11 @@ export default function AdminLayout() {
         />
       </Sider>
       <Layout style={{ background: 'var(--bg-primary)' }}>
-        <Header className='admin-header' style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 1.5rem',
-          height: 64,
-          lineHeight: '64px',
-        }}>
+        <Header className='admin-header'>
           <Link to='/'><Button type='text' icon={<ArrowLeftOutlined />}>返回前台</Button></Link>
           <div className='flex items-center gap-3'>
             <Button type='text' icon={isDark ? <SunOutlined /> : <MoonOutlined />} onClick={toggleTheme} />
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{user?.nickname || user?.username}</span>
+            <span className='admin-header-user'>{user?.nickname || user?.username}</span>
           </div>
         </Header>
         <Content className='admin-content'>

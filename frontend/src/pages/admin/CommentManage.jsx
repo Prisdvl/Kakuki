@@ -47,8 +47,8 @@ export default function CommentManage() {
   ];
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">评论管理</h2>
+    <div className="admin-page">
+      <h2 className="admin-page-title">评论管理</h2>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} />
     </div>
   );

@@ -68,9 +68,9 @@ export default function CategoryManage() {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">分类管理</h2>
+    <div className="admin-page">
+      <div className="admin-page-head">
+        <h2 className="admin-page-title">分类管理</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); form.resetFields(); setModalOpen(true); }}>新增分类</Button>
       </div>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} />

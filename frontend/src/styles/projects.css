@@ -4,39 +4,39 @@
    ============================================================ */
 
 .pj-page {
-  padding-top: 2rem;
+  padding-top: var(--space-6);
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.pj-head { margin-bottom: 2rem; }
+.pj-head { margin-bottom: var(--space-6); }
 
 .pj-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 .pj-sub {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   margin-bottom: 0.9rem;
 }
 
-.pj-links { display: flex; gap: 0.5rem; }
+.pj-links { display: flex; gap: var(--space-2); }
 .pj-link {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
   color: var(--text-secondary);
   text-decoration: none;
-  padding: 0.32rem 0.7rem;
-  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-secondary);
-  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .pj-link:hover {
   color: var(--accent);
@@ -48,7 +48,7 @@
 .pj-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.1rem;
+  gap: var(--space-4);
 }
 
 .pj-card {
@@ -56,8 +56,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  padding: 1.1rem 1.15rem;
-  border-radius: 16px;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-xl);
   /* 统一卡面：此前 bg-secondary(0.07 淡底) 让项目卡与全站卡片脱节；
      现升级为磨砂玻璃：半透明卡底 + backdrop 模糊 + 玻璃描边与内高光 */
   background: var(--card-bg);
@@ -68,12 +68,13 @@
   text-decoration: none;
   color: inherit;
   overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.24s ease, background 0.2s ease;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-base) ease, background var(--motion-fast) ease;
 }
 .pj-card:hover {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
   box-shadow: 0 10px 28px -14px color-mix(in srgb, var(--accent) 45%, transparent),
     var(--glass-shadow), var(--glass-inner-shadow);
+  transform: translateY(-2px);
 }
 
 .pj-card-top {
@@ -202,25 +203,19 @@
 
 /* ---------------- 空态 / 缓存提示 ---------------- */
 .pj-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 3.5rem 2rem;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   border: 1px dashed var(--border);
-  color: var(--text-tertiary);
 }
-.pj-empty-hint { font-size: 0.75rem; }
+.pj-empty-hint { font-size: var(--fs-sm); }
 
 .pj-stale {
-  margin-top: 1.2rem;
-  font-size: 0.74rem;
+  margin-top: var(--space-5);
+  font-size: var(--fs-sm);
   color: var(--text-tertiary);
   text-align: center;
 }
 
 @media (max-width: 640px) {
   .pj-grid { grid-template-columns: 1fr; }
-  .pj-title { font-size: 1.6rem; }
+  .pj-title { font-size: var(--fs-2xl); }
 }

@@ -13,10 +13,10 @@ const LEETCODE_USERNAME = 'Likey-e';
 function StatItem({ icon: Icon, value, label }) {
   const animated = useCountUp(value);
   return (
-    <div className="about-stat">
-      <Icon size={15} style={{ color: "var(--accent)" }} />
-      <div className="about-stat-value">{animated}</div>
-      <div className="about-stat-label">{label}</div>
+    <div className="about-stat ui-stat">
+      <Icon size={15} className="about-stat-icon" />
+      <div className="about-stat-value ui-stat-value">{animated}</div>
+      <div className="about-stat-label ui-stat-label">{label}</div>
     </div>
   );
 }
@@ -72,36 +72,22 @@ export default function AboutPage() {
   return (
     <Row gutter={24} className="pt-8 about-page">
       <Col xs={24} lg={16}>
-        <div className="glass page-enter" style={{ borderRadius: 20, padding: "2rem 2.5rem" }}>
+        <div className="ui-card ui-pad-lg about-main-card page-enter">
           <div className="text-center mb-6">
-            <div style={{
-              width: 120, height: 120, borderRadius: "50%",
-              margin: "0 auto 1.5rem",
-              overflow: "hidden",
-              border: "3px solid var(--accent)",
-            }}>
+            <div className="about-avatar">
               <img
                 src="/avatar.jpg"
                 alt="Prisdvl"
-                style={{
-                  width: "100%", height: "100%", objectFit: "cover",
-                  display: "block",
-                }}
+                className="about-avatar-img"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling.style.display = 'flex';
                 }}
               />
-              <div style={{
-                display: "none",
-                width: "100%", height: "100%",
-                background: "linear-gradient(135deg, var(--accent), var(--accent-secondary))",
-                alignItems: "center", justifyContent: "center",
-                fontSize: "3rem", color: "var(--on-accent)", fontWeight: 700,
-              }}>P</div>
+              <div className="about-avatar-fallback">P</div>
             </div>
-            <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)" }}>Prisdvl</h2>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-tertiary)", marginTop: "0.25rem" }}>
+            <h2 className="about-name">Prisdvl</h2>
+            <p className="about-tagline">
               全栈开发者 · 热爱代码与创造
             </p>
           </div>
@@ -117,14 +103,13 @@ export default function AboutPage() {
             </div>
           )}
 
-          <div style={{ color: "var(--text-secondary)", lineHeight: 1.8, fontSize: "0.95rem" }}>
-            <p style={{ marginBottom: "1rem" }}>欢迎来到 Kakuki！这是我的个人网站，在这里我会分享技术心得、生活感悟和各种有趣的内容。</p>
-            <p style={{ marginBottom: "1rem" }}>我是一名全栈开发者，热爱编程、阅读和创作。这个站点使用 React 18 + Vite + Hono 构建，部署在 Cloudflare Workers（D1 + KV），包含在线音乐播放器、LeetCode 追踪与仪表盘工具。</p>
-            <p style={{ marginBottom: "1rem" }}>如果你有任何问题或建议，欢迎通过以下方式联系我：</p>
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
+          <div className="about-bio">
+            <p>欢迎来到 Kakuki！这是我的个人网站，在这里我会分享技术心得、生活感悟和各种有趣的内容。</p>
+            <p>我是一名全栈开发者，热爱编程、阅读和创作。这个站点使用 React 18 + Vite + Hono 构建，部署在 Cloudflare Workers（D1 + KV），包含在线音乐播放器、LeetCode 追踪与仪表盘工具。</p>
+            <p>如果你有任何问题或建议，欢迎通过以下方式联系我：</p>
+            <div className="about-contact">
               <a href="https://github.com/Prisdvl" target="_blank" rel="noopener noreferrer"
-                className="glass-button"
-                style={{ padding: "0.5rem 1.2rem", fontSize: "0.85rem", textDecoration: "none" }}>
+                className="ui-btn ui-btn-primary ui-btn-sm">
                 <GithubOutlined /> github.com/Prisdvl
               </a>
             </div>
@@ -134,38 +119,38 @@ export default function AboutPage() {
       <Col xs={0} lg={8}>
         {/* LeetCode 刷题进度 */}
         {matchedUser && (
-          <div className="glass page-enter" style={{ borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h4 style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <CodeOutlined style={{ color: "var(--accent)" }} /> LeetCode
+          <div className="ui-card ui-pad about-side-card page-enter">
+            <div className="ui-card-head">
+              <h4 className="ui-card-title">
+                <CodeOutlined /> LeetCode
               </h4>
-              <a href={`https://leetcode.cn/u/${LEETCODE_USERNAME}/`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.8rem", color: "var(--text-tertiary)" }}>
+              <a href={`https://leetcode.cn/u/${LEETCODE_USERNAME}/`} target="_blank" rel="noopener noreferrer" className="ui-card-link ui-card-sub">
                 主页
               </a>
             </div>
 
-            <div style={{ textAlign: "center", marginBottom: "1rem" }}>
-              <div style={{ position: "relative", width: 110, height: 110, margin: "0 auto 0.5rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Progress type="circle" showInfo={false} percent={lcTotalAll > 0 ? Math.round((lcSolved / lcTotalAll) * 100) : 0} size={110} strokeColor={{ '0%': '#ffb700', '100%': '#00b8a3' }} />
-                <div style={{ position: "absolute", textAlign: "center" }}>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)" }}>{lcSolved}</div>
-                  <div style={{ fontSize: "0.65rem", color: "var(--text-tertiary)" }}>已解答</div>
+            <div className="about-lc-center">
+              <div className="about-lc-ring">
+                <Progress type="circle" showInfo={false} percent={lcTotalAll > 0 ? Math.round((lcSolved / lcTotalAll) * 100) : 0} size={110} strokeColor={{ '0%': 'var(--leetcode-medium)', '100%': 'var(--leetcode-easy)' }} />
+                <div className="about-lc-center-text">
+                  <div className="about-lc-solved">{lcSolved}</div>
+                  <div className="about-lc-solved-label">已解答</div>
                 </div>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>共 {lcTotalAll} 题</div>
+              <div className="about-lc-total">共 {lcTotalAll} 题</div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            <div className="about-lc-diffs">
               {[
-                { label: "简单", solved: lcEasy, total: lcTotalEasy, color: "#00b8a3" },
-                { label: "中等", solved: lcMedium, total: lcTotalMedium, color: "#ffb700" },
-                { label: "困难", solved: lcHard, total: lcTotalHard, color: "#ff375f" },
+                { label: "简单", solved: lcEasy, total: lcTotalEasy, color: 'var(--leetcode-easy)' },
+                { label: "中等", solved: lcMedium, total: lcTotalMedium, color: 'var(--leetcode-medium)' },
+                { label: "困难", solved: lcHard, total: lcTotalHard, color: 'var(--leetcode-hard)' },
               ].map((d) => {
                 const pct = d.total > 0 ? Math.round((d.solved / d.total) * 100) : 0;
                 return (
                   <div key={d.label}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem", fontSize: "0.75rem" }}>
-                      <span style={{ color: "var(--text-secondary)" }}>{d.label} {d.solved}/{d.total}</span>
+                    <div className="about-lc-diff-row">
+                      <span className="about-lc-diff-label">{d.label} {d.solved}/{d.total}</span>
                     </div>
                     <Progress percent={pct} showInfo={false} strokeColor={d.color} size="small" />
                   </div>
@@ -173,45 +158,45 @@ export default function AboutPage() {
               })}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-around", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
-              <div style={{ textAlign: "center" }}>
-                <Trophy size={14} style={{ color: "var(--accent)" }} />
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>最长连续</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcMaxStreak} 天</div>
+            <div className="about-lc-foot">
+              <div className="about-lc-foot-item">
+                <Trophy size={14} className="about-lc-foot-icon" />
+                <div className="about-lc-foot-label">最长连续</div>
+                <div className="about-lc-foot-value">{lcMaxStreak} 天</div>
               </div>
-              <div style={{ textAlign: "center" }}>
-                <Flame size={14} style={{ color: "var(--success)" }} />
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>打卡天数</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcActiveDays} 天</div>
+              <div className="about-lc-foot-item">
+                <Flame size={14} className="about-lc-foot-icon about-lc-foot-icon-success" />
+                <div className="about-lc-foot-label">打卡天数</div>
+                <div className="about-lc-foot-value">{lcActiveDays} 天</div>
               </div>
-              <div style={{ textAlign: "center" }}>
-                <Zap size={14} style={{ color: "var(--warning)" }} />
-                <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: "0.2rem" }}>累计题数</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{lcTotalCount} 题</div>
+              <div className="about-lc-foot-item">
+                <Zap size={14} className="about-lc-foot-icon about-lc-foot-icon-warning" />
+                <div className="about-lc-foot-label">累计题数</div>
+                <div className="about-lc-foot-value">{lcTotalCount} 题</div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="glass reveal" style={{ borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem" }}>
-          <h4 style={{ fontWeight: 600, marginBottom: "1rem", color: "var(--text-primary)" }}>技术栈</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+        <div className="ui-card ui-pad about-side-card">
+          <h4 className="ui-card-title about-side-title">技术栈</h4>
+          <div className="about-tech-grid">
             {TECH_STACK.map((t) => (
-              <div key={t.name} style={{ padding: "0.55rem 0.75rem", borderRadius: 10, background: "var(--bg-tertiary)" }}>
+              <div key={t.name} className="about-tech-tile">
                 {/* bg-tertiary 叠玻璃底偏暗，accent/tertiary 字都不达标，用 primary/secondary */}
-                <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{t.name}</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{t.desc}</div>
+                <div className="about-tech-name">{t.name}</div>
+                <div className="about-tech-desc">{t.desc}</div>
               </div>
             ))}
           </div>
         </div>
-        <div className="glass reveal" style={{ borderRadius: 20, padding: "1.5rem" }}>
-          <h4 style={{ fontWeight: 600, marginBottom: "1rem", color: "var(--text-primary)" }}>快速导航</h4>
-          <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.75rem", padding: 0 }}>
-            <li><Link to="/" style={{ color: "var(--text-secondary)" }}>&larr; 返回首页</Link></li>
-            <li><Link to="/archive" style={{ color: "var(--text-secondary)" }}>浏览归档</Link></li>
-            <li><Link to="/talks" style={{ color: "var(--text-secondary)" }}>看看杂谈</Link></li>
-            <li><Link to="/projects" style={{ color: "var(--text-secondary)" }}>项目展示</Link></li>
+        <div className="ui-card ui-pad about-side-card">
+          <h4 className="ui-card-title about-side-title">快速导航</h4>
+          <ul className="about-nav-list">
+            <li><Link to="/" className="ui-card-link">&larr; 返回首页</Link></li>
+            <li><Link to="/archive" className="ui-card-link">浏览归档</Link></li>
+            <li><Link to="/talks" className="ui-card-link">看看杂谈</Link></li>
+            <li><Link to="/projects" className="ui-card-link">项目展示</Link></li>
           </ul>
         </div>
       </Col>

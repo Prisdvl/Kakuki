@@ -99,8 +99,8 @@ export default function TalksPage() {
   const handleLikeById = (id) => likeTalk(id);
 
   return (
-    <div style={{ paddingTop: "2rem", maxWidth: 760, margin: "0 auto" }}>
-      <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "2rem" }}>杂谈</h1>
+    <div className="talks-page">
+      <h1 className="ui-page-title-lg">杂谈</h1>
 
       {isLoggedIn && user?.is_staff && (
         <div className="glass talk-publish reveal">
@@ -128,8 +128,9 @@ export default function TalksPage() {
       {loading ? (
         <div className="glass talk-card shimmer" style={{ height: 120 }} />
       ) : talks.length === 0 ? (
-        <div className="glass talk-card" style={{ textAlign: "center", color: "var(--text-tertiary)", padding: "3rem" }}>
-          还没有杂谈，快来写下第一条吧
+        <div className="ui-empty glass talk-card">
+          <span className="ui-empty-title">还没有杂谈</span>
+          <span className="ui-empty-text">快来写下第一条吧</span>
         </div>
       ) : (
         talks.map((t, i) => (
@@ -144,8 +145,8 @@ export default function TalksPage() {
         ))
       )}
 
-      <div style={{ marginTop: "2rem", textAlign: "center" }}>
-        <Link to="/" style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>&larr; 返回首页</Link>
+      <div className="talks-back">
+        <Link to="/" className="ui-card-link">&larr; 返回首页</Link>
       </div>
     </div>
   );

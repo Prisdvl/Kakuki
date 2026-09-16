@@ -91,7 +91,7 @@ export default function ArchivePage() {
     return (
       <Row gutter={24} className="pt-8">
         <Col xs={24}>
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "1.25rem" }}>文章归档</h2>
+          <h2 className="ui-page-title archive-title">文章归档</h2>
         </Col>
       </Row>
     );
@@ -100,23 +100,22 @@ export default function ArchivePage() {
   return (
     <Row gutter={24} className="pt-8">
       <Col xs={24}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: searching ? "0.5rem" : "1.25rem" }}>
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 700, margin: 0 }}>
+        <div className="archive-head">
+          <h2 className="ui-page-title">
             {searching ? "搜索文章" : "文章归档"}
           </h2>
           {isStaff && (
             <button
-              className="glass-button"
+              className="ui-btn ui-btn-sm"
               onClick={() => navigate("/admin/articles/new")}
               title="用富编辑器写新文章"
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", flexShrink: 0 }}
             >
               <Edit3 size={14} /> 写文章
             </button>
           )}
         </div>
         {searching && (
-          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
+          <p className="archive-search-note">
             关键词「{q}」的搜索结果
           </p>
         )}
@@ -130,19 +129,20 @@ export default function ArchivePage() {
           value={kw}
           onChange={(e) => setKw(e.target.value)}
           onPressEnter={() => handleSearch(kw)}
-          style={{ maxWidth: 480, marginBottom: "1rem" }}
         />
 
         {searching ? (
           <>
             {searchLoading ? (
-              <p style={{ color: "var(--text-tertiary)", padding: "2rem 0" }}>正在搜索...</p>
+              <div className="ui-empty archive-empty">
+                <span className="ui-empty-text">正在搜索…</span>
+              </div>
             ) : results.length === 0 ? (
               <Empty
                 description="没有找到相关文章"
-                style={{ padding: "3rem 0" }}
+                className="archive-empty"
               >
-                <Link to="/archive" style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                <Link to="/archive" className="ui-card-link">
                   <ArrowLeft size={14} /> 返回全部归档
                 </Link>
               </Empty>
@@ -152,17 +152,17 @@ export default function ArchivePage() {
                   <Link
                     key={article.id}
                     to={`/article/${article.id}`}
-                    className="article-card reveal"
-                    style={{ padding: "0.9rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem", '--reveal-i': ri }}
+                    className="article-card archive-result-row reveal"
+                    style={{ '--reveal-i': ri }}
                   >
-                    <FileSearch size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                    <span style={{ color: "var(--text-primary)", fontSize: "0.95rem", flex: 1, minWidth: 0 }}>
+                    <FileSearch size={15} className="archive-result-icon" />
+                    <span className="archive-result-title">
                       {article.title}
                     </span>
-                    <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", flexShrink: 0 }}>
+                    <span className="archive-result-date">
                       {article.created_at?.slice(0, 10)}
                     </span>
-                    <ChevronRight size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
+                    <ChevronRight size={14} className="archive-result-arrow" />
                   </Link>
                 ))}
                 {total > PAGE_SIZE && (
@@ -172,14 +172,14 @@ export default function ArchivePage() {
                     pageSize={PAGE_SIZE}
                     onChange={handlePageChange}
                     showSizeChanger={false}
-                    style={{ marginTop: "1.5rem", textAlign: "center" }}
+                    className="archive-pagination"
                   />
                 )}
               </>
             )}
           </>
         ) : data.length === 0 ? (
-          <Empty description="还没有文章" style={{ padding: "3rem 0" }} />
+          <Empty description="还没有文章" className="archive-empty" />
         ) : (
           <div className="tl-root">
             {data.map((yearGroup, gi) => (

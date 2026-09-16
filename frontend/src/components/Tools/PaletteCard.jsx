@@ -61,60 +61,40 @@ export default function PaletteCard() {
   };
 
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Palette size={18} style={{ color: 'var(--accent)' }} /> 色板生成器
+    <div className="ui-card ui-pad ui-flex-col ui-h-full">
+      <div className="ui-card-head">
+        <h3 className="ui-card-title">
+          <Palette size={18} /> 色板生成器
         </h3>
-        <button
-          onClick={regenerate}
-          aria-label="生成新色板"
-          title="换一组颜色"
-          className="quote-shuffle"
-          style={{
-            border: '1px solid var(--border)', background: 'var(--glass-bg-strong)', color: 'var(--text-secondary)',
-            width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'all 0.3s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'rotate(180deg)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'rotate(0deg)'; }}
-        >
-          <RefreshCw size={14} />
-        </button>
+        <div className="ui-card-actions">
+          <button
+            onClick={regenerate}
+            aria-label="生成新色板"
+            title="换一组颜色"
+            className="ui-icon-action"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.4rem', flex: 1 }}>
+      <div className="palette-grid">
         {colors.map((c, i) => (
           <button
             key={i}
             onClick={() => copyColor(c.hex)}
             aria-label={`复制颜色 ${c.hex}`}
             title={`点击复制 ${c.hex}`}
-            style={{
-              position: 'relative', border: 'none', borderRadius: 12, cursor: 'pointer',
-              background: c.hex, aspectRatio: '1', display: 'flex',
-              alignItems: 'flex-end', justifyContent: 'center', padding: 0,
-              overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              transition: 'transform 0.2s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+            className="palette-swatch"
+            style={{ background: c.hex }}
           >
-            <span style={{
-              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.02em',
-              textShadow: '0 1px 3px rgba(0,0,0,0.45)', background: 'rgba(0,0,0,0.06)',
-              opacity: 0, transition: 'opacity 0.2s',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; }}
-            >
+            <span className="palette-swatch-label">
               {copied === c.hex ? <Check size={16} /> : c.hex}
             </span>
           </button>
         ))}
       </div>
-      <p style={{ marginTop: '0.6rem', fontSize: '0.68rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+      <p className="palette-caption">
         {copied ? `已复制 ${copied}` : '点击色块复制颜色 · 支持任意主题取色'}
       </p>
     </div>

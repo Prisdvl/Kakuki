@@ -35,6 +35,12 @@
 @property --muted           { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0.55); }
 @property --star-color      { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.55); }
 @property --star-color-dim  { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0.22); }
+@property --success         { syntax: '<color>'; inherits: true; initial-value: #22c55e; }
+@property --warning         { syntax: '<color>'; inherits: true; initial-value: #a16207; }
+@property --error           { syntax: '<color>'; inherits: true; initial-value: #a33a3a; }
+@property --info            { syntax: '<color>'; inherits: true; initial-value: #3b82f6; }
+@property --danger          { syntax: '<color>'; inherits: true; initial-value: #a33a3a; }
+@property --white           { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
 
 :root {
   /* ============ 颜色基线 ============ */
@@ -47,6 +53,12 @@
   --text-tertiary: #8e8e93;
   --border: rgba(0, 0, 0, 0.1);
   --on-accent: #ffffff;
+  --white: #ffffff;
+
+  /* 运行时会由 themeStore 覆盖，这里只是首帧的无 JS 兜底档 */
+  --muted: rgba(0, 0, 0, 0.55);
+  --dark-muted: #6b7280;
+  --light-muted: #d1d5db;
 
   /* 强调色（统一基线，运行时主题切换覆盖） */
   --accent: #007aff;
@@ -56,11 +68,51 @@
   --accent-dark: #0051d5;
   --accent-light: #5aa8ff;
 
-  /* 语义色（错误/警示采用暗调，与水墨主题协调） */
+  /* 语义色（错误/警示采用暗调，与水墨主题协调）
+     --danger 是 --error 的别名：settings.css / checkin.css 早期用的是 --danger，
+     未定义时只能靠 var() 内的硬编码 fallback 兜底，主题色一变就对不上。 */
   --success: #22c55e;     --success-soft: rgba(34, 197, 94, 0.15);
   --warning: #a16207;     --warning-soft: rgba(161, 98, 7, 0.15);
   --error: #a33a3a;       --error-soft: rgba(163, 58, 58, 0.15);
+  --danger: #a33a3a;      --danger-soft: rgba(163, 58, 58, 0.15);
   --info: #3b82f6;        --info-soft: rgba(59, 130, 246, 0.15);
+
+  /* 热力图色阶（打卡日历）：空 → 满同色系递进。运行时由 themeStore 重算 */
+  --heat-empty: #e5e5ea;
+  --heat-level-1: #c7c7cc;
+  --heat-level-2: #8e8e93;
+  --heat-level-3: #636366;
+  --heat-level-4: #007aff;
+
+  /* LeetCode 三档难度：仪表盘 / 关于页共用，禁止再散写 hex 字面量 */
+  --leetcode-easy: #00b8a3;
+  --leetcode-medium: #ffb700;
+  --leetcode-hard: #ff375f;
+  /* 字面量镜像：antd Progress(type="line") 把颜色写进 SVG stroke 属性，
+     那里 var() 不会被解析，只能传字面值；改色时两处同步。 */
+  --leetcode-easy-hex: #00b8a3;
+  --leetcode-medium-hex: #ffb700;
+  --leetcode-hard-hex: #ff375f;
+
+  /* 分层实底（固定条 / 弹层内嵌块）。--bg-tertiary 过淡，需要一层更实的面 */
+  --surface-1: rgba(255, 255, 255, 0.85);
+  --surface-2: rgba(255, 255, 255, 0.65);
+  --surface-3: rgba(255, 255, 255, 0.45);
+
+  /* 星光视差背景（运行时由 themeStore 重算，这里只作首帧兜底） */
+  --star-color: rgba(255, 255, 255, 0.55);
+  --star-color-dim: rgba(255, 255, 255, 0.22);
+  --starfield-opacity: 0.45;
+
+  /* ============ 语义玻璃层级（Elevation 档位，全站只允许用这三档）============
+   * 扁平化的根因是"每处玻璃自己调 blur / 透明度"。三档收敛后：
+   *   --glass-flat   内嵌块 / 输入框 / 分段控件（几乎不浮起）
+   *   --glass-raise  卡片 / 面板（默认档，等价 .glass / .glass-card）
+   *   --glass-float  导航栏 / 下拉 / 抽屉 / 模态（最强分离）
+   * ============================================================ */
+  --glass-flat: var(--bg-tertiary);
+  --glass-raise: var(--card-bg);
+  --glass-float: var(--glass-bg-strong);
 
   /* ============ 磨砂液态玻璃（Frosted Liquid Glass）============
    * 关键参数一览：
@@ -146,12 +198,71 @@
   --hero-overlay: rgba(245, 245, 247, 0.6);
 
   /* ============ 圆角档位 ============ */
-  --radius-sm: 8px;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-2xl: 28px;
   --radius-full: 9999px;
+
+  /* ============ 排版刻度（Type Scale）============
+   * 收敛前全站散写 30 档 font-size，其中 0.62/0.65/0.66/0.68/0.7/0.72/0.75rem
+   * 彼此肉眼不可分。现统一为 8 档，组件只允许从这 8 档取值。
+   *   --fs-2xs  10px 极小徽章 / 计数
+   *   --fs-xs   11px 元信息 / 状态栏
+   *   --fs-sm   12px 次要说明 / 标签
+   *   --fs-base 13px 卡片正文 / 列表行
+   *   --fs-md   14px 正文默认
+   *   --fs-lg   16px 卡片标题
+   *   --fs-xl   20px 区块标题
+   *   --fs-2xl  24px 页面标题
+   * ============================================================ */
+  --fs-2xs: 0.625rem;
+  --fs-xs: 0.6875rem;
+  --fs-sm: 0.75rem;
+  --fs-base: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem;
+  --fs-3xl: 1.875rem;
+
+  /* 字重刻度 */
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* 行高刻度 */
+  --lh-tight: 1.2;    /* 数字 / 大标题 */
+  --lh-snug: 1.4;     /* 标题 / 列表行 */
+  --lh-base: 1.6;     /* 正文 */
+  --lh-loose: 1.8;    /* 长文 markdown */
+
+  /* 字距 */
+  --ls-tight: -0.01em;   /* 大号数字 / 大标题 */
+  --ls-wide: 0.08em;     /* 全大写小标签 */
+  --ls-wider: 0.18em;    /* 状态栏 / 装饰性标签 */
+
+  /* 等宽字体栈（时钟 / 代码 / hex 输入） */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ============ 组件尺寸档位 ============
+   * 控件高度统一：32 / 40 / 48，与 antd controlHeight 系列对齐。
+   * ============================================================ */
+  --control-h-sm: 32px;
+  --control-h: 40px;
+  --control-h-lg: 48px;
+  --control-px-sm: 0.75rem;
+  --control-px: 1rem;
+  --control-px-lg: 1.5rem;
+
+  /* ============ 控件内间距（沿用 antd 5 基线）============ */
+  --control-py-sm: 0.25rem;
+  --control-py: 0.375rem;
+  --control-py-lg: 0.5rem;
 
   /* ============ 阴影层级（Elevation）============
    * z0: 平面
@@ -240,6 +351,10 @@
   --text-secondary: #a1a1a6;
   --text-tertiary: #6e6e73;
   --border: rgba(255, 255, 255, 0.08);
+  --white: #ffffff;
+  --muted: rgba(255, 255, 255, 0.55);
+  --dark-muted: #48484a;
+  --light-muted: #8e8e93;
 
   --accent: #0a84ff;
   --accent-soft: rgba(10, 132, 255, 0.12);
@@ -251,7 +366,30 @@
   --success: #30d158; --success-soft: rgba(48, 209, 88, 0.15);
   --warning: #ff9f0a; --warning-soft: rgba(255, 159, 10, 0.15);
   --error: #ff453a;   --error-soft: rgba(255, 69, 58, 0.15);
+  --danger: #ff453a;  --danger-soft: rgba(255, 69, 58, 0.15);
   --info: #0a84ff;    --info-soft: rgba(10, 132, 255, 0.15);
+
+  /* 热力图色阶（暗主题） */
+  --heat-empty: rgba(255, 255, 255, 0.15);
+  --heat-level-1: rgba(255, 255, 255, 0.3);
+  --heat-level-2: rgba(10, 132, 255, 0.5);
+  --heat-level-3: rgba(10, 132, 255, 0.75);
+  --heat-level-4: #0a84ff;
+
+  /* LeetCode 三档难度（暗主题） */
+  --leetcode-easy: #30d158;
+  --leetcode-medium: #ff9f0a;
+  --leetcode-hard: #ff453a;
+
+  /* 分层实底（暗主题） */
+  --surface-1: rgba(28, 28, 30, 0.85);
+  --surface-2: rgba(28, 28, 30, 0.65);
+  --surface-3: rgba(28, 28, 30, 0.45);
+
+  /* 星光视差背景（暗主题兜底） */
+  --star-color: rgba(255, 255, 255, 0.55);
+  --star-color-dim: rgba(255, 255, 255, 0.22);
+  --starfield-opacity: 0.8;
 
   --glass-bg: rgba(28, 28, 30, 0.32);
   --glass-bg-strong: rgba(28, 28, 30, 0.48);

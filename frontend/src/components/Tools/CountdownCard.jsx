@@ -49,22 +49,16 @@ export default function CountdownCard() {
   const label = isPast ? '已过去' : (days === 0 ? '就是今天' : '倒计时');
 
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <CalendarDays size={18} style={{ color: 'var(--accent)' }} /> 纪念日
+    <div className="ui-card ui-pad ui-flex-col ui-h-full">
+      <div className="ui-card-head countdown-head">
+        <h3 className="ui-card-title">
+          <CalendarDays size={18} /> 纪念日
         </h3>
         {event && !editing && (
           <button
             onClick={() => { setTitle(event.title); setDate(event.date); setEditing(true); }}
             aria-label="编辑纪念日"
-            style={{
-              border: 'none', background: 'transparent', cursor: 'pointer',
-              color: 'var(--text-tertiary)', display: 'flex', padding: '0.2rem',
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
+            className="ui-icon-action"
           >
             <Pencil size={14} />
           </button>
@@ -72,19 +66,13 @@ export default function CountdownCard() {
       </div>
 
       {editing ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
+        <div className="ui-flex ui-flex-col ui-gap-2 countdown-edit">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="事件名称，如：我的生日"
             aria-label="事件名称"
-            style={{
-              padding: '0.55rem 0.75rem', borderRadius: 10,
-              background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-              color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none',
-            }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+            className="ui-input"
           />
           <input
             type="date"
@@ -92,43 +80,32 @@ export default function CountdownCard() {
             min={todayStr()}
             onChange={(e) => setDate(e.target.value)}
             aria-label="事件日期"
-            style={{
-              padding: '0.55rem 0.75rem', borderRadius: 10,
-              background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-              color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none',
-              colorScheme: 'inherit',
-            }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+            className="ui-input"
+            style={{ colorScheme: 'inherit' }}
           />
-          <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
-            <button onClick={save} className="glass-button-solid" style={{ padding: '0.5rem 1rem', borderRadius: 10, fontSize: '0.8rem', flex: 1 }}>
+          <div className="ui-flex ui-gap-2">
+            <button onClick={save} className="ui-btn ui-btn-primary countdown-save" style={{ flex: 1 }}>
               <Save size={14} /> 保存
             </button>
             {event && (
-              <button onClick={cancel} className="glass-button" style={{ padding: '0.5rem 1rem', borderRadius: 10, fontSize: '0.8rem' }}>
+              <button onClick={cancel} className="ui-btn">
                 <X size={14} /> 取消
               </button>
             )}
           </div>
         </div>
       ) : event ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{event.title}</span>
-          <span className="countdown-number" style={{
-            fontSize: '2.6rem', fontWeight: 800, lineHeight: 1.1,
-            color: isPast ? 'var(--text-tertiary)' : 'var(--accent)',
-            fontVariantNumeric: 'tabular-nums',
-            textShadow: isPast ? 'none' : '0 0 24px var(--accent-glow)',
-          }}>
+        <div className="ui-flex ui-flex-col ui-items-center ui-justify-center ui-gap-1 countdown-display ui-flex-1">
+          <span className="countdown-title">{event.title}</span>
+          <span className={`countdown-number ${isPast ? 'countdown-number-past' : ''}`}>
             {Math.abs(days)}
           </span>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{label} · {event.date?.slice(0, 10)}</span>
+          <span className="countdown-caption">{label} · {event.date?.slice(0, 10)}</span>
         </div>
       ) : (
-        <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.8rem', padding: '1rem 0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          设置一个值得期待的日子吧
-        </p>
+        <div className="ui-empty ui-empty-inline ui-flex-1">
+          <span className="ui-empty-text">设置一个值得期待的日子吧</span>
+        </div>
       )}
     </div>
   );

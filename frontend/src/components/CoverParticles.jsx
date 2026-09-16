@@ -21,43 +21,10 @@ const PARTICLE_CAP = 4096;       // 桌面端粒子上限（比原来更密集�
  *  防止反复进出音乐页时 rAF 循环残留累积把页面拖死。 */
 let generation = 0;
 
-const STYLES = `
-.cover-particles {
-  position: relative;
-  width: 100%;
-}
-.cp-canvas {
-  width: 100%;
-  height: 380px;
-  display: block;
-  border-radius: 16px;
-  cursor: grab;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.cp-canvas.dragging { cursor: grabbing; }
-.cp-status {
-  font-size: 0.7rem;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  opacity: 0.7;
-  user-select: none;
-  margin-top: 0.5rem;
-  text-align: center;
-}
-@media (max-width: 640px) {
-  .cp-canvas { height: 300px; }
-}
-`;
-
-if (typeof document !== 'undefined' && !document.getElementById('cover-particles-styles')) {
-  const tag = document.createElement('style');
-  tag.id = 'cover-particles-styles';
-  tag.textContent = STYLES;
-  document.head.appendChild(tag);
-}
+/* ============================================================
+ * 相关样式已迁入 styles/globals.css（.cover-particles / .cp-canvas /
+ * .cp-status），不再运行时注入 <style>。
+ * ============================================================ */
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 

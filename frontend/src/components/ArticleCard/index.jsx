@@ -112,27 +112,6 @@ export default function ArticleCard({ article }) {
 }
 
 /* ============================================================
- * 配套的 CSS（直接放在组件文件下，避免散落，可被项目内 CSS 引入）
+ * 配套样式已迁入 styles/globals.css（.article-title-hover /
+ * .stagger-item），不再运行时注入 <style>。
  * ============================================================ */
-const styles = `
-.article-title-hover:hover {
-  color: var(--accent);
-}
-
-.stagger-item {
-  opacity: 0;
-  animation: fadeUp var(--motion-slow) var(--ease-decelerate) both;
-  animation-delay: calc(var(--i, 0) * 80ms);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stagger-item { animation: none !important; opacity: 1 !important; transform: none !important; }
-}
-`;
-
-if (typeof document !== "undefined" && !document.getElementById("article-card-styles")) {
-  const tag = document.createElement("style");
-  tag.id = "article-card-styles";
-  tag.textContent = styles;
-  document.head.appendChild(tag);
-}

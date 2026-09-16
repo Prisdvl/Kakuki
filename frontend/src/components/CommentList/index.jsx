@@ -66,7 +66,7 @@ export default function CommentList({ articleId }) {
           />
           <Button
             type="primary"
-            className="mt-2 !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] shadow-[var(--shadow-accent)]"
+            className="mt-2 !bg-[var(--accent)] hover:!bg-[var(--accent-dark)] shadow-[var(--shadow-accent)]"
             loading={loading}
             onClick={handleSubmit}
           >

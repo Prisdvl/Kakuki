@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -91,11 +91,9 @@ export function ProfileCard({ stats }) {
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">
         {avatarLevel >= 2 ? (
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1.4rem' }}>P</div>
+          <div className="profile-avatar-fallback">P</div>
         ) : (
-          <img src={avatarSources[avatarLevel]} alt="Prisdvl" style={{
-            width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
-          }} onError={() => setAvatarLevel((l) => l + 1)} />
+          <img src={avatarSources[avatarLevel]} alt="Prisdvl" className="profile-avatar-img" onError={() => setAvatarLevel((l) => l + 1)} />
         )}
       </div>
       <div className="profile-info">
@@ -176,35 +174,28 @@ export function QuoteCard() {
   const q = QUOTES[index] || QUOTES[0];
 
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem 1.25rem 1rem', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Quote size={18} style={{ color: 'var(--accent)' }} /> 拾句
+    <div className="ui-card ui-pad">
+      <div className="ui-card-head">
+        <h3 className="ui-card-title">
+          <Quote size={18} /> 拾句
         </h3>
-        <button
-          onClick={shuffle}
-          aria-label="换一句"
-          title="换一句"
-          className="quote-shuffle"
-          style={{
-            border: '1px solid var(--border)', background: 'var(--glass-bg-strong)', color: 'var(--text-secondary)',
-            width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'rotate(180deg)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'rotate(0deg)'; }}
-        >
-          <Shuffle size={14} />
-        </button>
+        <div className="ui-card-actions">
+          <button
+            onClick={shuffle}
+            aria-label="换一句"
+            title="换一句"
+            className="ui-icon-action quote-shuffle"
+          >
+            <Shuffle size={14} />
+          </button>
+        </div>
       </div>
       <div className={`quote-fade ${visible ? 'quote-show' : 'quote-hide'}`} style={{ flex: 1 }}>
-        <p style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--text-primary)' }}>“{q.text}”</p>
+        <p className="quote-text">“{q.text}”</p>
       </div>
-      <div style={{ marginTop: '0.5rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+      <div className="quote-author">
         —— {q.author}
-        <span style={{ marginLeft: '0.35rem', opacity: 0.75 }}>
-          《{q.work}》
-        </span>
+        <span className="quote-work">《{q.work}》</span>
       </div>
     </div>
   );
@@ -216,67 +207,61 @@ export function ProjectsCard() {
   const projects = useMemo(() => allProjects.slice(0, 3), [allProjects]);
 
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Rocket size={18} style={{ color: 'var(--accent)' }} /> 项目精选
+    <div className="ui-card ui-pad">
+      <div className="ui-card-head">
+        <h3 className="ui-card-title">
+          <Rocket size={18} /> 项目精选
         </h3>
-        <Link to="/projects" style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-          更多 <ExternalLink size={12} />
-        </Link>
+        <div className="ui-card-actions">
+          <Link to="/projects" className="ui-card-sub ui-card-link">
+            更多 <ExternalLink size={12} />
+          </Link>
+        </div>
       </div>
       {loading && projects.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '1.25rem 0', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>加载项目...</div>
+        <div className="ui-empty ui-empty-inline">
+          <span className="ui-empty-text">加载项目中…</span>
+        </div>
       ) : projects.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', padding: '1rem 0', fontSize: '0.85rem' }}>还没有项目内容</p>
+        <div className="ui-empty ui-empty-inline">
+          <span className="ui-empty-text">还没有项目内容</span>
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        <div className="ui-card-list">
           {projects.map((p) => (
-            <div key={p.id} className="project-mini" style={{
-              display: 'flex', flexDirection: 'column', gap: '0.35rem', padding: '0.75rem 0.85rem',
-              borderRadius: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-              transition: 'all 0.2s', textDecoration: 'none', color: 'inherit',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                <a href={p.repo_url || p.url || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
+            <div key={p.id} className="project-mini ui-card-row ui-card-row-stack">
+              <div className="project-mini-head">
+                <a
+                  href={p.repo_url || p.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="project-mini-name"
+                >
                   {p.language && (
-                    <i style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: LANG_COLORS[p.language] || '#8b949e' }} />
+                    <i className="project-mini-lang" style={{ background: LANG_COLORS[p.language] || '#8b949e' }} />
                   )}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                  <span className="project-mini-name-text">{p.name}</span>
                 </a>
-                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexShrink: 0 }}>
+                <div className="project-mini-links">
                   {p.repo_url && (
-                    <a href={p.repo_url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 仓库`} title="GitHub 仓库"
-                      style={{ color: 'var(--text-tertiary)', display: 'flex', transition: 'color 0.2s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                    <a href={p.repo_url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 仓库`} title="GitHub 仓库" className="ui-icon-action project-mini-link">
                       <Code2 size={14} />
                     </a>
                   )}
                   {p.url && (
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 在线访问`} title="在线访问"
-                      style={{ color: 'var(--text-tertiary)', display: 'flex', transition: 'color 0.2s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                    <a href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} 在线访问`} title="在线访问" className="ui-icon-action project-mini-link">
                       <ExternalLink size={14} />
                     </a>
                   )}
                 </div>
               </div>
-              {p.description && (
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {p.description}
-                </p>
-              )}
+              {p.description && <p className="project-mini-desc">{p.description}</p>}
               {p.tech_list?.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                <div className="project-mini-tech">
                   {p.tech_list.slice(0, 4).map((t) => (
                     // 字不用 var(--accent)：accent-soft 叠在玻璃卡上后底色偏暗，
                     // accent 字只剩 3~4:1；text-primary 在同一底上 ≥ 5:1
-                    <span key={t} style={{ fontSize: '0.65rem', padding: '0.1rem 0.5rem', borderRadius: 8, background: 'var(--accent-soft)', color: 'var(--text-primary)' }}>{t}</span>
+                    <span key={t} className="ui-badge">{t}</span>
                   ))}
                 </div>
               )}
@@ -290,23 +275,27 @@ export function ProjectsCard() {
 
 export function CategoriesCard({ categories }) {
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <FolderTree size={18} style={{ color: 'var(--accent)' }} /> 分类速览
+    <div className="ui-card ui-pad">
+      <div className="ui-card-head">
+        <h3 className="ui-card-title">
+          <FolderTree size={18} /> 分类速览
         </h3>
-        <Link to="/category" style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-          全部 <ArrowRight size={12} />
-        </Link>
+        <div className="ui-card-actions">
+          <Link to="/archive" className="ui-card-sub ui-card-link">
+            全部 <ArrowRight size={12} />
+          </Link>
+        </div>
       </div>
-      <div className="category-chip-container" style={{ marginBottom: 0, padding: 0, background: 'transparent', border: 'none', boxShadow: 'none' }}>
+      <div className="category-chip-container category-chip-container-bare">
         {categories.length === 0 ? (
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', padding: '0.5rem 0' }}>暂无分类</p>
+          <div className="ui-empty ui-empty-inline">
+            <span className="ui-empty-text">暂无分类</span>
+          </div>
         ) : (
           categories.map((c) => (
-            <Link key={c.id} to={`/category/${c.id}`} className="category-chip">
+            <Link key={c.id} to={`/category/${c.id}`} className="ui-chip ui-chip-plain category-chip">
               {c.name}
-              <span className="category-chip-count">{c.article_count ?? 0}</span>
+              <span className="ui-chip-count category-chip-count">{c.article_count ?? 0}</span>
             </Link>
           ))
         )}
@@ -336,44 +325,40 @@ export function TalksCard() {
   };
 
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.25rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <MessageSquare size={18} style={{ color: 'var(--accent)' }} /> 最新杂谈
+    <div className="ui-card ui-pad">
+      <div className="ui-card-head">
+        <h3 className="ui-card-title">
+          <MessageSquare size={18} /> 最新杂谈
         </h3>
-        <Link to="/talks" style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-          更多 <ExternalLink size={12} />
-        </Link>
+        <div className="ui-card-actions">
+          <Link to="/talks" className="ui-card-sub ui-card-link">
+            更多 <ExternalLink size={12} />
+          </Link>
+        </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div className="ui-card-list">
         {talks.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', padding: '1.5rem 0', fontSize: '0.85rem' }}>
-            还没有杂谈内容
-          </p>
+          <div className="ui-empty ui-empty-inline">
+            <span className="ui-empty-text">还没有杂谈内容</span>
+          </div>
         ) : (
           talks.map((item) => (
-            <div key={item.id} style={{ padding: '0.65rem 0.8rem', borderRadius: 10, background: 'var(--bg-tertiary)', border: '1px solid var(--border)', display: 'block', transition: 'all 0.2s' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-soft)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
-            >
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.25rem', lineHeight: 1.4 }}>{item.content}</p>
-              <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-tertiary)', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}><Calendar size={11} /> {item.created_at?.slice(5, 10)}</span>
+            <div key={item.id} className="ui-card-row ui-card-row-stack talk-mini">
+              <p className="talk-mini-content">{item.content}</p>
+              <div className="talk-mini-meta">
+                <span className="ui-card-sub talk-mini-date">
+                  <Calendar size={11} /> {item.created_at?.slice(5, 10)}
+                </span>
                 <button
                   onClick={() => handleLike(item)}
                   aria-pressed={!!item.liked}
                   aria-label="点赞"
-                  className={`talk-like-btn ${item.liked ? 'liked' : ''}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.2rem', border: 'none', background: 'transparent',
-                    color: item.liked ? 'var(--accent)' : 'var(--text-tertiary)', cursor: 'pointer',
-                    padding: '0.1rem 0.2rem', fontSize: '0.72rem', transition: 'all 0.2s', fontFamily: 'inherit',
-                  }}
+                  className={`ui-icon-action talk-like-mini ${item.liked ? 'liked' : ''}`}
                 >
                   <Heart size={11} fill={item.liked ? 'currentColor' : 'none'} />
                   {item.like_count || 0}
                 </button>
-                <Link to="/talks" style={{ color: 'var(--text-tertiary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.15rem', marginLeft: 'auto' }}>
+                <Link to="/talks" className="ui-card-sub ui-card-link talk-mini-more">
                   去互动 <ArrowRight size={11} />
                 </Link>
               </div>
@@ -469,20 +454,20 @@ export default function HomePage() {
   };
 
   return (
-    <section style={{ padding: '1.5rem 0 1rem' }}>
-      <div className="app-container" style={{ maxWidth: 1200 }}>
+    <section className="home-section">
+      <div className="app-container home-container">
         {/* Layout Toolbar */}
         <div className="home-layout-toolbar">
           {!editing ? (
-            <button className="glass-button" ref={magneticRef} onClick={enterEdit} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+            <button className="ui-btn ui-btn-sm" ref={magneticRef} onClick={enterEdit}>
               <LayoutGrid size={15} /> 自定义布局
             </button>
           ) : (
             <>
-              <button className="glass-button-solid" ref={magneticRefSolid} onClick={finishEdit} style={{ padding: '0.5rem 1.1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+              <button className="ui-btn ui-btn-primary ui-btn-sm" ref={magneticRefSolid} onClick={finishEdit}>
                 <Check size={15} /> 完成编辑
               </button>
-              <button className="glass-button" ref={magneticRef} onClick={resetLayout} style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', borderRadius: 12 }}>
+              <button className="ui-btn ui-btn-sm" ref={magneticRef} onClick={resetLayout}>
                 <RotateCcw size={15} /> 恢复默认
               </button>
             </>
@@ -587,9 +572,12 @@ export default function HomePage() {
               ))}
             </>
           ) : articles.length === 0 ? (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-tertiary)' }}>
-              <BookOpen size={40} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
-              <p>暂无文章，登录后去 <Link to="/admin/articles/new" style={{ color: 'var(--accent)' }}>后台创建</Link> 第一篇吧</p>
+            <div className="ui-empty hero-articles-empty">
+              <span className="ui-empty-icon"><BookOpen size={40} /></span>
+              <span className="ui-empty-title">暂无文章</span>
+              <span className="ui-empty-text">
+                登录后去 <Link to="/admin/articles/new" className="ui-card-link">后台创建</Link> 第一篇吧
+              </span>
             </div>
           ) : (
             articles.slice(0, 3).map((article, idx) => {

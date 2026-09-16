@@ -71,38 +71,36 @@ export default function Dashboard() {
   const lcBar = (solved, total, color) => {
     const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
     return (
-      <div style={{ marginBottom: '0.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.8rem' }}>
+      <div className="admin-lc-bar">
+        <div className="admin-lc-bar-row">
           <span style={{ color: 'var(--text-secondary)' }}>{solved} / {total}</span>
           <span style={{ color, fontWeight: 600 }}>{pct}%</span>
         </div>
+        {/* Progress(type="line") 把 strokeColor 写进 SVG stroke 属性，var() 在那里不生效，
+            必须给字面色值；圆环型走 CSS background，才能用 var(--leetcode-*)。 */}
         <Progress percent={pct} showInfo={false} strokeColor={color} size="small" />
       </div>
     );
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">控制台</h2>
+    <div className="admin-page">
+      <h2 className="admin-page-title">控制台</h2>
 
       {/* 统计卡片网格 */}
       <Row gutter={[16, 16]}>
         {items.map((it) => (
           <Col xs={12} lg={6} xl={4} key={it.title}>
-            <Card className="hover:shadow-lg transition-shadow" bodyStyle={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: 12,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: `${it.color}15`, color: it.color, fontSize: '1.1rem',
-                }}>
+            <Card className="hover:shadow-lg transition-shadow admin-stat-card" bodyStyle={{ padding: '1.25rem' }}>
+              <div className="flex items-center" style={{ gap: '0.75rem' }}>
+                <div className="admin-stat-icon" style={{ color: it.color, background: `${it.color}15` }}>
                   {it.icon}
                 </div>
                 <div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  <div className="admin-stat-value" style={{ color: 'var(--text-primary)' }}>
                     {it.value ?? 0}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{it.title}</div>
+                  <div className="admin-stat-label">{it.title}</div>
                 </div>
               </div>
             </Card>
@@ -135,47 +133,49 @@ export default function Dashboard() {
                     type="circle"
                     percent={lcTotalAll > 0 ? Math.round((lcSolved / lcTotalAll) * 100) : 0}
                     size={120}
-                    strokeColor={{ '0%': '#ffb700', '100%': '#00b8a3' }}
+                    strokeColor={{ '0%': 'var(--leetcode-medium)', '100%': 'var(--leetcode-easy)' }}
                   />
                   <div style={{ position: 'absolute', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)' }}>{lcSolved}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>已解答</div>
+                    <div className="admin-lc-solved">{lcSolved}</div>
+                    <div className="admin-lc-solved-label">已解答</div>
                   </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>共 {lcTotalAll} 题</div>
+                <div className="admin-lc-total">共 {lcTotalAll} 题</div>
               </div>
             </Col>
 
             {/* 难度分布 */}
             <Col xs={24} md={10}>
-              <h4 style={{ marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>难度分布</h4>
-              {lcBar(lcEasy, lcTotalEasy, '#00b8a3')}
-              {lcBar(lcMedium, lcTotalMedium, '#ffb700')}
-              {lcBar(lcHard, lcTotalHard, '#ff375f')}
+              <h4 className="admin-lc-subtitle">难度分布</h4>
+              {/* Progress(type="line") 的 strokeColor 落到 SVG stroke 属性，不能写 var()，
+                  这里的字面色值对应 --leetcode-easy/medium/hard 的亮色主题基线 */}
+              {lcBar(lcEasy, lcTotalEasy, 'var(--leetcode-easy-hex)')}
+              {lcBar(lcMedium, lcTotalMedium, 'var(--leetcode-medium-hex)')}
+              {lcBar(lcHard, lcTotalHard, 'var(--leetcode-hard-hex)')}
             </Col>
 
             {/* 关键指标 */}
             <Col xs={24} md={6}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <TrophyOutlined style={{ color: 'var(--accent)', fontSize: '1.1rem' }} />
+              <div className="admin-lc-metrics">
+                <div className="admin-lc-metric">
+                  <TrophyOutlined className="admin-lc-metric-icon" style={{ color: 'var(--accent)' }} />
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>最长连续</div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{lcMaxStreak} 天</div>
+                    <div className="admin-lc-metric-label">最长连续</div>
+                    <div className="admin-lc-metric-value">{lcMaxStreak} 天</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FireOutlined style={{ color: 'var(--warning)', fontSize: '1.1rem' }} />
+                <div className="admin-lc-metric">
+                  <FireOutlined className="admin-lc-metric-icon" style={{ color: 'var(--warning)' }} />
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>打卡天数</div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{lcActiveDays} 天</div>
+                    <div className="admin-lc-metric-label">打卡天数</div>
+                    <div className="admin-lc-metric-value">{lcActiveDays} 天</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircleOutlined style={{ color: 'var(--success)', fontSize: '1.1rem' }} />
+                <div className="admin-lc-metric">
+                  <CheckCircleOutlined className="admin-lc-metric-icon" style={{ color: 'var(--success)' }} />
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>总通过</div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{lcSolved} 题</div>
+                    <div className="admin-lc-metric-label">总通过</div>
+                    <div className="admin-lc-metric-value">{lcSolved} 题</div>
                   </div>
                 </div>
               </div>
@@ -191,15 +191,15 @@ export default function Dashboard() {
         <Col xs={24} lg={12}>
           <Card title="最近发布" extra={<Link to="/admin/articles">管理文章</Link>}>
             {recent.length === 0 ? (
-              <p style={{ color: 'var(--text-tertiary)', margin: 0 }}>还没有文章，去发布第一篇吧</p>
+              <p className="admin-list-empty">还没有文章，去发布第一篇吧</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <ul className="admin-list">
                 {recent.map((a) => (
-                  <li key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '0.4rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <Link to={`/article/${a.id}`} style={{ color: 'var(--text-primary)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <li key={a.id} className="admin-list-item">
+                    <Link to={`/article/${a.id}`} className="admin-list-link">
                       {a.title}
                     </Link>
-                    <span style={{ flexShrink: 0, fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                    <span className="admin-list-meta">
                       {a.created_at?.slice(0, 10)}
                     </span>
                   </li>
@@ -211,24 +211,18 @@ export default function Dashboard() {
         <Col xs={24} lg={12}>
           <Card title="热门文章（按阅读量）" extra={<Tag color="orange"><FireOutlined /> Top 5</Tag>}>
             {hot.length === 0 ? (
-              <p style={{ color: 'var(--text-tertiary)', margin: 0 }}>暂无数据</p>
+              <p className="admin-list-empty">暂无数据</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <ul className="admin-list">
                 {hot.map((a, i) => (
-                  <li key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '0.4rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
-                      <span style={{
-                        flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '0.72rem', fontWeight: 700,
-                        background: i < 3 ? 'var(--accent)' : 'var(--bg-tertiary)',
-                        color: i < 3 ? '#fff' : 'var(--text-tertiary)',
-                      }}>{i + 1}</span>
-                      <Link to={`/article/${a.id}`} style={{ color: 'var(--text-primary)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <li key={a.id} className="admin-list-item">
+                    <div className="admin-list-lead">
+                      <span className={`admin-rank ${i < 3 ? 'is-top' : ''}`}>{i + 1}</span>
+                      <Link to={`/article/${a.id}`} className="admin-list-link">
                         {a.title}
                       </Link>
                     </div>
-                    <span style={{ flexShrink: 0, fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                    <span className="admin-list-meta">
                       <EyeOutlined /> {a.views}
                     </span>
                   </li>

@@ -100,102 +100,117 @@ function ThemeWrapper({ children }) {
   );
 }
 
-export default function App() {
-  const { isDark, themeColor, colorPalette } = useThemeStore(
-    (state) => ({ isDark: state.isDark, themeColor: state.themeColor, colorPalette: state.colorPalette }),
-    (a, b) => a.isDark === b.isDark && a.themeColor === b.themeColor && a.colorPalette === b.colorPalette
-  );
-  const accent = themeColor || '#7c3aed';
-  const accentSoft = accent + '1f';
-  const accentGlow = accent + '40';
-  const accentSecondary = colorPalette?.LightVibrant || '#ec4899';
-  const bgContainer = isDark
-    ? (colorPalette?.DarkMuted || '#1e1b4b')
-    : (colorPalette?.LightMuted || '#ffffff');
-  const bgElevated = isDark
-    ? (colorPalette?.DarkVibrant || '#262260')
-    : '#ffffff';
-  const textPrimary = isDark
-    ? (colorPalette?.LightVibrant || '#ede9fe')
-    : (colorPalette?.DarkVibrant || '#1e1b4b');
-  const textSecondary = isDark
-    ? (colorPalette?.Vibrant || '#c4b5fd')
-    : (colorPalette?.Muted || '#4c1d95');
+// ===== antd 主题与 CSS 令牌对齐 =====
+// themeStore.applyThemeVars() 把对比度标定后的颜色写到 :root 的内联样式上，
+// 但那是 CSS 变量，antd 的 ConfigProvider 读不到 —— 它只能吃字面值。
+// 若这里直接用 colorPalette 的原始值，会出现两套色：CSS 用标定后的 accent，
+// antd 用未标定的 Vibrant，同屏的 antd 按钮与自绘玻璃按钮深浅不一。
+// 因此这里统一走同一套 CSS 变量引用（antd 5 的 token 支持 var() 字符串），
+// 由 themeStore 保证变量已存在；var() 无法求值时 antd 会回落到算法色。
+const CSS_VARS = {
+  accent: 'var(--accent)',
+  accentSoft: 'var(--accent-soft)',
+  onAccent: 'var(--on-accent)',
+  bgContainer: 'var(--card-bg)',
+  bgElevated: 'var(--glass-bg-strong)',
+  textPrimary: 'var(--text-primary)',
+  textSecondary: 'var(--text-secondary)',
+  textTertiary: 'var(--text-tertiary)',
+  border: 'var(--border)',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  error: 'var(--error)',
+  info: 'var(--info)',
+};
 
-  // ⏱️ 主题切换使用统一缓动：var(--motion-base) / var(--ease-standard)
-  // 避免散写 cubic-bezier，所有过渡由 CSS 变量统一调度
+// 圆角 / 高度 / 时长与 design-tokens.css 的档位一一对应，禁止在这里另立数值。
+// （antd 的 borderRadius=14 对应 --radius-md 12px 一档，取 14 会让按钮比自绘 .ui-btn 更圆）
+const RADIUS_MD = 12;
+const RADIUS_SM = 10;
+const RADIUS_LG = 20;
+const CONTROL_H = 40;
+const CONTROL_H_SM = 32;
+const CONTROL_H_LG = 48;
+
+export default function App() {
+  const { isDark } = useThemeStore(
+    (state) => ({ isDark: state.isDark }),
+    (a, b) => a.isDark === b.isDark
+  );
+
   return (
     <ConfigProvider
       theme={{
         algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: {
-          colorPrimary: accent,
-          colorInfo: accent,
-          colorSuccess: '#22c55e',
-          colorWarning: '#f59e0b',
-          colorError: isDark ? '#c98a8a' : '#a33a3a',
-          // 圆角提升（含输入框）：12/8/16 → 14/10/20
-          borderRadius: 14,
-          borderRadiusSM: 10,
-          borderRadiusLG: 20,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-          colorBgContainer: bgContainer,
-          colorBgElevated: bgElevated,
-          colorText: textPrimary,
-          colorTextSecondary: textSecondary,
-          colorBorder: isDark ? accentGlow.replace('40', '26') : accentGlow.replace('40', '1f'),
-          controlHeight: 40,
-          controlHeightSM: 32,
-          controlHeightLG: 48,
+          colorPrimary: CSS_VARS.accent,
+          colorInfo: CSS_VARS.info,
+          colorSuccess: CSS_VARS.success,
+          colorWarning: CSS_VARS.warning,
+          colorError: CSS_VARS.error,
+          // 圆角与 --radius-sm/md/xl 对齐（曾散写 14/10/20，与 CSS 的 12 不一致）
+          borderRadius: RADIUS_MD,
+          borderRadiusSM: RADIUS_SM,
+          borderRadiusLG: RADIUS_LG,
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          colorBgContainer: CSS_VARS.bgContainer,
+          colorBgElevated: CSS_VARS.bgElevated,
+          colorText: CSS_VARS.textPrimary,
+          colorTextSecondary: CSS_VARS.textSecondary,
+          colorTextTertiary: CSS_VARS.textTertiary,
+          colorBorder: CSS_VARS.border,
+          colorBorderSecondary: CSS_VARS.border,
+          controlHeight: CONTROL_H,
+          controlHeightSM: CONTROL_H_SM,
+          controlHeightLG: CONTROL_H_LG,
+          // 与 --motion-* / --ease-* 同值（antd 只接受 ms/s 与字面曲线）
           motionDurationFast: '0.18s',
           motionDurationMid: '0.24s',
           motionDurationSlow: '0.36s',
-          motionEaseIn: 'cubic-bezier(0.3, 0, 1, 1)',
-          motionEaseOut: 'cubic-bezier(0, 0, 0, 1)',
-          motionEaseInOut: 'cubic-bezier(0.2, 0, 0, 1)',
+          motionEaseIn: 'cubic-bezier(0.55, 0.06, 0.68, 0.19)',
+          motionEaseOut: 'cubic-bezier(0.165, 0.84, 0.44, 1)',
+          motionEaseInOut: 'cubic-bezier(0.215, 0.61, 0.355, 1)',
         },
         components: {
           Button: {
-            colorPrimary: accent,
-            algorithm: true,
-            borderRadius: 14,
-            controlHeight: 40,
+            borderRadius: RADIUS_MD,
+            borderRadiusSM: RADIUS_SM,
+            controlHeight: CONTROL_H,
             fontWeight: 500,
             primaryShadow: '0 4px 16px var(--accent-glow)',
           },
           Input: {
-            colorPrimary: accent,
-            algorithm: true,
-            borderRadius: 14,
-            controlHeight: 40,
-            activeBorderColor: accent,
-            hoverBorderColor: accent,
+            borderRadius: RADIUS_MD,
+            controlHeight: CONTROL_H,
+            activeBorderColor: CSS_VARS.accent,
+            hoverBorderColor: CSS_VARS.accent,
             activeShadow: '0 0 0 3px var(--accent-glow)',
           },
+          Select: {
+            borderRadius: RADIUS_MD,
+            controlHeight: CONTROL_H,
+          },
           Card: {
-            headerBg: isDark ? bgContainer : '#ffffff',
-            colorBorderSecondary: isDark ? accentGlow.replace('40', '26') : accentGlow.replace('40', '1f'),
-            borderRadiusLG: 20,
+            borderRadiusLG: RADIUS_LG,
+            colorBorderSecondary: CSS_VARS.border,
           },
           Tag: {
-            colorPrimary: accent,
-            borderRadiusSM: 10,
+            borderRadiusSM: RADIUS_SM,
           },
           Menu: {
-            itemSelectedBg: accentSoft,
-            itemBorderRadius: 10,
+            itemBorderRadius: RADIUS_SM,
             motionDurationMid: '0.24s',
           },
           Modal: {
-            borderRadiusLG: 20,
+            borderRadiusLG: RADIUS_LG,
             motionDurationMid: '0.24s',
           },
           Drawer: {
             motionDurationMid: '0.36s',
           },
           Tabs: {
-            itemSelectedColor: accent,
-            inkBarColor: accent,
+            inkBarColor: CSS_VARS.accent,
+            itemSelectedColor: CSS_VARS.accent,
             motionDurationMid: '0.24s',
           },
         },

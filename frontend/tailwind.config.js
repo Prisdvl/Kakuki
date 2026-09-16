@@ -31,12 +31,13 @@ export default {
       maxWidth: {
         content: '1700px',
       },
-      // 与 design-tokens.css 对齐的圆角档位
+      // 与 design-tokens.css 对齐的圆角档位（--radius-xs/sm/md/lg/xl/2xl）
       borderRadius: {
-        sm: '8px',
-        md: '12px',
-        lg: '16px',
-        xl: '20px',
+        xs:    '6px',
+        sm:    '10px',
+        md:    '12px',
+        lg:    '16px',
+        xl:    '20px',
         '2xl': '28px',
       },
       // 动画时长档位
@@ -48,11 +49,12 @@ export default {
         slower:  '480ms',
         page:    '560ms',
       },
-      // 缓动函数档位
+      // 缓动函数档位（与 design-tokens.css 的 --ease-* 同值，
+      // 之前标准/减速/加速曲线与 CSS 实际使用的不一致）
       transitionTimingFunction: {
-        standard:    'cubic-bezier(0.2, 0, 0, 1)',
-        decelerate:  'cubic-bezier(0, 0, 0, 1)',
-        accelerate:  'cubic-bezier(0.3, 0, 1, 1)',
+        standard:    'cubic-bezier(0.215, 0.61, 0.355, 1)',
+        decelerate:  'cubic-bezier(0.165, 0.84, 0.44, 1)',
+        accelerate:  'cubic-bezier(0.55, 0.06, 0.68, 0.19)',
         spring:      'cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
       // 阴影层级

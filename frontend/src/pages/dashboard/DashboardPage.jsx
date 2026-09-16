@@ -20,10 +20,9 @@ function GitHubAvatar() {
     `${import.meta.env.BASE_URL}github-avatar.jpg`, // 本地快照优先：与 GitHub 一致、网络受限环境零请求
     `https://github.com/${GITHUB_USERNAME}.png`,
   ];
-  const style = { width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--glass-border)', flexShrink: 0 };
   if (level >= sources.length) {
     return (
-      <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--glass-bg-strong)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1.1rem' }}>
+      <div className="dash-avatar dash-avatar-fallback">
         {GITHUB_USERNAME[0].toUpperCase()}
       </div>
     );
@@ -32,7 +31,7 @@ function GitHubAvatar() {
     <img
       src={sources[level]}
       alt={GITHUB_USERNAME}
-      style={style}
+      className="dash-avatar"
       onError={() => setLevel((l) => l + 1)}
     />
   );
@@ -48,15 +47,15 @@ function ClockCard() {
   const pad = (n) => String(n).padStart(2, '0');
   const week = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-        <Clock size={15} style={{ color: 'var(--accent)' }} /> 当前时间
+    <div className="ui-card ui-pad dash-card">
+      <div className="dash-label">
+        <Clock size={15} /> 当前时间
       </div>
-      <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: '3rem', fontWeight: 800, letterSpacing: '0.03em', lineHeight: 1.1, color: 'var(--text-primary)' }}>
-        {pad(now.getHours())}<span style={{ color: 'var(--accent)', animation: 'clock-colon 1s steps(1) infinite' }}>:</span>{pad(now.getMinutes())}
-        <span style={{ fontSize: '1.6rem', color: 'var(--text-secondary)' }}>:{pad(now.getSeconds())}</span>
+      <div className="dash-clock">
+        {pad(now.getHours())}<span className="dash-clock-colon">:</span>{pad(now.getMinutes())}
+        <span className="dash-clock-sec">:{pad(now.getSeconds())}</span>
       </div>
-      <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+      <div className="dash-clock-date">
         {now.getFullYear()} 年 {now.getMonth() + 1} 月 {now.getDate()} 日 · 星期{week}
       </div>
     </div>
@@ -152,19 +151,19 @@ function StudyTimeCard() {
   ];
 
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-          <Timer size={15} style={{ color: 'var(--accent)' }} /> 已学习时间
+    <div className="ui-card ui-pad dash-card">
+      <div className="ui-card-head">
+        <span className="dash-label">
+          <Timer size={15} /> 已学习时间
         </span>
-        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+        <span className="dash-footnote">
           {stats.source === 'pristimer' ? 'PrisTimer 同步' : '本地记录'}
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+      <div className="dash-split">
         {/* 今日进度环 */}
-        <div style={{ position: 'relative', width: 112, height: 112, flexShrink: 0 }}>
+        <div className="dash-ring">
           <svg width="112" height="112" viewBox="0 0 112 112">
             <circle cx="56" cy="56" r={R} fill="none" stroke="var(--glass-border)" strokeWidth="8" />
             <circle
@@ -172,23 +171,25 @@ function StudyTimeCard() {
               stroke="var(--accent)" strokeWidth="8" strokeLinecap="round"
               strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)}
               transform="rotate(-90 56 56)"
-              style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }}
+              className="dash-ring-fill"
             />
           </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.today}<span style={{ fontSize: '0.68rem', fontWeight: 600, marginLeft: 3 }}>分</span></span>
-            <span style={{ fontSize: '0.66rem', color: 'var(--text-tertiary)' }}>目标 8h</span>
+          <div className="dash-ring-center">
+            <span className="dash-ring-value">
+              {stats.today}<span className="dash-ring-unit">分</span>
+            </span>
+            <span className="dash-ring-caption">目标 8h</span>
           </div>
         </div>
 
         {/* 2×2 指标 */}
-        <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.7rem 1rem' }}>
+        <div className="dash-cells">
           {cells.map((s) => (
-            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+            <div key={s.label} className="dash-cell">
               <s.icon size={14} style={{ color: s.color, flexShrink: 0 }} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', lineHeight: 1.3, whiteSpace: 'nowrap' }}>{s.label}</div>
-                <div style={{ fontSize: '0.86rem', color: s.color, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.value}</div>
+              <div className="dash-cell-body">
+                <div className="dash-cell-label">{s.label}</div>
+                <div className="dash-cell-value" style={{ color: s.color }}>{s.value}</div>
               </div>
             </div>
           ))}
@@ -225,9 +226,9 @@ function LeetCodeProgressCard() {
 
   if (err || !stats) {
     return (
-      <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
-        <BarChart3 size={22} style={{ color: 'var(--accent)' }} />
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{err ? '暂无 LeetCode 数据' : '加载中'}</span>
+      <div className="ui-card ui-pad dash-card dash-card-center">
+        <span className="ui-empty-icon"><BarChart3 size={22} /></span>
+        <span className="dash-empty-text">{err ? '暂无 LeetCode 数据' : '加载中'}</span>
       </div>
     );
   }
@@ -238,19 +239,19 @@ function LeetCodeProgressCard() {
     { label: '困难', solved: stats.hard, total: stats.hardT, color: 'var(--leetcode-hard)' },
   ];
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-          <BarChart3 size={15} style={{ color: 'var(--accent)' }} /> LeetCode 进度
+    <div className="ui-card ui-pad dash-card">
+      <div className="ui-card-head">
+        <span className="dash-label">
+          <BarChart3 size={15} /> LeetCode 进度
         </span>
-        <a href="https://leetcode.cn/u/Likey-e/" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>
+        <a href="https://leetcode.cn/u/Likey-e/" target="_blank" rel="noopener noreferrer" className="ui-card-link dash-footnote">
           共 {stats.total} 题 · 查看 →
         </a>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+      <div className="dash-split">
         {/* 总进度环 */}
-        <div style={{ position: 'relative', width: 112, height: 112, flexShrink: 0 }}>
+        <div className="dash-ring">
           <svg width="112" height="112" viewBox="0 0 112 112">
             <circle cx="56" cy="56" r={R} fill="none" stroke="var(--glass-border)" strokeWidth="8" />
             <circle
@@ -258,36 +259,36 @@ function LeetCodeProgressCard() {
               stroke="var(--accent)" strokeWidth="8" strokeLinecap="round"
               strokeDasharray={C} strokeDashoffset={C * (1 - stats.pct / 100)}
               transform="rotate(-90 56 56)"
-              style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }}
+              className="dash-ring-fill"
             />
           </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{stats.solved}</span>
-            <span style={{ fontSize: '0.66rem', color: 'var(--text-tertiary)' }}>已解答 · {stats.pct}%</span>
+          <div className="dash-ring-center">
+            <span className="dash-ring-value dash-ring-value-lg">{stats.solved}</span>
+            <span className="dash-ring-caption">已解答 · {stats.pct}%</span>
           </div>
         </div>
 
         {/* 三档进度 */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+        <div className="dash-bars">
           {diff.map((d) => {
             const p = d.total ? Math.round((d.solved / d.total) * 1000) / 10 : 0;
             return (
               <div key={d.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.76rem', marginBottom: 4, gap: '0.5rem' }}>
-                  <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <i style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, display: 'inline-block' }} />
+                <div className="dash-bar-row">
+                  <span className="dash-bar-label">
+                    <i className="dash-bar-dot" style={{ background: d.color }} />
                     {d.label}
                   </span>
-                  <span style={{ color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'baseline' }}>
+                  <span className="dash-bar-nums">
                     {/* 固定列宽右对齐：三档数据的数字列、斜杠、百分号竖向对齐 */}
-                    <span style={{ display: 'inline-block', minWidth: 26, textAlign: 'right' }}>{d.solved}</span>
-                    <span style={{ opacity: 0.55, margin: '0 0.15rem' }}>/</span>
-                    <span style={{ display: 'inline-block', minWidth: 44, textAlign: 'right' }}>{d.total}</span>
-                    <span style={{ display: 'inline-block', minWidth: 38, textAlign: 'right', marginLeft: '0.45rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{p}%</span>
+                    <span className="dash-bar-num">{d.solved}</span>
+                    <span className="dash-bar-slash">/</span>
+                    <span className="dash-bar-total">{d.total}</span>
+                    <span className="dash-bar-pct">{p}%</span>
                   </span>
                 </div>
-                <div style={{ height: 5, borderRadius: 3, background: 'var(--glass-border)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.max(p, 0.6)}%`, borderRadius: 3, background: d.color, transition: 'width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)' }} />
+                <div className="dash-bar-track">
+                  <div className="dash-bar-fill" style={{ width: `${Math.max(p, 0.6)}%`, background: d.color }} />
                 </div>
               </div>
             );
@@ -327,37 +328,38 @@ function GithubCard() {
     return () => { alive = false; };
   }, []);
   return (
-    <div className="glass mouse-glow reveal" style={{ borderRadius: 20, padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
+    <div className="ui-card ui-pad dash-card dash-card-gap">
+      <div className="dash-label dash-label-plain">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
         GitHub
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+      <div className="dash-gh-id">
         {/* 头像三级回退：GitHub 官方 → 本地快照（与 GitHub 一致）→ 首字母徽章（网络受限环境可用） */}
         <GitHubAvatar />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{GITHUB_USERNAME}</div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="dash-gh-id-body">
+          <div className="dash-gh-name">{GITHUB_USERNAME}</div>
+          <div className="dash-gh-bio">
             {gh?.bio || 'React · Django · 个人站 Kakuki 构建者'}
           </div>
         </div>
       </div>
       {gh && (
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div className="dash-gh-stats">
           {[
             { label: '仓库', value: gh.public_repos },
             { label: '粉丝', value: gh.followers },
             { label: '关注', value: gh.following },
           ].map((s) => (
-            <div key={s.label} style={{ flex: 1, minWidth: 70, textAlign: 'center', padding: '0.55rem 0.2rem', borderRadius: 12, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{s.value ?? '—'}</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{s.label}</div>
+            <div key={s.label} className="dash-gh-stat">
+              <div className="dash-gh-stat-value">{s.value ?? '—'}</div>
+              <div className="dash-gh-stat-label">{s.label}</div>
             </div>
           ))}
         </div>
       )}
-      <a href={`https://github.com/${GITHUB_USERNAME}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.78rem', color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-        <svg width="13" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      <a href={`https://github.com/${GITHUB_USERNAME}`} target="_blank" rel="noopener noreferrer" className="ui-card-link dash-gh-link">
+        <svg width="13" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        查看主页
       </a>
     </div>
   );
@@ -370,10 +372,8 @@ function GithubCard() {
  * ============================================== */
 export default function DashboardPage() {
   return (
-    <div className="page-enter">
-      <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 1.4rem' }}>
-        仪表盘
-      </h1>
+    <div className="page-enter ui-page">
+      <h1 className="ui-page-title">仪表盘</h1>
 
       <div className="dashboard-grid">
         <TiltCard><ClockCard /></TiltCard>
@@ -386,32 +386,6 @@ export default function DashboardPage() {
         {/* 站点流量：自带 span-3 / span-12 栅格子项 */}
         <TrafficSection />
       </div>
-
-      <style>{`
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(12, 1fr);
-          gap: 1.1rem;
-          align-items: stretch;
-        }
-        /* 默认：所有直接子项占半行（个人状态卡） */
-        .dashboard-grid > * { grid-column: span 6; }
-        /* 流量指标卡：一行四张 */
-        .dashboard-grid > .span-3 { grid-column: span 3; }
-        /* 区块标题行 / 趋势图 / 缓存提示：整行通铺 */
-        .dashboard-grid > .span-12,
-        .dashboard-grid > .stats-head-row,
-        .dashboard-grid > .stats-stale { grid-column: 1 / -1; }
-        @media (max-width: 1200px) {
-          .dashboard-grid > .span-3 { grid-column: span 6; }
-        }
-        @media (max-width: 900px) {
-          .dashboard-grid > *,
-          .dashboard-grid > .span-3,
-          .dashboard-grid > .span-12 { grid-column: 1 / -1; }
-        }
-        @keyframes clock-colon { 50% { opacity: 0.35; } }
-      `}</style>
     </div>
   );
 }

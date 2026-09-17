@@ -7,6 +7,7 @@ import useUserStore from '../../store/userStore';
 import checkinApi from '../../api/checkin';
 import FeatureMenu from '../FeatureMenu';
 import SyncButton from '../SyncButton';
+import MeteorParticles from '../MeteorParticles';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const NAV_ITEMS = [
@@ -465,9 +466,10 @@ export default function AppLayout() {
 
   return (
     <>
-      {/* 背景：纯色底 + 可选背景图（iOS 风精简——水墨/网格/光束/星尘/粒子/光球等装饰层已移除） */}
+      {/* 背景：纯色底 + 可选背景图 + 陨石粒子层（iOS 风精简） */}
       <div className="bg-scene bg-scene-minimal">
         <div className="bg-image-layer" />
+        <MeteorParticles />
       </div>
 
       {scrollProgress > 0 && (

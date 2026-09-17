@@ -1,37 +1,47 @@
 import { create } from 'zustand';
 
 const STORAGE_KEY = 'kakuki-home-layout';
+export const GRID_COLS = 12;
 
-// 宽度档位：quarter(1/4) · third(1/3) · half(1/2) · two-thirds(2/3) · full(1/1)
-const WIDTH_ORDER = ['quarter', 'third', 'half', 'two-thirds', 'full'];
-
+/**
+ * 自由布局 v2（看板式，2026-09）：
+ * 每张卡片由 12 列网格坐标定位 { x 起始列, y 行, w 列跨度 }。
+ *  - 水平：任意列位置（1..12）与任意跨度（1..12）
+ *  - 垂直：以自然行为单位（一行放多卡，放置冲突时自动向下推挤）
+ *  - 空白位保留（不自动回收）
+ *
+ * layout 元素：{ id, x, y, w, visible }
+ */
 const DEFAULT_LAYOUT = [
-  { id: 'profile', width: 'full', visible: true },
-  { id: 'music', width: 'two-thirds', visible: true },
-  { id: 'leetcode', width: 'third', visible: true },
-  { id: 'talks', width: 'third', visible: true },
-  { id: 'projects', width: 'third', visible: true },
-  { id: 'categories', width: 'third', visible: true },
-  { id: 'quote', width: 'full', visible: true },
-  { id: 'todo', width: 'half', visible: true },
-  { id: 'palette', width: 'half', visible: true },
-  { id: 'countdown', width: 'half', visible: true },
+  { id: 'profile',   x: 1,  y: 1, w: 12, visible: true },
+  { id: 'music',     x: 1,  y: 2, w: 6,  visible: true },
+  { id: 'leetcode',  x: 7,  y: 2, w: 6,  visible: true },
+  { id: 'talks',     x: 1,  y: 3, w: 4,  visible: true },
+  { id: 'projects',  x: 5,  y: 3, w: 4,  visible: true },
+  { id: 'categories',x: 9,  y: 3, w: 4,  visible: true },
+  { id: 'quote',     x: 1,  y: 4, w: 12, visible: true },
+  { id: 'todo',      x: 1,  y: 5, w: 4,  visible: true },
+  { id: 'palette',   x: 5,  y: 5, w: 4,  visible: true },
+  { id: 'countdown', x: 9,  y: 5, w: 4,  visible: true },
 ];
 
-// 已下线组件：番茄钟（专注计时统一交给本地 PrisTimer）。
-// 这里显式剔除，避免旧 localStorage 布局残留出空白卡片。
+// 已下线组件：番茄钟（专注计时统一交给本地 PrisTimer）
 const RETIRED_IDS = new Set(['pomodoro']);
-// 组件注册表里的全部 id（HomePage COMPONENT_META 为准），用于过滤历史脏数据
 const KNOWN_IDS = new Set([
   'profile', 'music', 'leetcode', 'talks', 'projects',
   'categories', 'quote', 'todo', 'palette', 'countdown',
   'stats', 'tags', 'comments', 'weather',
 ]);
 
-// 兼容旧数据：wide → full；half 已是合法档位（1/2）
-function normalizeWidth(w) {
-  if (w === 'wide') return 'full';
-  return WIDTH_ORDER.includes(w) ? w : 'two-thirds';
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const overlap = (a1, a2, b1, b2) => a1 < b2 && a2 > b1;
+
+/** 兼容旧数据：旧格式有 width 字段 → 映射为 w */
+function normalize(item) {
+  const wMap = { quarter: 3, third: 4, half: 6, 'two-thirds': 8, full: 12 };
+  const old = wMap[item.width];
+  if (old) return { id: item.id, x: clamp(Math.round(item.x) || 1, 1, 12), y: Math.max(1, Math.round(item.y) || 1), w: clamp(Math.round(item.w) || old, 1, 12), visible: item.visible !== false };
+  return { id: item.id, x: clamp(Math.round(item.x) || 1, 1, 12), y: Math.max(1, Math.round(item.y) || 1), w: clamp(Math.round(item.w) || 4, 1, 12), visible: item.visible !== false };
 }
 
 function load() {
@@ -44,7 +54,7 @@ function load() {
         const cleaned = parsed
           .filter((x) => x && KNOWN_IDS.has(x.id) && !RETIRED_IDS.has(x.id))
           .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
-          .map((x) => ({ id: x.id, width: normalizeWidth(x.width), visible: x.visible !== false }));
+          .map(normalize);
         if (cleaned.length) return cleaned;
       }
     }
@@ -56,66 +66,101 @@ function persist(arr) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch { /* ignore */ }
 }
 
-export const useHomeLayout = create((set) => ({
+/**
+ * 推挤式放置：把 id 放到 (x, y, w)。
+ * 目标区域与其它可见卡片重叠时，被挤卡片依次向下推到空行（y 单调递增 → 必然终止）。
+ * 空白位保留（不回收行号）。
+ * @returns 新 layout 数组（不可变）
+ */
+function placeIn(layout, id, x, y, w) {
+  x = clamp(Math.round(x) || 1, 1, GRID_COLS);
+  w = clamp(Math.round(w) || 4, 1, GRID_COLS);
+  x = clamp(x, 1, GRID_COLS - w + 1);
+  y = Math.max(1, Math.round(y) || 1);
+
+  // 全量拷贝（不可变）：后续推挤直接改元素属性
+  const arr = layout.map((it) => ({
+    ...it,
+    ...(it.id === id ? { x, y, w } : {}),
+  }));
+
+  // 逐行向下的冲突消解：与已放置区域重叠的卡 → 下移一行（y 单调递增 → 必然终止）
+  const queue = [{ id, x, y, w }];
+  let guard = 0;
+  while (queue.length > 0 && guard < 60) {
+    guard += 1;
+    const cur = queue.shift();
+    for (const it of arr) {
+      if (it.id === cur.id || !it.visible) continue;
+      if (it.y === cur.y && overlap(it.x, it.x + it.w, cur.x, cur.x + cur.w)) {
+        it.y = it.y + 1;
+        it.x = Math.max(1, Math.min(it.x, GRID_COLS - it.w + 1));
+        queue.push({ id: it.id, x: it.x, y: it.y, w: it.w });
+      }
+    }
+  }
+  return arr;
+}
+
+export const useHomeLayout = create((set, get) => ({
   layout: load(),
   editing: false,
   setEditing: (v) => set({ editing: v }),
+
+  /** 任意格投放（看板落点）：目标卡 + 落点(前/后半) + 是否落到下一行 */
+  moveTo: (id, targetId, { after = false, belowRow = false } = {}) => set((s) => {
+    const t = s.layout.find((x) => x.id === targetId);
+    if (!t || id === targetId) return {};
+    const x = t.x + (after ? t.w : 0);
+    const y = t.y + (belowRow ? 1 : 0);
+    const self = s.layout.find((x) => x.id === id);
+    const arr = placeIn(s.layout, id, x, y, self?.w || 4);
+    persist(arr);
+    return { layout: arr };
+  }),
+
+  /** 拖拽中实时预览落点（只改 x / y / w 之一，不推挤） */
+  preview: (id, patch) => set((s) => ({
+    layout: s.layout.map((it) => (it.id === id ? { ...it, ...patch } : it)),
+  })),
+
+  /** resize：拖右下角手柄改跨度 w（1..12），松手落定（推挤） */
+  setWidth: (id, w) => set((s) => {
+    const self = s.layout.find((x) => x.id === id);
+    if (!self) return {};
+    const arr = placeIn(s.layout, id, self.x, self.y, w);
+    persist(arr);
+    return { layout: arr };
+  }),
+
   move: (id, dir) => set((s) => {
-    const idx = s.layout.findIndex((x) => x.id === id);
-    const ni = idx + dir;
-    if (idx < 0 || ni < 0 || ni >= s.layout.length) return {};
-    const arr = [...s.layout];
-    const [item] = arr.splice(idx, 1);
-    arr.splice(ni, 0, item);
+    const self = s.layout.find((x) => x.id === id);
+    if (!self) return {};
+    const arr = placeIn(s.layout, id, self.x, Math.max(1, self.y + dir), self.w);
     persist(arr);
     return { layout: arr };
   }),
-/**
- * 把 id 移动到 targetId 的位置。
- * @param after 落点在目标卡片的右半侧时为 true → 插到目标之后；
- *              否则插到目标之前。配合 12 列流式网格即"任意格投放"。
- */
-  moveTo: (id, targetId, after = false) => set((s) => {
-    const arr = [...s.layout];
-    const from = arr.findIndex((x) => x.id === id);
-    if (from < 0 || id === targetId) return {};
-    const [item] = arr.splice(from, 1);
-    const targetPos = arr.findIndex((x) => x.id === targetId);
-    if (targetPos < 0) return {};
-    arr.splice(after ? targetPos + 1 : targetPos, 0, item);
-    persist(arr);
-    return { layout: arr };
-  }),
-  setWidth: (id, width) => set((s) => {
-    const arr = s.layout.map((x) => (x.id === id ? { ...x, width } : x));
-    persist(arr);
-    return { layout: arr };
-  }),
-  cycleWidth: (id) => set((s) => {
-    const arr = s.layout.map((x) => {
-      if (x.id !== id) return x;
-      const next = WIDTH_ORDER[(WIDTH_ORDER.indexOf(normalizeWidth(x.width)) + 1) % WIDTH_ORDER.length];
-      return { ...x, width: next };
-    });
-    persist(arr);
-    return { layout: arr };
-  }),
+
   toggleVisible: (id) => set((s) => {
     const arr = s.layout.map((x) => (x.id === id ? { ...x, visible: !x.visible } : x));
     persist(arr);
     return { layout: arr };
   }),
-  addComponent: (id, width) => set((s) => {
+
+  addComponent: (id, w = 4) => set((s) => {
     if (s.layout.some((x) => x.id === id)) return {};
-    const arr = [...s.layout, { id, width: width || 'two-thirds', visible: true }];
+    const maxY = s.layout.reduce((m, x) => (x.visible ? Math.max(m, x.y) : m), 0);
+    const arr = [...s.layout, { id, x: 1, y: maxY + 1, w: clamp(w, 1, 12), visible: true }];
     persist(arr);
     return { layout: arr };
   }),
+
   removeComponent: (id) => set((s) => {
     const arr = s.layout.filter((x) => x.id !== id);
     persist(arr);
     return { layout: arr };
   }),
+
   resetLayout: () => set(() => {
     const arr = DEFAULT_LAYOUT.map((x) => ({ ...x }));
     persist(arr);

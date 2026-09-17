@@ -1920,32 +1920,16 @@ body.snap-active {
   will-change: transform;
 }
 
-/* ===== Global Background Scene ===== */
+/* ===== Global Background Scene（iOS 风：纯色底 + 可选背景图）=====
+ * 2026-09 视觉改版：移除渐变底色与三处 radial-gradient 光球（::before），
+ * 背景装饰只剩 MeteorField 粒子层（full-width canvas）与可选背景图。 */
 .bg-scene {
-  background: linear-gradient(135deg, #f4f3f0 0%, #ecebe7 35%, #f2f1ed 65%, #e7e7e3 100%);
+  background: var(--bg-primary);
   transition: background 0.6s ease;
 }
 
 .dark .bg-scene {
-  background: linear-gradient(135deg, #0a0b0c 0%, #131517 50%, #0a0b0c 100%);
-}
-
-.bg-scene::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(167, 139, 250, 0.3) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(244, 114, 182, 0.2) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 60% 30%, rgba(196, 181, 253, 0.2) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.dark .bg-scene::before {
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(124, 58, 237, 0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 60% 30%, rgba(167, 139, 250, 0.15) 0%, transparent 50%);
+  background: var(--bg-primary);
 }
 
 /* ===== Hero Profile + Music Layout ===== */
@@ -2380,6 +2364,7 @@ body.snap-active {
   grid-template-columns: 2fr 1fr 1fr;
   grid-template-rows: auto auto;
   gap: 1.25rem;
+  margin-bottom: var(--space-5);
 }
 
 .hero-article-card {
@@ -5507,15 +5492,14 @@ a, button, .article-card, .contact-card, .social-links a,
 /* ==================== 文章详情页 ==================== */
 .article-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 240px;
   gap: 1.5rem;
   align-items: start;
-  max-width: 1080px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding-top: 2rem;
-  /* 长文阅读场景：把全局玻璃倾斜弱化到"轻微"。
-     全局默认 7deg/1.012，这里降到 1.6deg 且不放大 —— 保留互动感，不再干扰视线。 */
-  --tilt-max: 1.6;
+  padding-top: var(--space-6);
+  /* 长文阅读场景：取消全局玻璃倾斜（AppLayout EXCLUDE 亦已排除 .article-page） */
+  --tilt-max: 0;
   --tilt-scale: 1;
 }
 
@@ -6559,7 +6543,7 @@ a, button, .article-card, .contact-card, .social-links a,
 }
 .home-layout-grid {
   display: grid;
-  /* 12 列基准：quarter=3 · third=4 · half=6 · two-thirds=8 · full=12 */
+  /* 12 列看板：位置/跨度由每张卡的 gridColumn/gridRow 内联控制 */
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--space-4);
   margin-top: var(--space-5);
@@ -6567,27 +6551,85 @@ a, button, .article-card, .contact-card, .social-links a,
 .home-layout-item {
   min-width: 0;
   position: relative;
+  /* 容器查询：窄列（<360px）时组件自动切换紧凑版式 */
+  container-type: inline-size;
 }
-.home-layout-item.quarter { grid-column: span 3; }
-.home-layout-item.third { grid-column: span 4; }
-.home-layout-item.half { grid-column: span 6; }
-.home-layout-item.two-thirds { grid-column: span 8; }
-.home-layout-item.full { grid-column: span 12; }
-@media (max-width: 1100px) {
-  .home-layout-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .home-layout-item.quarter,
-  .home-layout-item.third { grid-column: span 3; }
-  .home-layout-item.half,
-  .home-layout-item.two-thirds { grid-column: span 6; }
-  .home-layout-item.full { grid-column: span 6; }
-}
+/* 移动端：压缩为单列堆叠（坐标语义随 DOM 顺序回落） */
 @media (max-width: 900px) {
   .home-layout-grid { grid-template-columns: 1fr; }
-  .home-layout-item.quarter,
-  .home-layout-item.third,
-  .home-layout-item.half,
-  .home-layout-item.two-thirds,
-  .home-layout-item.full { grid-column: span 1; }
+  .home-layout-item {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+}
+/* 编辑模式：淡列参考线 */
+.home-layout-grid.editing {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in srgb, var(--text-tertiary) 10%, transparent) 0 1px,
+      transparent 1px calc((100% - 11 * var(--space-4)) / 12 + var(--space-4))
+    );
+  background-attachment: local;
+}
+.home-layout-grid.editing .home-layout-item {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* 拉宽手柄 */
+.layout-resize {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 5;
+  width: 18px;
+  height: 18px;
+  cursor: ew-resize;
+  border-radius: var(--radius-xs);
+  pointer-events: auto;
+  opacity: 0.9;
+}
+.layout-resize::before,
+.layout-resize::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  border-bottom-right-radius: 3px;
+}
+.layout-resize::after {
+  right: 7px;
+  bottom: 7px;
+  opacity: 0.55;
+}
+.layout-resize:hover { background: var(--accent-soft); }
+
+/* ============ 首页自由布局：窄列紧凑版式（容器查询）============
+ * .home-layout-item 声明了 container-type: inline-size，
+ * 卡片被拉窄 / 放进 3-4 列档位时，内部组件自动切换紧凑布局，
+ * 避免“缩小后文字排版错乱”。 */
+@container (max-width: 380px) {
+  .profile-card { flex-direction: column; text-align: center; gap: 1rem; padding: 1.25rem; }
+  .profile-stats { justify-content: center; }
+  .profile-social { justify-content: center; }
+  .site-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .weather-row { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  .weather-temp { font-size: 2rem; }
+  .checkin-stats { grid-template-columns: repeat(2, 1fr); }
+  .countdown-number { font-size: 1.9rem; }
+  .palette-grid { grid-template-columns: repeat(3, 1fr); }
+  .quote-text { font-size: var(--fs-md); line-height: var(--lh-base); }
+  .ui-card-title { font-size: var(--fs-md); }
+}
+@container (max-width: 260px) {
+  .weather-detail { flex-direction: column; gap: 0.25rem; }
+  .ui-card-title { font-size: var(--fs-base); }
+  .todo-text,
+  .comments-mini-content { font-size: var(--fs-sm); }
+  .ui-card-head { gap: var(--space-2); }
 }
 /* 编辑模式 */
 .home-layout-grid.editing .home-layout-item { cursor: grab; }
@@ -7044,7 +7086,7 @@ a, button, .article-card, .contact-card, .social-links a,
 
 /* ---------- 首页 ---------- */
 .home-section { padding: var(--space-6) 0 var(--space-4); }
-.home-container { max-width: 1200px; }
+.home-container { max-width: 1400px; }
 .hero-articles-empty { grid-column: 1 / -1; }
 
 .profile-avatar-img {
@@ -8314,33 +8356,19 @@ a, button, .article-card, .contact-card, .social-links a,
   margin-top: var(--space-2);
 }
 
-/* 陨石粒子（首页首屏局部背景） */
-.meteor-particles {
-  position: relative;
+/* 陨石粒子（全屏背景层，挂在 .bg-scene 内） */
+.meteor-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
   user-select: none;
   overflow: hidden;
-  border-radius: var(--radius-xl);
 }
-.meteor-particles canvas {
+.meteor-field canvas {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: inherit;
-}
-/* 首屏专用：hero 网格右下空白处 */
-.hero-articles { position: relative; }
-.meteor-hero {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 340px;
-  height: 200px;
-  z-index: 0;
-  opacity: 0.9;
-}
-@media (max-width: 1400px) {
-  .meteor-hero { display: none; }
 }
 
 /* 手动同步按钮 */
@@ -8351,3 +8379,6 @@ a, button, .article-card, .contact-card, .social-links a,
   opacity: 0.75;
   font-variant-numeric: tabular-nums;
 }
+.sync-done { color: var(--success) !important; border-color: var(--success) !important; }
+.sync-nav-btn.theme-toggle { width: 40px; height: 40px; padding: 0; }
+.sync-nav-btn.theme-toggle svg { transition: transform var(--motion-base) var(--ease-standard); }

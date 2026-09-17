@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cloud, RefreshCw, MapPin } from 'lucide-react';
+import { Cloud, RefreshCw, MapPin, Pencil } from 'lucide-react';
 import { getWeather, readCity, saveCity } from '../../api/weather';
 
 const PRESET_CITIES = ['北京', '上海', '广州', '深圳', '成都', '杭州'];
@@ -7,6 +7,8 @@ const PRESET_CITIES = ['北京', '上海', '广州', '深圳', '成都', '杭州
 /** 天气卡（首页可添加组件之一，经 Worker 代理 uapis.cn） */
 export default function WeatherCard() {
   const [city, setCity] = useState(readCity);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,9 +32,12 @@ export default function WeatherCard() {
     return () => { alive = false; };
   }, [city]);
 
-  const changeCity = (c) => {
+  const applyCity = (raw) => {
+    const c = (raw || '').trim();
+    if (!c) { setEditing(false); return; }
     saveCity(c);
     setCity(c);
+    setEditing(false);
   };
 
   return (
@@ -41,16 +46,34 @@ export default function WeatherCard() {
         <h3 className="ui-card-title">
           <Cloud size={18} /> 天气
         </h3>
-        <div className="ui-card-actions">
-          {PRESET_CITIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => changeCity(c)}
-              className={`ui-chip ui-chip-plain weather-city-switch ${c === city ? 'is-active' : ''}`}
-            >
-              {c}
-            </button>
-          ))}
+        <div className="ui-card-actions weather-city-row">
+          {editing ? (
+            <input
+              autoFocus
+              className="ui-input ui-input-sm weather-city-input"
+              value={draft}
+              placeholder="输入城市后回车"
+              aria-label="自定义城市"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') applyCity(draft);
+                if (e.key === 'Escape') setEditing(false);
+              }}
+              onBlur={() => applyCity(draft)}
+            />
+          ) : (
+            <>
+              {PRESET_CITIES.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => applyCity(c)}
+                  className={`ui-chip ui-chip-plain weather-city-switch ${c === city ? 'is-active' : ''}`}
+                >
+                  {c}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
@@ -67,9 +90,13 @@ export default function WeatherCard() {
           <div className="weather-row">
             <div className="weather-temp">{data.temperature != null ? `${data.temperature}°` : '--'}</div>
             <div className="weather-main">
-              <span className="weather-city">
-                <MapPin size={13} /> {data.city || city}
-              </span>
+              <button
+                className="weather-city"
+                onClick={() => { setDraft(data.city || city); setEditing(true); }}
+                title="点击自定义城市"
+              >
+                <MapPin size={13} /> {data.city || city} <Pencil size={11} />
+              </button>
               <span className="weather-desc">{data.weather || '未知'}</span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -26,7 +26,6 @@ import SiteStatsCard from "../../components/Tools/SiteStatsCard";
 import TagsCloudCard from "../../components/Tools/TagsCloudCard";
 import RecentCommentsCard from "../../components/Tools/RecentCommentsCard";
 import WeatherCard from "../../components/Tools/WeatherCard";
-import MeteorParticles from "../../components/MeteorParticles";
 import TiltCard from "../../components/TiltCard";
 import { QUOTES } from "../../data/quotes";
 import { useHomeLayout } from "../../store/homeLayoutStore";
@@ -410,10 +409,12 @@ export default function HomePage() {
     { label: "分类", value: totalCategories, icon: Code2 },
   ];
 
-  // ===== 自由布局 =====
-  const { layout, editing, setEditing, move, moveTo, cycleWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
+  // ===== 自由布局（12 列看板）=====
+  const { layout, editing, setEditing, move, moveTo, preview, setWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
   const [dragId, setDragId] = useState(null);
   const [overId, setOverId] = useState(null);
+  const gridRef = useRef(null);
+  const resizeRef = useRef(null);
 
   const visibleItems = layout.filter((x) => x.visible);
   const hiddenItems = layout.filter((x) => !x.visible);
@@ -451,24 +452,52 @@ export default function HomePage() {
   };
 
   /**
-   * 投放：任意格投放 + 流式补齐
-   *
-   * 传三个信息给 store：拖拽源 id、目标 id、落点在目标上的水平位置
-   * （左半 → 插到目标之前，右半 → 插到目标之后）。插入后其余卡片按
-   * 数组顺序自然流式重排，不需要手工补空白 —— 这正是「任意格投放」的语义：
-   * 网格是流式的，插到哪一格，后续卡片自动让位/补齐。
+   * 投放（任意格）：以目标卡为基准计算落点。
+   *  - 横向：落点在目标卡左半 → 目标卡原位；右半 → 目标卡右侧
+   *  - 纵向：鼠标在目标卡下 1/3 区域 → 落到目标卡的下一行
+   * store 侧 place() 会自动把重叠卡片向下推挤，空白位保留。
    */
   const handleDrop = (e, targetId) => {
     e.preventDefault();
     if (dragId && dragId !== targetId) {
       const rect = e.currentTarget.getBoundingClientRect();
       const after = e.clientX - rect.left > rect.width / 2;
-      moveTo(dragId, targetId, after);
+      const belowRow = e.clientY - rect.top > rect.height * 0.66;
+      moveTo(dragId, targetId, { after, belowRow });
     }
     setDragId(null);
     setOverId(null);
   };
   const handleDragEnd = () => { setDragId(null); setOverId(null); };
+
+  /**
+   * resize 手柄：编辑模式下拖右下角手柄，实时预览列跨度，松手落定。
+   * 列宽按 grid 容器 12 等分换算；最小 3 列、最大 12 列。
+   */
+  const startResize = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!gridRef.current) return;
+    const gridRect = gridRef.current.getBoundingClientRect();
+    const colW = gridRect.width / 12;
+    const startX = e.clientX;
+    const startW = item.w;
+    const onMove = (ev) => {
+      ev.preventDefault();
+      const newW = Math.max(3, Math.min(12, startW + Math.round((ev.clientX - startX) / colW)));
+      preview(item.id, { w: newW });
+    };
+    const onUp = () => {
+      const cur = layout.find((it) => it.id === item.id);
+      if (cur) setWidth(item.id, cur.w);
+      resizeRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    resizeRef.current = { onMove, onUp };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
 
   const enterEdit = () => {
     setEditing(true);
@@ -501,13 +530,13 @@ export default function HomePage() {
           )}
           {editing && (
             <span className="home-layout-hint">
-              <GripVertical size={13} /> 拖动卡片排序 · 点击控件调整
+              <GripVertical size={13} /> 拖动卡片到任意位置 · 右下角手柄任意拉宽 · 卡片重叠时自动下移
             </span>
           )}
         </div>
 
-        {/* Free Layout Grid */}
-        <div className={`home-layout-grid ${editing ? 'editing' : ''}`}>
+        {/* Free Layout Grid（12 列自由看板） */}
+        <div className={`home-layout-grid ${editing ? 'editing' : ''}`} ref={gridRef}>
           <AnimatePresence>
             {visibleItems.map((item) => {
               const meta = COMPONENT_META[item.id];
@@ -520,38 +549,43 @@ export default function HomePage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-                  className={`home-layout-item ${item.width || 'two-thirds'}`}
+                  className="home-layout-item"
                   data-id={item.id}
                   draggable={editing}
                   onDragStart={(e) => handleDragStart(e, item.id)}
                   onDragOver={(e) => handleDragOver(e, item.id)}
                   onDrop={(e) => handleDrop(e, item.id)}
                   onDragEnd={handleDragEnd}
-                  style={editing && overId === item.id ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : undefined}
+                  style={{
+                    gridColumn: `${item.x} / span ${item.w}`,
+                    gridRow: item.y,
+                    ...(editing && overId === item.id ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : {}),
+                  }}
                 >
                   <div>
                     {editing && (
                       <div className="home-layout-controls">
-                        <span className="home-drag-handle" title="拖动排序">
+                        <span className="home-drag-handle" title="拖动到任意位置">
                           <GripVertical size={15} />
                         </span>
                         <span className="home-ctrl-name">
                           {Icon && <Icon size={13} />} {meta?.name}
                         </span>
                         <div className="home-ctrl-actions">
-                          <button onClick={() => move(item.id, -1)} aria-label="上移" title="上移"><ArrowUp size={13} /></button>
-                          <button onClick={() => move(item.id, 1)} aria-label="下移" title="下移"><ArrowDown size={13} /></button>
-                          <button
-                            onClick={() => cycleWidth(item.id)}
-                            aria-label="切换宽度"
-                            title="循环切换宽度（1/3 · 2/3 · 全宽）"
-                          >
-                            {item.width === 'full' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                          </button>
+                          <button onClick={() => move(item.id, -1)} aria-label="上移一行" title="上移一行"><ArrowUp size={13} /></button>
+                          <button onClick={() => move(item.id, 1)} aria-label="下移一行" title="下移一行"><ArrowDown size={13} /></button>
                           <button onClick={() => toggleVisible(item.id)} aria-label="隐藏" title="隐藏"><EyeOff size={13} /></button>
                           <button onClick={() => removeComponent(item.id)} aria-label="移除" title="移除" className="danger"><X size={13} /></button>
                         </div>
                       </div>
+                    )}
+                    {/* 右下角拉宽手柄（编辑模式） */}
+                    {editing && (
+                      <span
+                        className="layout-resize"
+                        onPointerDown={(e) => startResize(e, item)}
+                        title="拖动拉宽（3–12 列）"
+                      />
                     )}
                     <TiltCard>{renderComponent(item.id)}</TiltCard>
                   </div>
@@ -588,9 +622,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Article Grid + 首屏局部陨石粒子（右侧空白装饰） */}
+        {/* Article Grid（hero 固定顶部；陨石粒子为全屏背景，见 AppLayout） */}
         <div className="hero-articles">
-          <MeteorParticles className="meteor-hero" />
           {loading ? (
             <>
               {[0, 1, 2].map((i) => (

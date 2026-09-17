@@ -6562,7 +6562,7 @@ a, button, .article-card, .contact-card, .social-links a,
     grid-row: auto !important;
   }
 }
-/* 编辑模式：淡列参考线 */
+/* 编辑模式：淡列参考线；光标常态为 default（拖拽时才 grabbing） */
 .home-layout-grid.editing {
   background-image:
     repeating-linear-gradient(
@@ -6572,8 +6572,15 @@ a, button, .article-card, .contact-card, .social-links a,
     );
   background-attachment: local;
 }
-.home-layout-grid.editing .home-layout-item {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+.home-layout-grid.editing .home-layout-item { cursor: default; }
+
+/* 跟手拖拽中的卡片 */
+.home-layout-item.is-dragging {
+  transform: translate3d(var(--drag-x, 0px), var(--drag-y, 0px), 0) !important;
+  transition: none !important;
+  z-index: 30;
+  cursor: grabbing !important;
+  box-shadow: var(--glass-shadow-hover);
 }
 /* 拉宽手柄 */
 .layout-resize {
@@ -6631,9 +6638,7 @@ a, button, .article-card, .contact-card, .social-links a,
   .comments-mini-content { font-size: var(--fs-sm); }
   .ui-card-head { gap: var(--space-2); }
 }
-/* 编辑模式 */
-.home-layout-grid.editing .home-layout-item { cursor: grab; }
-.home-layout-grid.editing .home-layout-item:active { cursor: grabbing; }
+/* 编辑模式（光标已统一为 default；拖拽中由 .is-dragging 接管 grabbing） */
 .home-layout-controls {
   display: flex;
   align-items: center;

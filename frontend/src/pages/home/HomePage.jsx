@@ -411,10 +411,10 @@ export default function HomePage() {
   ];
 
   // ===== 自由布局（12 列看板）=====
-  const { layout, editing, setEditing, move, moveTo, preview, setWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
-  const [dragId, setDragId] = useState(null);
-  const [overId, setOverId] = useState(null);
+  const { layout, editing, setEditing, move, preview, placeAt, setWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
+  const [drag, setDrag] = useState(null); // { id, fromX, fromY, startCX, startCY, colW, gridTop, gridHeight, maxY }
   const gridRef = useRef(null);
+  const dragElRef = useRef(null);
   const resizeRef = useRef(null);
 
   const visibleItems = layout.filter((x) => x.visible);
@@ -441,35 +441,71 @@ export default function HomePage() {
     }
   };
 
-  const handleDragStart = (e, id) => {
-    setDragId(id);
-    e.dataTransfer.effectAllowed = 'move';
-    try { e.dataTransfer.setData('text/plain', id); } catch { /* ignore */ }
-  };
-  const handleDragOver = (e, id) => {
+  /**
+   * Pointer 跟手拖拽（替代 HTML5 draggable —— 原实现受容器查询/3D 倾斜干扰拖不动）。
+   *  - 按下卡片（避开按钮/手柄）开始拖拽，卡片跟随鼠标平移
+   *  - 松手时按 12 列网格计算落点：横向按列宽取整位移，纵向按估算行高换行
+   *  - store.placeAt 内部推挤自动排版（重叠的卡向下让位，空白保留）
+   */
+  const beginDrag = (e, item) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button, a, .layout-resize, input, textarea, .home-ctrl-actions')) return;
+    const gridEl = gridRef.current;
+    if (!gridEl) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (overId !== id) setOverId(id);
+    const rect = gridEl.getBoundingClientRect();
+    const maxY = layout.reduce((m, it) => (it.visible ? Math.max(m, it.y) : m), 1);
+    const rowH = Math.max(96, (rect.height - Math.max(0, maxY - 1) * 16) / Math.max(1, maxY));
+    setDrag({
+      id: item.id,
+      fromX: item.x,
+      fromY: item.y,
+      startCX: e.clientX,
+      startCY: e.clientY,
+      colW: rect.width / 12,
+      gridLeft: rect.left,
+      gridTop: rect.top,
+      rowH,
+    });
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    document.body.style.cursor = 'grabbing';
+    e.currentTarget.classList.add('is-dragging');
+    dragElRef.current = e.currentTarget;
   };
 
-  /**
-   * 投放（任意格）：以目标卡为基准计算落点。
-   *  - 横向：落点在目标卡左半 → 目标卡原位；右半 → 目标卡右侧
-   *  - 纵向：鼠标在目标卡下 1/3 区域 → 落到目标卡的下一行
-   * store 侧 place() 会自动把重叠卡片向下推挤，空白位保留。
-   */
-  const handleDrop = (e, targetId) => {
-    e.preventDefault();
-    if (dragId && dragId !== targetId) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const after = e.clientX - rect.left > rect.width / 2;
-      const belowRow = e.clientY - rect.top > rect.height * 0.66;
-      moveTo(dragId, targetId, { after, belowRow });
-    }
-    setDragId(null);
-    setOverId(null);
-  };
-  const handleDragEnd = () => { setDragId(null); setOverId(null); };
+  const onDragMove = useCallback((e) => {
+    setDrag((d) => {
+      if (!d) return d;
+      const dx = e.clientX - d.startCX;
+      const dy = e.clientY - d.startCY;
+      if (dragElRef.current) {
+        dragElRef.current.style.setProperty('--drag-x', `${dx}px`);
+        dragElRef.current.style.setProperty('--drag-y', `${dy}px`);
+      }
+      return d;
+    });
+  }, []);
+
+  const onDragUp = useCallback((e) => {
+    setDrag((d) => {
+      if (!d) return d;
+      const dx = e.clientX - d.startCX;
+      const dy = e.clientY - d.startCY;
+      const colShift = Math.round(dx / d.colW);
+      const rowShift = Math.round(dy / d.rowH);
+      const x = Math.max(1, d.fromX + colShift);
+      const y = Math.max(1, d.fromY + rowShift);
+      placeAt(d.id, x, y);
+      if (dragElRef.current) {
+        dragElRef.current.classList.remove('is-dragging');
+        dragElRef.current.style.removeProperty('--drag-x');
+        dragElRef.current.style.removeProperty('--drag-y');
+        dragElRef.current = null;
+      }
+      document.body.style.cursor = '';
+      return null;
+    });
+  }, [placeAt]);
 
   /**
    * resize 手柄：编辑模式下拖右下角手柄，实时预览列跨度，松手落定。
@@ -510,6 +546,18 @@ export default function HomePage() {
     setEditing(false);
   };
 
+  // 编辑模式：全局监听 pointermove/pointerup 完成跟手拖动
+  useEffect(() => {
+    if (!editing) return undefined;
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragUp);
+    return () => {
+      window.removeEventListener('pointermove', onDragMove);
+      window.removeEventListener('pointerup', onDragUp);
+      document.body.style.cursor = '';
+    };
+  }, [editing, onDragMove, onDragUp]);
+
   return (
     <section className="home-section">
       {/* 首屏博主卡右侧的钻石陨石聚散（装饰层，pointer-events: none） */}
@@ -547,22 +595,17 @@ export default function HomePage() {
               return (
                 <motion.div
                   key={item.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.96, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-                  className="home-layout-item"
+                  layout={!editing}
+                  initial={editing ? false : { opacity: 0, scale: 0.96, y: 10 }}
+                  animate={editing ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+                  exit={editing ? undefined : { opacity: 0, scale: 0.96 }}
+                  transition={editing ? undefined : { duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+                  className={`home-layout-item ${drag?.id === item.id ? 'is-dragging' : ''}`}
                   data-id={item.id}
-                  draggable={editing}
-                  onDragStart={(e) => handleDragStart(e, item.id)}
-                  onDragOver={(e) => handleDragOver(e, item.id)}
-                  onDrop={(e) => handleDrop(e, item.id)}
-                  onDragEnd={handleDragEnd}
+                  onPointerDown={editing ? (e) => beginDrag(e, item) : undefined}
                   style={{
                     gridColumn: `${item.x} / span ${item.w}`,
                     gridRow: item.y,
-                    ...(editing && overId === item.id ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : {}),
                   }}
                 >
                   <div>

@@ -138,6 +138,15 @@ export const useHomeLayout = create((set, get) => ({
     layout: s.layout.map((it) => (it.id === id ? { ...it, ...patch } : it)),
   })),
 
+  /** 按网格坐标落定（pointer 拖拽松手时调用；内部推挤自动排版） */
+  placeAt: (id, x, y) => set((s) => {
+    const self = s.layout.find((it) => it.id === id);
+    if (!self) return {};
+    const arr = placeIn(s.layout, id, x, y, self.w);
+    persist(arr);
+    return { layout: arr };
+  }),
+
   /** resize：拖右下角手柄改跨度 w（1..12），松手落定（推挤） */
   setWidth: (id, w) => set((s) => {
     const self = s.layout.find((x) => x.id === id);

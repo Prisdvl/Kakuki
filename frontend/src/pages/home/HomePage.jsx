@@ -519,14 +519,15 @@ export default function HomePage() {
     const colW = gridRect.width / 12;
     const startX = e.clientX;
     const startW = item.w;
+    // 用局部变量跟踪预览中的最新宽度，避免松手时读旧闭包导致“自动复原”
+    let currentW = startW;
     const onMove = (ev) => {
       ev.preventDefault();
-      const newW = Math.max(3, Math.min(12, startW + Math.round((ev.clientX - startX) / colW)));
-      preview(item.id, { w: newW });
+      currentW = Math.max(3, Math.min(12, startW + Math.round((ev.clientX - startX) / colW)));
+      preview(item.id, { w: currentW });
     };
     const onUp = () => {
-      const cur = layout.find((it) => it.id === item.id);
-      if (cur) setWidth(item.id, cur.w);
+      setWidth(item.id, currentW);
       resizeRef.current = null;
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);

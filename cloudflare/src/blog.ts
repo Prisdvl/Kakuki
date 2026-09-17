@@ -343,6 +343,28 @@ export const blogRoutes = new Hono<{ Bindings: Env }>()
   })
 
   /* ---------------- Comments ---------------- */
+  .get('/comments/recent/', async (c) => {
+    const limit = Math.min(10, Math.max(1, Number(c.req.query('limit')) || 5));
+    const rows = await c.env.DB.prepare(
+      `SELECT cm.id, cm.article_id AS article, cm.content, cm.created_at,
+              u.id AS user_id, u.nickname AS user_name
+       FROM comments cm JOIN users u ON u.id = cm.user_id
+       WHERE cm.parent_id IS NULL
+       ORDER BY cm.created_at DESC LIMIT ?1`,
+    )
+      .bind(limit)
+      .all<Row>();
+    const out = rows.results.map((r) => ({
+      id: r.id,
+      article: r.article,
+      user_id: r.user_id,
+      user_name: r.user_name,
+      content: r.content,
+      created_at: r.created_at,
+    }));
+    return ok(out);
+  })
+
   .get('/articles/:id/comments/', async (c) => {
     const articleId = Number(c.req.param('id'));
     const tops = await c.env.DB.prepare(

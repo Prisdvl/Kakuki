@@ -508,12 +508,12 @@ function buildThemeVars(palette, isDark) {
     darkMuted: DarkMuted,
     lightMuted: LightMuted,
 
-    glassBg: isDark ? rgba(DarkMuted, 0.42) : rgba(LightMuted, 0.4),
-    glassBgStrong: isDark ? rgba(DarkMuted, 0.72) : rgba(LightMuted, 0.7),
+    glassBg: isDark ? rgba(DarkMuted, 0.36) : rgba(LightMuted, 0.36),
+    glassBgStrong: isDark ? rgba(DarkMuted, 0.64) : rgba(LightMuted, 0.62),
     // 实底档：固定条（状态栏）专用。半透明玻璃叠在滚过的任意内容上，
     // 文字对比度不可控，必须用 0.94+ 的不透明档（浅色偏白、深色偏黑）。
     glassBgStrongSolid: isDark ? 'rgba(24, 24, 28, 0.95)' : 'rgba(255, 255, 255, 0.94)',
-    glassBorder: isDark ? rgba(accent, 0.36) : rgba(accent, 0.32),
+    glassBorder: isDark ? rgba(accent, 0.3) : rgba(accent, 0.26),
     glassShadow: isDark
       ? `0 8px 32px ${rgba(DarkVibrant, 0.4)}`
       : `0 8px 32px ${rgba(accent, 0.08)}`,

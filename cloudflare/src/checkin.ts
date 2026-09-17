@@ -3,7 +3,7 @@
  *
  * - checkins   : 每日刷题打卡。历史数据（LeetCode calendar）一次性导入为初始记录，
  *                此后由用户手动打卡。date 唯一，重复打卡幂等（不报错，返回当日记录）。
- * - focus_stats: 每日专注时长，由本地 PrisTimer 同步脚本上报聚合结果（按日 PK 覆盖）。
+ * - focus_stats: 每日专注时长，由本地 PrisTimer 同步（本机助手 / 旧脚本）上报聚合结果（按日 PK 覆盖）。
  *
  * 权限：读接口公开（首页卡片 / 状态栏），写接口需要认证（打卡）或 SYNC_TOKEN（脚本上报）。
  */
@@ -258,12 +258,21 @@ export const checkinRoutes = new Hono<{ Bindings: Env }>()
     });
   })
 
-  /** 专注数据上报（本地 PrisTimer 同步脚本调用，需 SYNC_TOKEN） */
+  /** 专注数据上报。
+   * 鉴权二选一：
+   *  - X-Sync-Token（旧版本机脚本，兼容保留）
+   *  - Bearer JWT（本机助手 local-sync/helper.py 用登录态 access token，站长身份）
+   * 2026-09 同步机制重构：由登录后手动「同步」按钮触发，不再有定时脚本。 */
   .post('/focus/sync/', async (c) => {
-    const token = c.env.SYNC_TOKEN;
     const given = c.req.header('X-Sync-Token');
-    if (!token) return fail(503, 'SYNC_TOKEN 未配置，同步接口未启用');
-    if (!given || given !== token) return fail(401, '同步令牌无效');
+    let authorized = false;
+    if (c.env.SYNC_TOKEN && given && given === c.env.SYNC_TOKEN) {
+      authorized = true;
+    } else {
+      const user = await authUser(c);
+      if (user && user.is_staff) authorized = true;
+    }
+    if (!authorized) return fail(401, '同步令牌无效或未登录站长');
 
     let body: { days?: { date: string; total_ms: number; session_cnt?: number; tags?: string[] }[] } = {};
     try {

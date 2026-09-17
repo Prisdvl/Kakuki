@@ -41,13 +41,14 @@
 - 卡片各自带兜底数据源，上游不可用时降级显示而不是白屏
 
 **界面**
-- 玻璃拟态 + 折射滤镜（SVG displacement map）
+- iOS 风格毛玻璃 + 克制的描边与圆角（纯色底，无装饰性背景层，滚动流畅）
 - 深浅主题平滑切换（WCAG 对比度标定）
-- 组件化首页布局、滚动入场动效
+- 组件化首页自由布局（5 档宽度 · 任意格投放 · 可添加 站点统计/分类云/最近评论/天气 等组件）
 
 **外部数据代理**（前端禁止直连第三方，全部经 Worker 边缘缓存）
-- GitHub 用户 / 仓库数据（三级兜底：缓存 → 过期缓存 → 快照）
-- LeetCode 提交统计
+- GitHub 用户 / 仓库数据（实时拉取 + 前端缓存上次成功结果兜底）
+- LeetCode 提交统计（同上）
+- 天气（uapis.cn，10 分钟边缘缓存）
 - 网易云歌单 / 歌词
 - Cloudflare Analytics 站点流量（Token 只留在 Worker，5 分钟边缘缓存）
 
@@ -102,20 +103,26 @@ cd cloudflare && npm run deploy
 
 首次部署的 D1 / R2 / Secret 配置步骤见 [cloudflare/README.md](cloudflare/README.md#-首次部署)。
 
-## 🔁 自动数据同步（本机运行）
+## 🔄 数据同步（已改为手动，不再有定时脚本）
 
-站点本身会实时拉取 GitHub / LeetCode 并缓存；以下三项需要本机定时任务（`scripts/` 为本地运维脚本，不入库）：
+站点对 GitHub / LeetCode / 天气等外部数据一律**实时经 Worker 代理拉取**，
+前端把最近一次成功结果缓存到 localStorage（代理不可达时展示「离线数据」而非空页）。
 
-1. **PrisTimer 专注时长** → `scripts/sync-pristimer.py`（只读本机库，按日聚合 `finished` 会话上报 `/api/v1/focus/sync/`）
-2. **LeetCode 数据快照** → 刷新 `frontend/src/data/leetcodeStatic.js`（从站点公开代理 `GET /api/v1/leetcode/:user/` 拉取，前端离线兜底用）
-3. **GitHub 头像快照** → 刷新 `frontend/public/github-avatar.jpg`（下载 GitHub 头像转 JPEG）
+**PrisTimer 专注时长** 改为**登录后手动同步**（2026-09 起废弃定时脚本与静态快照）：
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\schedule-auto-sync.ps1   # 注册计划任务 Kakuki-AutoSync（每 4 小时一次）
-powershell -ExecutionPolicy Bypass -File scripts\sync-all.ps1             # 立即手动跑一次（幂等）
-```
+1. 本机运行简助助手（唯一保留的本机组件，无定时任务、仅标准库）：
 
-同步日志追加到 `logs/sync.log`（已 gitignore）。任一步失败不影响其余步骤，网络受限时快照保留旧文件。
+   ```bash
+   python local-sync/helper.py        # 监听 http://127.0.0.1:8787
+   ```
+
+2. 在**本机打开**站点并登录（线上 kakuki.top 会提示请在本机打开）：
+   - 仪表盘「已学习时间」卡右上角，或导航栏登录态下的「同步」按钮
+   - 点击 → 助手读本机 PrisTimer 库（只读、按日聚合 `finished` 会话）
+     → 以你的登录态 JWT 上报 `/api/v1/focus/sync/` → 卡片局部刷新，
+     并显示「新增 X 天 / Y 分钟」与最近同步时间
+
+同步鉴权复用登录态 JWT（后端同时兼容旧的 `X-Sync-Token`）。
 
 ## 📄 License
 

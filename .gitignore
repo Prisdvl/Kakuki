@@ -53,12 +53,12 @@ npm-debug.log*
 !.env.example
 
 # 本地同步令牌（含密钥，绝不提交）
-scripts/.sync-token
+local-sync/.sync-token
 
 # Vite 临时配置产物（构建中断时残留）
 vite.config.js.timestamp-*.mjs
 
-# ===== 仓库结构（2026-09-13）：前后端同仓（参考 lxpavilion），本地脚本不外传 =====
+# ===== 仓库结构（2026-09-13）：前后端同仓（参考 lxpavilion），本地运维代码不外传 =====
 backend/
 scripts/
 docker-compose.yml

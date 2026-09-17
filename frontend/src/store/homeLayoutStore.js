@@ -2,8 +2,8 @@ import { create } from 'zustand';
 
 const STORAGE_KEY = 'kakuki-home-layout';
 
-// 宽度档位：third(1/3) · two-thirds(2/3) · full(1/1)
-const WIDTH_ORDER = ['third', 'two-thirds', 'full'];
+// 宽度档位：quarter(1/4) · third(1/3) · half(1/2) · two-thirds(2/3) · full(1/1)
+const WIDTH_ORDER = ['quarter', 'third', 'half', 'two-thirds', 'full'];
 
 const DEFAULT_LAYOUT = [
   { id: 'profile', width: 'full', visible: true },
@@ -25,12 +25,12 @@ const RETIRED_IDS = new Set(['pomodoro']);
 const KNOWN_IDS = new Set([
   'profile', 'music', 'leetcode', 'talks', 'projects',
   'categories', 'quote', 'todo', 'palette', 'countdown',
+  'stats', 'tags', 'comments', 'weather',
 ]);
 
-// 兼容旧数据：wide → full，half → two-thirds
+// 兼容旧数据：wide → full；half 已是合法档位（1/2）
 function normalizeWidth(w) {
   if (w === 'wide') return 'full';
-  if (w === 'half') return 'two-thirds';
   return WIDTH_ORDER.includes(w) ? w : 'two-thirds';
 }
 
@@ -70,15 +70,19 @@ export const useHomeLayout = create((set) => ({
     persist(arr);
     return { layout: arr };
   }),
-  moveTo: (id, targetId) => set((s) => {
+/**
+ * 把 id 移动到 targetId 的位置。
+ * @param after 落点在目标卡片的右半侧时为 true → 插到目标之后；
+ *              否则插到目标之前。配合 12 列流式网格即"任意格投放"。
+ */
+  moveTo: (id, targetId, after = false) => set((s) => {
     const arr = [...s.layout];
     const from = arr.findIndex((x) => x.id === id);
-    if (from < 0 || arr.some((x) => x.id === targetId) === false) return {};
-    if (id === targetId) return {};
+    if (from < 0 || id === targetId) return {};
     const [item] = arr.splice(from, 1);
     const targetPos = arr.findIndex((x) => x.id === targetId);
     if (targetPos < 0) return {};
-    arr.splice(targetPos, 0, item);
+    arr.splice(after ? targetPos + 1 : targetPos, 0, item);
     persist(arr);
     return { layout: arr };
   }),

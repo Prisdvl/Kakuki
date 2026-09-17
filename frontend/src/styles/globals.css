@@ -3610,6 +3610,15 @@ input:autofill {
   --ant-color-primary: #7c3aed;
 }
 
+/* 首页分类云卡：分类云在 .ui-card 内不再自带底板（避免玻璃叠玻璃发灰） */
+.ui-card .tag-cloud-container {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
 /* ===== Tag & Category Chip Buttons ===== */
 .tag-cloud-container,
 .category-chip-container {
@@ -6550,26 +6559,33 @@ a, button, .article-card, .contact-card, .social-links a,
 }
 .home-layout-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: 1.2rem;
+  /* 12 列基准：quarter=3 · third=4 · half=6 · two-thirds=8 · full=12 */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
 }
 .home-layout-item {
   min-width: 0;
   position: relative;
 }
-.home-layout-item.third { grid-column: span 1; }
-.home-layout-item.two-thirds { grid-column: span 2; }
-.home-layout-item.full { grid-column: span 3; }
+.home-layout-item.quarter { grid-column: span 3; }
+.home-layout-item.third { grid-column: span 4; }
+.home-layout-item.half { grid-column: span 6; }
+.home-layout-item.two-thirds { grid-column: span 8; }
+.home-layout-item.full { grid-column: span 12; }
 @media (max-width: 1100px) {
-  .home-layout-grid { grid-template-columns: repeat(2, 1fr); }
-  .home-layout-item.third { grid-column: span 1; }
-  .home-layout-item.two-thirds { grid-column: span 1; }
-  .home-layout-item.full { grid-column: span 2; }
+  .home-layout-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .home-layout-item.quarter,
+  .home-layout-item.third { grid-column: span 3; }
+  .home-layout-item.half,
+  .home-layout-item.two-thirds { grid-column: span 6; }
+  .home-layout-item.full { grid-column: span 6; }
 }
 @media (max-width: 900px) {
   .home-layout-grid { grid-template-columns: 1fr; }
+  .home-layout-item.quarter,
   .home-layout-item.third,
+  .home-layout-item.half,
   .home-layout-item.two-thirds,
   .home-layout-item.full { grid-column: span 1; }
 }
@@ -8133,4 +8149,205 @@ a, button, .article-card, .contact-card, .social-links a,
 /* ---- CommentList 入场 ---- */
 .animate-fade-in-up {
   animation: fadeUp var(--motion-slow) var(--ease-decelerate) both;
+}
+
+/* ============================================================
+ * iOS 风精简：背景只留纯色底 + 可选背景图。
+ * 水墨/网格/光束/星尘/粒子/光球等装饰层已从 AppLayout 移除，
+ * 这里只兜底保证移除后背景层仍是纯色且不透明。
+ * ============================================================ */
+.bg-scene-minimal { background: var(--bg-primary); }
+
+/* ============================================================
+ * 后台（/admin）精修 —— 与前台同容器、同节奏、同材质
+ * ============================================================ */
+
+/* 内容区：统一 24px 内边距与居中限宽 */
+.admin-content.ant-layout-content {
+  padding: var(--space-6) !important;
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100% !important;
+}
+
+/* 后台表单：标签与前台同档字号/字重，输入控件 40px 基线 */
+.admin-content .ant-form-vertical .ant-form-item {
+  margin-bottom: var(--space-5);
+}
+.admin-content .ant-form-item-label > label {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  height: auto;
+  margin-bottom: var(--space-1);
+}
+.admin-content .ant-form-item-label {
+  padding-bottom: var(--space-1) !important;
+}
+
+/* 富编辑器：与前台输入框一致的玻璃壳 */
+.admin-content .w-md-editor {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+.admin-content .w-md-editor-toolbar {
+  border-bottom: 1px solid var(--border) !important;
+  background: var(--bg-tertiary) !important;
+}
+
+/* 后台表格：行高与数字列对齐前台节奏 */
+.admin-content .ant-table-thead > tr > th,
+.admin-content .ant-table-tbody > tr > td {
+  padding: var(--space-3) var(--space-4) !important;
+}
+.admin-content .ant-table-tbody > tr > td {
+  font-variant-numeric: tabular-nums;
+}
+.admin-content .ant-table-thead > tr > th {
+  white-space: nowrap;
+}
+
+/* 后台弹窗：玻璃面（对齐前台 Modal 观感） */
+.admin-content .ant-modal-content {
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-hover);
+}
+.admin-content .ant-modal-header {
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-4);
+}
+
+/* 后台分段控件 / 上传 / 开关与前台控件一致 */
+.admin-content .ant-upload-drag,
+.admin-content .ant-upload {
+  border-radius: var(--radius-md) !important;
+}
+
+/* ============================================================
+ * 首页：自由布局网格档位已并入 Home Free Layout 段（12 列 span 体系，
+ * quarter/third/half/two-thirds/full 五档），此处不再重复定义。
+ * ============================================================ */
+
+/* 新增首页组件的排版（视觉基底仍来自 .ui-card） */
+.site-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-2);
+}
+@media (max-width: 640px) {
+  .site-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.site-stats-grid .ui-stat { padding: var(--space-3) var(--space-1); }
+.site-stats-grid .ui-stat-value { font-size: var(--fs-xl); }
+
+/* 最近评论行 */
+.comments-mini { min-width: 0; }
+.comments-mini-content {
+  font-size: var(--fs-md);
+  color: var(--text-primary);
+  line-height: var(--lh-snug);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comments-mini-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+  display: flex;
+  gap: var(--space-3);
+}
+.comments-mini-more { margin-left: auto; font-size: var(--fs-xs); }
+
+/* 天气卡 */
+.weather-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.weather-temp {
+  font-family: var(--font-mono);
+  font-size: 2.6rem;
+  font-weight: var(--fw-black);
+  line-height: var(--lh-tight);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.weather-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.weather-city {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.weather-desc { font-size: var(--fs-md); color: var(--text-secondary); }
+.weather-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin-top: var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+.weather-detail b {
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.weather-set {
+  font-size: var(--fs-2xs);
+  color: var(--text-tertiary);
+  opacity: 0.75;
+  margin-top: var(--space-2);
+}
+
+/* 陨石粒子（首页首屏局部背景） */
+.meteor-particles {
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+.meteor-particles canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+/* 首屏专用：hero 网格右下空白处 */
+.hero-articles { position: relative; }
+.meteor-hero {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  height: 200px;
+  z-index: 0;
+  opacity: 0.9;
+}
+@media (max-width: 1400px) {
+  .meteor-hero { display: none; }
+}
+
+/* 手动同步按钮 */
+.sync-btn { gap: 0.35rem; }
+.sync-btn .spin { animation: spin 0.9s linear infinite; }
+.sync-btn-last {
+  font-size: var(--fs-2xs);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
 }

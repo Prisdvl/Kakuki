@@ -10,14 +10,15 @@ import githubApi from '../../api/github';
 import TodoCard from '../../components/Tools/TodoCard';
 import CountdownCard from '../../components/Tools/CountdownCard';
 import TrafficSection from '../../components/Stats/TrafficSection';
+import SyncButton from '../../components/SyncButton';
+import useUserStore from '../../store/userStore';
 
 const GITHUB_USERNAME = 'Prisdvl';
 
-/* ================= GitHub 头像（三级回退：官方 → 本地快照 → 首字母徽章） ================= */
+/* ================= GitHub 头像（回退：官方 URL → 首字母徽章） ================= */
 function GitHubAvatar() {
   const [level, setLevel] = useState(0);
   const sources = [
-    `${import.meta.env.BASE_URL}github-avatar.jpg`, // 本地快照优先：与 GitHub 一致、网络受限环境零请求
     `https://github.com/${GITHUB_USERNAME}.png`,
   ];
   if (level >= sources.length) {
@@ -143,6 +144,9 @@ function StudyTimeCard() {
     return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
   };
 
+  const { isLoggedIn, user } = useUserStore();
+  const isStaff = isLoggedIn && user?.is_staff;
+
   const cells = [
     { icon: Flame, label: '今日', value: fmt(stats.today), color: 'var(--accent)' },
     { icon: TrendingUp, label: '本周', value: fmt(stats.week), color: 'var(--text-primary)' },
@@ -156,9 +160,12 @@ function StudyTimeCard() {
         <span className="dash-label">
           <Timer size={15} /> 已学习时间
         </span>
-        <span className="dash-footnote">
-          {stats.source === 'pristimer' ? 'PrisTimer 同步' : '本地记录'}
-        </span>
+        <div className="ui-card-actions">
+          <span className="dash-footnote">
+            {stats.source === 'pristimer' ? 'PrisTimer 同步' : '本地记录'}
+          </span>
+          {isStaff && <SyncButton />}
+        </div>
       </div>
 
       <div className="dash-split">

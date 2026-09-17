@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { STATIC_LEETCODE } from '../data/leetcodeStatic';
 
 const request = axios.create({
   baseURL: '/api/v1',
@@ -73,8 +72,8 @@ function mockResolve(config) {
       code: 200, message: 'ok',
       data: {
         id: cur.id, username: cur.username, nickname: cur.nickname,
-        avatar: `${import.meta.env.BASE_URL}github-avatar.jpg`,
-        bio: '全栈开发者 · React + Vite + Django · 构建玻璃拟态个人站 Kakuki：博客 / 音乐播放器 / LeetCode 追踪 / 仪表盘工具',
+        avatar: 'https://github.com/Prisdvl.png',
+        bio: '全栈开发者 · React + Vite · 构建 Kakuki：博客 / 音乐播放器 / LeetCode 追踪 / 仪表盘工具',
       },
     });
   }
@@ -86,7 +85,12 @@ function mockResolve(config) {
   }
 
   if (url.startsWith('/leetcode/') && method === 'get') {
-    return Promise.resolve(STATIC_LEETCODE);
+    // 静态快照已废弃：降级层改读「上次成功拉取」的客户端缓存
+    try {
+      const cached = JSON.parse(localStorage.getItem('kakuki-leetcode-cache') || 'null');
+      if (cached) return Promise.resolve({ ...cached, stale: true });
+    } catch { /* ignore */ }
+    return Promise.reject({ response: { status: 503, data: { message: 'LeetCode 数据暂不可用' } } });
   }
 
   /* ---- 打卡：后端不可用时用 localStorage 兜底，保证线上仍可打卡 ---- */

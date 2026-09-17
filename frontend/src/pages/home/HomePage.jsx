@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,6 +10,7 @@ import {
   Rocket, FolderTree, Quote, ThumbsUp, Shuffle, ArrowRight,
   LayoutGrid, GripVertical, ArrowUp, ArrowDown, Maximize2, Minimize2,
   EyeOff, Plus, RotateCcw, Check, X, CalendarCheck,
+  Tags, Cloud, MessageCircle,
 } from "lucide-react";
 import { getArticles, getCategories } from "../../api/article";
 import { getTalks, likeTalk } from "../../api/talk";
@@ -21,6 +22,11 @@ import TodoCard from "../../components/Tools/TodoCard";
 import PaletteCard from "../../components/Tools/PaletteCard";
 import CountdownCard from "../../components/Tools/CountdownCard";
 import CheckinCard from "../../components/Tools/CheckinCard";
+import SiteStatsCard from "../../components/Tools/SiteStatsCard";
+import TagsCloudCard from "../../components/Tools/TagsCloudCard";
+import RecentCommentsCard from "../../components/Tools/RecentCommentsCard";
+import WeatherCard from "../../components/Tools/WeatherCard";
+import MeteorParticles from "../../components/MeteorParticles";
 import TiltCard from "../../components/TiltCard";
 import { QUOTES } from "../../data/quotes";
 import { useHomeLayout } from "../../store/homeLayoutStore";
@@ -40,6 +46,10 @@ const COMPONENT_META = {
   todo:      { name: "待办清单",  icon: Check },
   palette:   { name: "色板生成",  icon: LayoutGrid },
   countdown: { name: "纪念日",    icon: Calendar },
+  stats:     { name: "站点统计",  icon: BarChart3 },
+  tags:      { name: "分类云",    icon: Tags },
+  comments:  { name: "最近评论",  icon: MessageCircle },
+  weather:   { name: "天气",      icon: Cloud },
 };
 
 function AnimatedStatValue({ value }) {
@@ -51,7 +61,7 @@ const GITHUB_USERNAME = 'Prisdvl';
 const GH_CACHE_KEY = 'kakuki-github-profile';
 const GH_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
 
-// 从 GitHub API 同步头像与个人介绍（缓存 24h，失败回退本地）
+// 从 GitHub API 实时拉取头像与个人介绍（Worker 代理；localStorage 缓存 24h 作离线兜底）
 function useGithubProfile() {
   const [profile, setProfile] = useState(null);
   useEffect(() => {
@@ -83,14 +93,14 @@ function useGithubProfile() {
 
 export function ProfileCard({ stats }) {
   const gh = useGithubProfile();
-  // 头像：本地快照（unavatar 下载，与 GitHub 一致，网络受限环境零请求）→ GitHub 官方 → 首字母徽章
+  // 头像：GitHub 官方（经 Worker 代理缓存）→ 首字母徽章（本地快照已废弃）
   const [avatarLevel, setAvatarLevel] = useState(0);
-  const avatarSources = [`${import.meta.env.BASE_URL}github-avatar.jpg`, gh?.avatar_url || 'https://github.com/Prisdvl.png'];
-  const bio = gh?.bio || '全栈开发者 · React + Vite + Django · 构建玻璃拟态个人站 Kakuki：博客 / 音乐播放器 / LeetCode 追踪 / 仪表盘工具';
+  const avatarSources = [gh?.avatar_url || 'https://github.com/Prisdvl.png'];
+  const bio = gh?.bio || '全栈开发者 · React + Vite · 构建 Kakuki：博客 / 音乐播放器 / LeetCode 追踪 / 仪表盘工具';
   return (
     <div className="glass profile-card mouse-glow">
       <div className="profile-avatar">
-        {avatarLevel >= 2 ? (
+        {avatarLevel >= 1 ? (
           <div className="profile-avatar-fallback">P</div>
         ) : (
           <img src={avatarSources[avatarLevel]} alt="Prisdvl" className="profile-avatar-img" onError={() => setAvatarLevel((l) => l + 1)} />
@@ -421,6 +431,10 @@ export default function HomePage() {
       case 'todo': return <TodoCard />;
       case 'palette': return <PaletteCard />;
       case 'countdown': return <CountdownCard />;
+      case 'stats': return <SiteStatsCard />;
+      case 'tags': return <TagsCloudCard />;
+      case 'comments': return <RecentCommentsCard />;
+      case 'weather': return <WeatherCard />;
       default: return null;
     }
   };
@@ -435,9 +449,22 @@ export default function HomePage() {
     e.dataTransfer.dropEffect = 'move';
     if (overId !== id) setOverId(id);
   };
+
+  /**
+   * 投放：任意格投放 + 流式补齐
+   *
+   * 传三个信息给 store：拖拽源 id、目标 id、落点在目标上的水平位置
+   * （左半 → 插到目标之前，右半 → 插到目标之后）。插入后其余卡片按
+   * 数组顺序自然流式重排，不需要手工补空白 —— 这正是「任意格投放」的语义：
+   * 网格是流式的，插到哪一格，后续卡片自动让位/补齐。
+   */
   const handleDrop = (e, targetId) => {
     e.preventDefault();
-    if (dragId && dragId !== targetId) moveTo(dragId, targetId);
+    if (dragId && dragId !== targetId) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const after = e.clientX - rect.left > rect.width / 2;
+      moveTo(dragId, targetId, after);
+    }
     setDragId(null);
     setOverId(null);
   };
@@ -493,7 +520,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-                  className={`home-layout-item ${item.width === 'third' ? 'third' : item.width === 'full' ? 'full' : 'two-thirds'}`}
+                  className={`home-layout-item ${item.width || 'two-thirds'}`}
                   data-id={item.id}
                   draggable={editing}
                   onDragStart={(e) => handleDragStart(e, item.id)}
@@ -561,8 +588,9 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Article Grid */}
+        {/* Article Grid + 首屏局部陨石粒子（右侧空白装饰） */}
         <div className="hero-articles">
+          <MeteorParticles className="meteor-hero" />
           {loading ? (
             <>
               {[0, 1, 2].map((i) => (

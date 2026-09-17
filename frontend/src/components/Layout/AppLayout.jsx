@@ -6,9 +6,7 @@ import useThemeStore from '../../store/themeStore';
 import useUserStore from '../../store/userStore';
 import checkinApi from '../../api/checkin';
 import FeatureMenu from '../FeatureMenu';
-import ParticleField from '../ParticleField';
-import InkWash from '../InkWash';
-import StarfieldParallax from './StarfieldParallax';
+import SyncButton from '../SyncButton';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const NAV_ITEMS = [
@@ -279,7 +277,7 @@ export default function AppLayout() {
   // 因为大幅倾斜会干扰长文阅读。
   useEffect(() => {
     const SEL = 'main .glass, main .glass-card, main .glass-elevated';
-    const EXCLUDE = '.search-center, .music-player-bar, .status-bar, .feature-menu-dropdown, .navbar, .tilt-card, .tilt-card *, .about-page, .about-page *';
+    const EXCLUDE = '.search-center, .music-player-bar, .status-bar, .feature-menu-dropdown, .navbar, .tilt-card, .tilt-card *, .about-page, .about-page *, .article-page, .article-page *';
     const DEFAULT_TILT_MAX = 7;
     const DEFAULT_TILT_SCALE = 1.012;
     const TILT_EASE = 'transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease';
@@ -467,24 +465,9 @@ export default function AppLayout() {
 
   return (
     <>
-      <div className="bg-scene">
+      {/* 背景：纯色底 + 可选背景图（iOS 风精简——水墨/网格/光束/星尘/粒子/光球等装饰层已移除） */}
+      <div className="bg-scene bg-scene-minimal">
         <div className="bg-image-layer" />
-        <StarfieldParallax />
-        <div className="bg-scene-grid" />
-        <InkWash />
-        <div className="bg-scene-flow">
-          <div className="bg-flow-beam" />
-          <div className="bg-flow-beam" />
-          <div className="bg-flow-beam" />
-          <div className="bg-flow-beam" />
-          <div className="bg-flow-beam vertical" />
-          <div className="bg-flow-beam vertical" />
-          <div className="bg-flow-beam vertical" />
-        </div>
-        <div className="bg-scene-orb orb-1" />
-        <div className="bg-scene-orb orb-2" />
-        <div className="bg-scene-orb orb-3" />
-        <ParticleField />
       </div>
 
       {scrollProgress > 0 && (
@@ -559,6 +542,7 @@ export default function AppLayout() {
             <FeatureMenu />
             {isLoggedIn ? (
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <SyncButton variant="nav" />
                 <Link to="/admin" className="btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
                   {user?.nickname || user?.username || '管理'}
                 </Link>
@@ -608,7 +592,7 @@ export default function AppLayout() {
       </nav>
 
       <main className="page-content" style={{ paddingBottom: '4rem' }}>
-        <div className="app-container" style={{ maxWidth: 1200 }}>
+        <div className="app-container" style={{ maxWidth: 1400 }}>
           <div key={location.pathname} className="page-enter">
             <Outlet />
           </div>

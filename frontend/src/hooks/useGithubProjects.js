@@ -11,7 +11,8 @@ import githubApi from '../api/github';
  *
  * 数据源走**本站 Worker 代理**（/api/v1/github/repos/:login/），不直连 GitHub：
  * 浏览器直连用的是未认证配额（60 次/小时/IP），访客几次刷新就打满后全部 403。
- * 这里再叠一层 localStorage 缓存，网络失败时回退到 FALLBACK 快照。
+ * 静态快照已废弃（2026-09 同步机制重构）：失败时回退到 localStorage 缓存
+ * （最近一次成功结果），无缓存则显示空态。
  */
 const GH_USER = 'Prisdvl';
 const CACHE_KEY = 'kakuki-github-repos';
@@ -37,61 +38,7 @@ export const LANG_COLORS = {
   Go: '#00ADD8',
 };
 
-/** 兜底快照：2026-09-12 抓取的 GitHub 真实数据 */
-const FALLBACK = [
-  {
-    id: 'PrisTimer',
-    name: 'PrisTimer',
-    description: 'Tauri 2 + Rust + Vue 3 的液态玻璃风格专注计时器，支持多任务标签、会话统计与本地持久化。',
-    language: 'Vue',
-    tech_list: ['Tauri 2', 'Rust', 'Vue 3'],
-    repo_url: 'https://github.com/Prisdvl/PrisTimer',
-    url: '',
-    stars: 0,
-    updated_at: '',
-    is_featured: true,
-    source: 'github',
-  },
-  {
-    id: 'Kakuki',
-    name: 'Kakuki',
-    description: '本站源码：个人博客全栈实现，含文章、归档、音乐播放器与可视化看板。',
-    language: 'JavaScript',
-    tech_list: ['Django', 'React', 'MySQL'],
-    repo_url: 'https://github.com/Prisdvl/Kakuki',
-    url: 'https://kakuki.top',
-    stars: 0,
-    updated_at: '',
-    is_featured: true,
-    source: 'github',
-  },
-  {
-    id: 'homework-grading-system',
-    name: 'homework-grading-system',
-    description: '作业批改系统，面向教师端的作业收集、批改与成绩统计流程。',
-    language: 'Python',
-    tech_list: ['Python'],
-    repo_url: 'https://github.com/Prisdvl/homework-grading-system',
-    url: '',
-    stars: 1,
-    updated_at: '',
-    is_featured: false,
-    source: 'github',
-  },
-  {
-    id: 'prisdvl-nvim-config',
-    name: 'prisdvl-nvim-config',
-    description: '我的 Neovim 配置，面向 C/C++ 开发，集成 LSP、调试与模糊查找。',
-    language: 'Lua',
-    tech_list: ['Lua', 'Neovim'],
-    repo_url: 'https://github.com/Prisdvl/prisdvl-nvim-config',
-    url: '',
-    stars: 0,
-    updated_at: '',
-    is_featured: false,
-    source: 'github',
-  },
-];
+/** 兜底快照已废弃：失败时回退 localStorage 缓存，无缓存即空态（见 useGithubProjects） */
 
 /** 仓库描述兜底：GitHub 上为空或编码损坏时用人工描述，避免卡片出现乱码/空白 */
 const DESC_FALLBACK = {
@@ -169,7 +116,7 @@ function readCache() {
  * @returns {{ projects: Array, loading: boolean, error: string, stale: boolean }}
  */
 export function useGithubProjects() {
-  const [projects, setProjects] = useState(() => readCache() || FALLBACK);
+  const [projects, setProjects] = useState(() => readCache() || []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stale, setStale] = useState(true);
@@ -199,7 +146,7 @@ export function useGithubProjects() {
       .catch((e) => {
         if (cancelled) return;
         setError(String(e?.message || e));
-        // 已有缓存或兜底快照，页面照常可用
+        // 已有 localStorage 缓存则页面照常可用（stale 标记离线）
       })
       .finally(() => { if (!cancelled) setLoading(false); });
 

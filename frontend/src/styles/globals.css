@@ -8358,8 +8358,8 @@ a, button, .article-card, .contact-card, .social-links a,
   margin-top: var(--space-2);
 }
 
-/* 陨石粒子（全屏背景层，挂在 .bg-scene 内） */
-.meteor-field {
+/* 陨石粒子（双形态） */
+.meteor-ambient {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -8367,10 +8367,32 @@ a, button, .article-card, .contact-card, .social-links a,
   user-select: none;
   overflow: hidden;
 }
-.meteor-field canvas {
+.meteor-ambient canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* 首页：博主卡右侧的钻石陨石（装饰层） */
+.home-section { position: relative; }
+.meteor-home {
+  position: absolute;
+  right: var(--space-4);
+  top: 64px; /* 避开布局工具栏，落在首屏博主卡行右侧 */
+  width: min(440px, 32vw);
+  height: 330px;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.95;
+}
+.meteor-home canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 1100px) {
+  .meteor-home { display: none; }
 }
 
 /* 手动同步按钮 */

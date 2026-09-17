@@ -466,10 +466,10 @@ export default function AppLayout() {
 
   return (
     <>
-      {/* 背景：纯色底 + 可选背景图 + 陨石粒子层（iOS 风精简） */}
+      {/* 背景：纯色底 + 可选背景图 + 全站弥散粒子（首页另加陨石聚散，见 HomePage） */}
       <div className="bg-scene bg-scene-minimal">
         <div className="bg-image-layer" />
-        <MeteorParticles />
+        <MeteorParticles variant="ambient" />
       </div>
 
       {scrollProgress > 0 && (

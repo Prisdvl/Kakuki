@@ -13,7 +13,7 @@ export const GRID_COLS = 12;
  * layout 元素：{ id, x, y, w, visible }
  */
 const DEFAULT_LAYOUT = [
-  { id: 'profile',   x: 1,  y: 1, w: 12, visible: true },
+  { id: 'profile',   x: 1,  y: 1, w: 8,  visible: true },
   { id: 'music',     x: 1,  y: 2, w: 6,  visible: true },
   { id: 'leetcode',  x: 7,  y: 2, w: 6,  visible: true },
   { id: 'talks',     x: 1,  y: 3, w: 4,  visible: true },
@@ -24,6 +24,7 @@ const DEFAULT_LAYOUT = [
   { id: 'palette',   x: 5,  y: 5, w: 4,  visible: true },
   { id: 'countdown', x: 9,  y: 5, w: 4,  visible: true },
 ];
+// 首屏第一行右侧 4 列留作「陨石图形」装饰区（见 HomePage .meteor-home）
 
 // 已下线组件：番茄钟（专注计时统一交给本地 PrisTimer）
 const RETIRED_IDS = new Set(['pomodoro']);
@@ -36,12 +37,21 @@ const KNOWN_IDS = new Set([
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const overlap = (a1, a2, b1, b2) => a1 < b2 && a2 > b1;
 
-/** 兼容旧数据：旧格式有 width 字段 → 映射为 w */
+/** 兼容旧数据：旧格式有 width 字段 → 视为 v1 布局，直接放弃（v2 起为网格坐标） */
+function isLegacyLayout(arr) {
+  try {
+    return Array.isArray(arr) && arr.some((x) => x && typeof x === 'object' && 'width' in x);
+  } catch { return true; }
+}
+
 function normalize(item) {
-  const wMap = { quarter: 3, third: 4, half: 6, 'two-thirds': 8, full: 12 };
-  const old = wMap[item.width];
-  if (old) return { id: item.id, x: clamp(Math.round(item.x) || 1, 1, 12), y: Math.max(1, Math.round(item.y) || 1), w: clamp(Math.round(item.w) || old, 1, 12), visible: item.visible !== false };
-  return { id: item.id, x: clamp(Math.round(item.x) || 1, 1, 12), y: Math.max(1, Math.round(item.y) || 1), w: clamp(Math.round(item.w) || 4, 1, 12), visible: item.visible !== false };
+  return {
+    id: item.id,
+    x: clamp(Math.round(item.x) || 1, 1, GRID_COLS),
+    y: Math.max(1, Math.round(item.y) || 1),
+    w: clamp(Math.round(item.w) || 4, 1, GRID_COLS),
+    visible: item.visible !== false,
+  };
 }
 
 function load() {
@@ -50,11 +60,15 @@ function load() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) {
+        // v1（width 档位）布局：无法安全映射到 v2 网格坐标，重置为默认，
+        // 否则所有卡片都会落在 (1,1) 造成全屏重叠。
+        if (isLegacyLayout(parsed)) return DEFAULT_LAYOUT.map((x) => ({ ...x }));
         const seen = new Set();
         const cleaned = parsed
           .filter((x) => x && KNOWN_IDS.has(x.id) && !RETIRED_IDS.has(x.id))
           .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
-          .map(normalize);
+          .map(normalize)
+          .map((x) => ({ ...x, x: clamp(x.x, 1, GRID_COLS - x.w + 1) }));
         if (cleaned.length) return cleaned;
       }
     }

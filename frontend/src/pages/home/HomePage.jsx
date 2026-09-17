@@ -26,6 +26,7 @@ import SiteStatsCard from "../../components/Tools/SiteStatsCard";
 import TagsCloudCard from "../../components/Tools/TagsCloudCard";
 import RecentCommentsCard from "../../components/Tools/RecentCommentsCard";
 import WeatherCard from "../../components/Tools/WeatherCard";
+import MeteorParticles from "../../components/MeteorParticles";
 import TiltCard from "../../components/TiltCard";
 import { QUOTES } from "../../data/quotes";
 import { useHomeLayout } from "../../store/homeLayoutStore";
@@ -511,6 +512,8 @@ export default function HomePage() {
 
   return (
     <section className="home-section">
+      {/* 首屏博主卡右侧的钻石陨石聚散（装饰层，pointer-events: none） */}
+      <MeteorParticles variant="home" />
       <div className="app-container home-container">
         {/* Layout Toolbar */}
         <div className="home-layout-toolbar">

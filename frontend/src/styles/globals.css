@@ -8313,6 +8313,8 @@ a, button, .article-card, .contact-card, .social-links a,
   align-items: center;
   gap: var(--space-4);
 }
+.weather-city-row { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.weather-city-input { width: 110px; height: var(--control-h-sm); font-size: var(--fs-base); }
 .weather-temp {
   font-family: var(--font-mono);
   font-size: 2.6rem;

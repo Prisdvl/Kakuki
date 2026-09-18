@@ -6562,6 +6562,15 @@ a, button, .article-card, .contact-card, .social-links a,
 .home-layout-item .ui-card-body,
 .home-layout-item .ui-card .ui-card-list,
 .home-layout-item .ui-card .ui-flex-1 { overflow-y: auto; min-height: 0; }
+/* 非 .ui-card 的组件根（博主卡/打卡卡等）：一律撑满固定行高并裁掉溢出，
+   防止内容飘出卡片压住相邻组件（“乱”的主要来源）。 */
+.home-layout-item .tilt-card > * {
+  height: 100%;
+  overflow: hidden;
+}
+.home-layout-item .tilt-card > .checkin-card { overflow-y: auto; }
+.home-layout-item .profile-card,
+.home-layout-item .music-card { border-radius: inherit; }
 /* 移动端：压缩为单列堆叠（行高随内容自适应） */
 @media (max-width: 900px) {
   .home-layout-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }

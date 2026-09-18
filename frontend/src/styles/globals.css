@@ -6551,7 +6551,10 @@ a, button, .article-card, .contact-card, .social-links a,
 .home-layout-item {
   min-width: 0;
   position: relative;
-  /* 容器查询：窄列（<360px）时组件自动切换紧凑版式 */
+}
+/* 容器查询放在卡内层（tilt-card）：避免 grid item 上 containment 的兼容问题 */
+.home-layout-item .tilt-card {
+  height: 100%;
   container-type: inline-size;
 }
 /* 宽度档位（span） */
@@ -6560,19 +6563,6 @@ a, button, .article-card, .contact-card, .social-links a,
 .home-layout-item.half { grid-column: span 6; }
 .home-layout-item.two-thirds { grid-column: span 8; }
 .home-layout-item.full { grid-column: 1 / -1; }
-/* 卡片内容高度自适应；超高时卡内滚动（正常按内容高度，不会裁） */
-.home-layout-item > div { height: 100%; }
-.home-layout-item .tilt-card { height: 100%; }
-.home-layout-item .ui-card { height: 100%; overflow: hidden; }
-.home-layout-item .ui-card-body,
-.home-layout-item .ui-card .ui-card-list,
-.home-layout-item .ui-card .ui-flex-1 { overflow-y: auto; min-height: 0; }
-/* 非 .ui-card 的组件根（博主卡/打卡卡等）：撑满并裁掉内部溢出 */
-.home-layout-item .tilt-card > * {
-  height: 100%;
-  overflow: hidden;
-}
-.home-layout-item .tilt-card > .checkin-card { overflow-y: auto; }
 @media (max-width: 900px) {
   .home-layout-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .home-layout-item.quarter,

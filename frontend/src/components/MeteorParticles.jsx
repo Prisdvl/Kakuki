@@ -207,16 +207,36 @@ export default function MeteorParticles({ variant = 'ambient' }) {
         // 光标影响强度（平滑接近目标）
         hover += (hoverTarget - hover) * 0.12;
 
+        // DS 官网风格：聚合完成后持续“呼吸 + 缓慢旋转 + 粒子游动”
+        const t = now / 1000;
+        const breath = gathered ? 1 + Math.sin(t * 0.55) * 0.03 : 1;
+        const rot = gathered ? Math.sin(t * 0.14) * 0.055 : 0;
+        const c = Math.cos(rot);
+        const s = Math.sin(rot);
+
         const shader = (br) => {
-          const l = Math.max(16, Math.min(92, Math.round(br * 55 + 22)));
-          return `color-mix(in srgb, ${accent} ${l}%, #000000)`;
+          // 核心（亮度低）→ 压向黑；外缘（亮度高）→ 压向白（DS 青白感）
+          const l = Math.max(14, Math.min(96, Math.round(br * 72 + 16)));
+          const mixInto = l < 45 ? '#000000' : '#ffffff';
+          return `color-mix(in srgb, ${accent} ${l}%, ${mixInto})`;
         };
 
         for (const p of particles) {
           let fx, fy;
           if (p.isShape) {
-            fx = p.dhx + (cx + p.dx * scale - p.dhx) * k;
-            fy = p.dhy + (cy + p.dy * scale - p.dhy) * k;
+            // 形位（含呼吸/旋转），入场时从弥散位插值过来
+            const peak = 0.6 + Math.sin(t * 0.7 + p.jx) * 0.25 + Math.random() * 0.1;
+            const lx = p.dx * scale * breath;
+            const ly = p.dy * scale * breath;
+            const rx = lx * c - ly * s;
+            const ry = lx * s + ly * c;
+            const sx = cx + rx;
+            const sy = cy + ry;
+            fx = p.dhx + (sx - p.dhx) * k;
+            fy = p.dhy + (sy - p.dhy) * k;
+            // 粒子绕形位轻微游动（DS 的“流动”感）
+            fx += Math.sin(t * 0.5 + p.jx) * 1.6 * peak;
+            fy += Math.cos(t * 0.42 + p.jy) * 1.6 * peak;
           } else {
             fx = p.dhx;
             fy = p.dhy;
@@ -237,7 +257,7 @@ export default function MeteorParticles({ variant = 'ambient' }) {
           ctx.globalAlpha = p.alpha * (p.isShape ? 0.5 + 0.5 * k : 1);
           ctx.fillStyle = p.isShape ? shader(p.brightness) : accent;
           ctx.beginPath();
-          ctx.arc(fx, fy, p.r, 0, Math.PI * 2);
+          ctx.arc(fx, fy, p.r * (p.isShape ? breath : 1), 0, Math.PI * 2);
           ctx.fill();
         }
       } else {

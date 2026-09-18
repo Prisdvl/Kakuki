@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 const STORAGE_KEY = 'kakuki-home-layout';
 export const GRID_COLS = 24;       // 24 半列（视觉 12 列，半列级吸附）
-export const ROW_H = 92;           // 单行高度（px，与 globals --row-h 一致）
+export const ROW_H = 100;          // 单行高度（px，与 globals --row-h 一致）
 export const ROW_STEP = ROW_H + 16; // 行步长（含 gap）
 
 /**
@@ -94,23 +94,57 @@ function normalize(item) {
 }
 
 function load() {
+  let base;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) {
-        if (isLegacy(parsed)) return DEFAULT_LAYOUT.map((x) => ({ ...x }));
-        const seen = new Set();
-        const cleaned = parsed
-          .filter((x) => x && KNOWN_IDS.has(x.id) && !RETIRED_IDS.has(x.id))
-          .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
-          .map(normalize)
-          .map((x) => ({ ...x, x: clamp(x.x, 1, GRID_COLS - x.w + 1) }));
-        if (cleaned.length) return cleaned;
+        if (isLegacy(parsed)) {
+          base = DEFAULT_LAYOUT.map((x) => ({ ...x }));
+        } else {
+          const seen = new Set();
+          base = parsed
+            .filter((x) => x && KNOWN_IDS.has(x.id) && !RETIRED_IDS.has(x.id))
+            .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
+            .map(normalize);
+        }
       }
     }
   } catch { /* ignore */ }
-  return DEFAULT_LAYOUT.map((x) => ({ ...x }));
+  if (!base || base.length === 0) base = DEFAULT_LAYOUT.map((x) => ({ ...x }));
+
+  // 全量推挤整理：任何旧数据 / 迁移结果都保证无重叠（按数组顺序依次放置）
+  // 旧版本迁移（如 v2→v3 行高变化）是重叠的主因，这里统一兜底。
+  const placedMap = new Map();
+  const order = base.filter((it) => it.visible).map((it) => ({ id: it.id, x: it.x, y: it.y, w: it.w, h: it.h }));
+  let guard = 0;
+  for (const item of order) {
+    const cur = { ...item };
+    let moved = true;
+    while (moved && guard < 200) {
+      guard += 1;
+      moved = false;
+      for (const p of placedMap.values()) {
+        const hit =
+          p.y < cur.y + cur.h &&
+          p.y + p.h > cur.y &&
+          overlap1d(p.x, p.x + p.w, cur.x, cur.x + cur.w);
+        if (hit) {
+          cur.y = p.y + p.h;
+          cur.x = clamp(cur.x, 1, GRID_COLS - cur.w + 1);
+          moved = true;
+          break;
+        }
+      }
+    }
+    placedMap.set(cur.id, cur);
+  }
+  const arr = base.map((it) => {
+    const p = placedMap.get(it.id);
+    return p ? { ...it, x: p.x, y: p.y } : it;
+  });
+  return arr;
 }
 
 function persist(arr) {

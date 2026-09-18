@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Code2,
   MessageSquare, BookOpen, Sparkles,
@@ -29,7 +28,7 @@ import WeatherCard from "../../components/Tools/WeatherCard";
 import MeteorParticles from "../../components/MeteorParticles";
 import TiltCard from "../../components/TiltCard";
 import { QUOTES } from "../../data/quotes";
-import { useHomeLayout, GRID_COLS, ROW_STEP } from "../../store/homeLayoutStore";
+import { useHomeLayout } from "../../store/homeLayoutStore";
 import useMusicStore from '../../store/musicStore';
 import useCountUp from "../../hooks/useCountUp";
 import useMagnetic from "../../hooks/useMagnetic";
@@ -410,12 +409,8 @@ export default function HomePage() {
     { label: "分类", value: totalCategories, icon: Code2 },
   ];
 
-  // ===== 自由布局（24 半列 · 固定行高 · 可调高度）=====
-  const { layout, editing, setEditing, move, preview, placeAt, setSize, toggleVisible, addComponent, removeComponent, resetLayout, applyTemplate, tidy } = useHomeLayout();
-  const [drag, setDrag] = useState(null);
-  const gridRef = useRef(null);
-  const dragElRef = useRef(null);
-  const resizeRef = useRef(null);
+  // ===== 自由布局（v4 流式自动排版，稳定优先）=====
+  const { layout, editing, setEditing, move, cycleWidth, toggleVisible, addComponent, removeComponent, resetLayout, applyTemplate, tidy } = useHomeLayout();
 
   const visibleItems = layout.filter((x) => x.visible);
   const hiddenItems = layout.filter((x) => !x.visible);
@@ -441,101 +436,6 @@ export default function HomePage() {
     }
   };
 
-  /**
-   * Pointer 跟手拖拽（替代 HTML5 draggable —— 原实现受容器查询/3D 倾斜干扰拖不动）。
-   *  - 按下卡片（避开按钮/手柄）开始拖拽，卡片跟随鼠标平移
-   *  - 松手时按 12 列网格计算落点：横向按列宽取整位移，纵向按估算行高换行
-   *  - store.placeAt 内部推挤自动排版（重叠的卡向下让位，空白保留）
-   */
-  const beginDrag = (e, item) => {
-    if (e.button !== 0) return;
-    if (e.target.closest('button, a, .layout-resize, input, textarea, .home-ctrl-actions')) return;
-    const gridEl = gridRef.current;
-    if (!gridEl) return;
-    e.preventDefault();
-    const rect = gridEl.getBoundingClientRect();
-    setDrag({
-      id: item.id,
-      fromX: item.x,
-      fromY: item.y,
-      startCX: e.clientX,
-      startCY: e.clientY,
-      colW: rect.width / GRID_COLS,   // 24 半列
-      rowStep: ROW_STEP,              // 固定行步长（92 + 16 gap）
-    });
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    document.body.style.cursor = 'grabbing';
-    e.currentTarget.classList.add('is-dragging');
-    dragElRef.current = e.currentTarget;
-  };
-
-  const onDragMove = useCallback((e) => {
-    setDrag((d) => {
-      if (!d) return d;
-      const dx = e.clientX - d.startCX;
-      const dy = e.clientY - d.startCY;
-      if (dragElRef.current) {
-        dragElRef.current.style.setProperty('--drag-x', `${dx}px`);
-        dragElRef.current.style.setProperty('--drag-y', `${dy}px`);
-      }
-      return d;
-    });
-  }, []);
-
-  const onDragUp = useCallback((e) => {
-    setDrag((d) => {
-      if (!d) return d;
-      const dx = e.clientX - d.startCX;
-      const dy = e.clientY - d.startCY;
-      const colShift = Math.round(dx / d.colW);
-      const rowShift = Math.round(dy / d.rowStep);
-      const x = Math.max(1, d.fromX + colShift);
-      const y = Math.max(1, d.fromY + rowShift);
-      placeAt(d.id, x, y);
-      if (dragElRef.current) {
-        dragElRef.current.classList.remove('is-dragging');
-        dragElRef.current.style.removeProperty('--drag-x');
-        dragElRef.current.style.removeProperty('--drag-y');
-        dragElRef.current = null;
-      }
-      document.body.style.cursor = '';
-      return null;
-    });
-  }, [placeAt]);
-
-  /**
-   * 角拖手柄（右下角）：水平拖 → 改宽（半列步长），垂直拖 → 改行数（高度）。
-   * 松手提交 setSize（placeIn 自动推挤）。
-   */
-  const startResize = (e, item) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!gridRef.current) return;
-    const gridRect = gridRef.current.getBoundingClientRect();
-    const colW = gridRect.width / GRID_COLS;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startW = item.w;
-    const startH = item.h;
-    let currentW = startW;
-    let currentH = startH;
-    const onMove = (ev) => {
-      ev.preventDefault();
-      currentW = Math.max(2, Math.min(GRID_COLS, startW + Math.round((ev.clientX - startX) / colW)));
-      currentH = Math.max(1, Math.min(4, startH + Math.round((ev.clientY - startY) / ROW_STEP)));
-      preview(item.id, { w: currentW, h: currentH });
-    };
-    const onUp = () => {
-      setSize(item.id, currentW, currentH);
-      resizeRef.current = null;
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-    resizeRef.current = { onMove, onUp };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  };
-
   const enterEdit = () => {
     setEditing(true);
   };
@@ -545,18 +445,6 @@ export default function HomePage() {
   const finishEdit = () => {
     setEditing(false);
   };
-
-  // 编辑模式：全局监听 pointermove/pointerup 完成跟手拖动
-  useEffect(() => {
-    if (!editing) return undefined;
-    window.addEventListener('pointermove', onDragMove);
-    window.addEventListener('pointerup', onDragUp);
-    return () => {
-      window.removeEventListener('pointermove', onDragMove);
-      window.removeEventListener('pointerup', onDragUp);
-      document.body.style.cursor = '';
-    };
-  }, [editing, onDragMove, onDragUp]);
 
   return (
     <section className="home-section">
@@ -590,64 +478,53 @@ export default function HomePage() {
           )}
           {editing && (
             <span className="home-layout-hint">
-              <GripVertical size={13} /> 拖卡片到任意位置 · 右下角手柄拉宽/调高 · 重叠自动让位 · 可用模板一键排版
+              <GripVertical size={13} /> 卡片自动流式排版 · 用「宽度」按钮调整大小 · 上移下移换顺序 · 有经典/杂志模板
             </span>
           )}
         </div>
 
-        {/* Free Layout Grid（12 列自由看板） */}
-        <div className={`home-layout-grid ${editing ? 'editing' : ''}`} ref={gridRef}>
-          <AnimatePresence>
-            {visibleItems.map((item) => {
+        {/* 自由布局网格（v4 流式自动排版：卡片按顺序自动折行，永不重叠/溢出） */}
+        <div className={`home-layout-grid ${editing ? 'editing' : ''}`}>
+          {visibleItems.map((item) => {
               const meta = COMPONENT_META[item.id];
               const Icon = meta?.icon;
               return (
-                <motion.div
+                <div
                   key={item.id}
-                  layout={!editing}
-                  initial={editing ? false : { opacity: 0, scale: 0.96, y: 10 }}
-                  animate={editing ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-                  exit={editing ? undefined : { opacity: 0, scale: 0.96 }}
-                  transition={editing ? undefined : { duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-                  className={`home-layout-item ${drag?.id === item.id ? 'is-dragging' : ''}`}
+                  className={`home-layout-item ${item.w}`}
                   data-id={item.id}
-                  onPointerDown={editing ? (e) => beginDrag(e, item) : undefined}
-                  style={{
-                    gridColumn: `${item.x} / span ${item.w}`,
-                    gridRow: `${item.y} / span ${item.h}`,
-                  }}
                 >
                   <div>
                     {editing && (
                       <div className="home-layout-controls">
-                        <span className="home-drag-handle" title="拖动到任意位置">
+                        <span className="home-drag-handle">
                           <GripVertical size={15} />
                         </span>
                         <span className="home-ctrl-name">
                           {Icon && <Icon size={13} />} {meta?.name}
                         </span>
                         <div className="home-ctrl-actions">
-                          <button onClick={() => move(item.id, -1)} aria-label="上移一行" title="上移一行"><ArrowUp size={13} /></button>
-                          <button onClick={() => move(item.id, 1)} aria-label="下移一行" title="下移一行"><ArrowDown size={13} /></button>
+                          <button onClick={() => move(item.id, -1)} aria-label="上移" title="上移"><ArrowUp size={13} /></button>
+                          <button onClick={() => move(item.id, 1)} aria-label="下移" title="下移"><ArrowDown size={13} /></button>
+                          <button
+                            onClick={() => cycleWidth(item.id)}
+                            aria-label="切换宽度"
+                            title={`切换宽度（当前：${item.w}）`}
+                          >
+                            {item.w === 'full' ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                          </button>
                           <button onClick={() => toggleVisible(item.id)} aria-label="隐藏" title="隐藏"><EyeOff size={13} /></button>
                           <button onClick={() => removeComponent(item.id)} aria-label="移除" title="移除" className="danger"><X size={13} /></button>
                         </div>
                       </div>
                     )}
-                    {/* 右下角角拖手柄（编辑模式）：水平=宽，垂直=高 */}
-                    {editing && (
-                      <span
-                        className="layout-resize"
-                        onPointerDown={(e) => startResize(e, item)}
-                        title="角拖调整：左右改宽度 · 上下改高度"
-                      />
-                    )}
+                    {/* 编辑提示：当前宽度档 */}
+                    {editing && <span className="home-width-hint">{item.w}</span>}
                     <TiltCard>{renderComponent(item.id)}</TiltCard>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
-          </AnimatePresence>
         </div>
 
         {/* Add / Restore Panel */}

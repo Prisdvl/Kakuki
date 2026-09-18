@@ -29,7 +29,7 @@ import WeatherCard from "../../components/Tools/WeatherCard";
 import MeteorParticles from "../../components/MeteorParticles";
 import TiltCard from "../../components/TiltCard";
 import { QUOTES } from "../../data/quotes";
-import { useHomeLayout } from "../../store/homeLayoutStore";
+import { useHomeLayout, GRID_COLS, ROW_STEP } from "../../store/homeLayoutStore";
 import useMusicStore from '../../store/musicStore';
 import useCountUp from "../../hooks/useCountUp";
 import useMagnetic from "../../hooks/useMagnetic";
@@ -410,9 +410,9 @@ export default function HomePage() {
     { label: "分类", value: totalCategories, icon: Code2 },
   ];
 
-  // ===== 自由布局（12 列看板）=====
-  const { layout, editing, setEditing, move, preview, placeAt, setWidth, toggleVisible, addComponent, removeComponent, resetLayout } = useHomeLayout();
-  const [drag, setDrag] = useState(null); // { id, fromX, fromY, startCX, startCY, colW, gridTop, gridHeight, maxY }
+  // ===== 自由布局（24 半列 · 固定行高 · 可调高度）=====
+  const { layout, editing, setEditing, move, preview, placeAt, setSize, toggleVisible, addComponent, removeComponent, resetLayout, applyTemplate, tidy } = useHomeLayout();
+  const [drag, setDrag] = useState(null);
   const gridRef = useRef(null);
   const dragElRef = useRef(null);
   const resizeRef = useRef(null);
@@ -454,18 +454,14 @@ export default function HomePage() {
     if (!gridEl) return;
     e.preventDefault();
     const rect = gridEl.getBoundingClientRect();
-    const maxY = layout.reduce((m, it) => (it.visible ? Math.max(m, it.y) : m), 1);
-    const rowH = Math.max(96, (rect.height - Math.max(0, maxY - 1) * 16) / Math.max(1, maxY));
     setDrag({
       id: item.id,
       fromX: item.x,
       fromY: item.y,
       startCX: e.clientX,
       startCY: e.clientY,
-      colW: rect.width / 12,
-      gridLeft: rect.left,
-      gridTop: rect.top,
-      rowH,
+      colW: rect.width / GRID_COLS,   // 24 半列
+      rowStep: ROW_STEP,              // 固定行步长（92 + 16 gap）
     });
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
     document.body.style.cursor = 'grabbing';
@@ -492,7 +488,7 @@ export default function HomePage() {
       const dx = e.clientX - d.startCX;
       const dy = e.clientY - d.startCY;
       const colShift = Math.round(dx / d.colW);
-      const rowShift = Math.round(dy / d.rowH);
+      const rowShift = Math.round(dy / d.rowStep);
       const x = Math.max(1, d.fromX + colShift);
       const y = Math.max(1, d.fromY + rowShift);
       placeAt(d.id, x, y);
@@ -508,26 +504,29 @@ export default function HomePage() {
   }, [placeAt]);
 
   /**
-   * resize 手柄：编辑模式下拖右下角手柄，实时预览列跨度，松手落定。
-   * 列宽按 grid 容器 12 等分换算；最小 3 列、最大 12 列。
+   * 角拖手柄（右下角）：水平拖 → 改宽（半列步长），垂直拖 → 改行数（高度）。
+   * 松手提交 setSize（placeIn 自动推挤）。
    */
   const startResize = (e, item) => {
     e.preventDefault();
     e.stopPropagation();
     if (!gridRef.current) return;
     const gridRect = gridRef.current.getBoundingClientRect();
-    const colW = gridRect.width / 12;
+    const colW = gridRect.width / GRID_COLS;
     const startX = e.clientX;
+    const startY = e.clientY;
     const startW = item.w;
-    // 用局部变量跟踪预览中的最新宽度，避免松手时读旧闭包导致“自动复原”
+    const startH = item.h;
     let currentW = startW;
+    let currentH = startH;
     const onMove = (ev) => {
       ev.preventDefault();
-      currentW = Math.max(3, Math.min(12, startW + Math.round((ev.clientX - startX) / colW)));
-      preview(item.id, { w: currentW });
+      currentW = Math.max(2, Math.min(GRID_COLS, startW + Math.round((ev.clientX - startX) / colW)));
+      currentH = Math.max(1, Math.min(4, startH + Math.round((ev.clientY - startY) / ROW_STEP)));
+      preview(item.id, { w: currentW, h: currentH });
     };
     const onUp = () => {
-      setWidth(item.id, currentW);
+      setSize(item.id, currentW, currentH);
       resizeRef.current = null;
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
@@ -575,6 +574,15 @@ export default function HomePage() {
               <button className="ui-btn ui-btn-primary ui-btn-sm" ref={magneticRefSolid} onClick={finishEdit}>
                 <Check size={15} /> 完成编辑
               </button>
+              <button className="ui-btn ui-btn-sm" onClick={tidy} title="按顺序自动流式重排">
+                <LayoutGrid size={14} /> 自动整理
+              </button>
+              <button className="ui-btn ui-btn-sm" onClick={() => applyTemplate('classic')} title="套用经典排布模板">
+                经典模板
+              </button>
+              <button className="ui-btn ui-btn-sm" onClick={() => applyTemplate('magazine')} title="套用杂志交错模板">
+                杂志模板
+              </button>
               <button className="ui-btn ui-btn-sm" ref={magneticRef} onClick={resetLayout}>
                 <RotateCcw size={15} /> 恢复默认
               </button>
@@ -582,7 +590,7 @@ export default function HomePage() {
           )}
           {editing && (
             <span className="home-layout-hint">
-              <GripVertical size={13} /> 拖动卡片到任意位置 · 右下角手柄任意拉宽 · 卡片重叠时自动下移
+              <GripVertical size={13} /> 拖卡片到任意位置 · 右下角手柄拉宽/调高 · 重叠自动让位 · 可用模板一键排版
             </span>
           )}
         </div>
@@ -606,7 +614,7 @@ export default function HomePage() {
                   onPointerDown={editing ? (e) => beginDrag(e, item) : undefined}
                   style={{
                     gridColumn: `${item.x} / span ${item.w}`,
-                    gridRow: item.y,
+                    gridRow: `${item.y} / span ${item.h}`,
                   }}
                 >
                   <div>
@@ -626,12 +634,12 @@ export default function HomePage() {
                         </div>
                       </div>
                     )}
-                    {/* 右下角拉宽手柄（编辑模式） */}
+                    {/* 右下角角拖手柄（编辑模式）：水平=宽，垂直=高 */}
                     {editing && (
                       <span
                         className="layout-resize"
                         onPointerDown={(e) => startResize(e, item)}
-                        title="拖动拉宽（3–12 列）"
+                        title="角拖调整：左右改宽度 · 上下改高度"
                       />
                     )}
                     <TiltCard>{renderComponent(item.id)}</TiltCard>

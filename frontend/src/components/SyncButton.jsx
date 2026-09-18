@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { message, Modal } from 'antd';
 import { probeLocalHelper, triggerLocalSync, isLocalHost } from '../utils/syncHelper';
+import checkinApi from '../api/checkin';
 
 const LAST_SYNC_KEY = 'kakuki-focus-last-sync';
 
@@ -24,6 +25,8 @@ export default function SyncButton({ variant = 'card' }) {
   const [syncing, setSyncing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [result, setResult] = useState(null);
   const [fresh, setFresh] = useState(true); // 刚挂载探测未完成前不允许点击
   const [lastSync, setLastSync] = useState(() => {
     try { return localStorage.getItem(LAST_SYNC_KEY) || ''; } catch { return ''; }
@@ -68,7 +71,7 @@ export default function SyncButton({ variant = 'card' }) {
 
     setSyncing(true);
     try {
-      const data = await triggerLocalSync();
+      const syncData = await triggerLocalSync();
       const now = (() => {
         try { return new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'); } catch { return ''; }
       })();
@@ -76,12 +79,28 @@ export default function SyncButton({ variant = 'card' }) {
       setLastSync(now);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 1400);
-      if (data.synced_days > 0) {
-        message.success(`同步完成：${data.synced_days} 天 / ${data.total_minutes} 分钟 / ${data.sessions} 段`);
+
+      // 强刷所有专注展示（状态栏 / 学习卡 / 仪表盘）
+      window.dispatchEvent(new CustomEvent('kakuki:focus-updated'));
+
+      // 拉取最新总览，组装结果面板（可见、可留痕）
+      let summary = null;
+      try {
+        const res = await checkinApi.focusSummary(7);
+        summary = res?.data ?? null;
+      } catch { /* 拉取失败也不影响结果面板 */ }
+      setResult({
+        sync: syncData,
+        summary,
+        time: now,
+      });
+      setShowResult(true);
+
+      if (syncData.synced_days > 0) {
+        message.success(`同步完成：${syncData.synced_days} 天 / ${syncData.total_minutes} 分钟 / ${syncData.sessions} 段`);
       } else {
         message.success('同步完成：没有新的专注记录');
       }
-      window.dispatchEvent(new CustomEvent('kakuki:focus-updated'));
     } catch (err) {
       message.error(err?.message || '同步失败，请确认本机助手正在运行');
     } finally {
@@ -113,6 +132,9 @@ export default function SyncButton({ variant = 'card' }) {
             }}
           />
         )}
+        {showResult && result && (
+          <SyncResult result={result} onClose={() => setShowResult(false)} />
+        )}
       </>
     );
   }
@@ -139,7 +161,89 @@ export default function SyncButton({ variant = 'card' }) {
           }}
         />
       )}
+      {showResult && result && (
+        <SyncResult result={result} onClose={() => setShowResult(false)} />
+      )}
     </>
+  );
+}
+
+/** 同步结果面板：本次新增 + 当前今日/本周/累计 + 上次同步时间 */
+function SyncResult({ result, onClose }) {
+  const { sync, summary, time } = result;
+  const fmt = (min) => {
+    if (min == null || Number.isNaN(min)) return '—';
+    if (min < 60) return `${min} 分钟`;
+    const h = Math.floor(min / 60);
+    const m = Math.round(min % 60);
+    return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
+  };
+  const today = summary?.today_minutes ?? (summary?.today_ms != null ? Math.round(summary.today_ms / 60000) : null);
+  const week = summary?.week_minutes ?? null;
+  const total = summary?.total_minutes ?? null;
+
+  return (
+    <Modal
+      open
+      onCancel={onClose}
+      footer={null}
+      width={400}
+      title="同步结果"
+      centered
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          padding: '0.7rem 0.9rem', borderRadius: '12px',
+          background: 'color-mix(in srgb, var(--success) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)',
+          color: 'var(--success)', fontWeight: 600, fontSize: '0.9rem',
+        }}>
+          <Check size={16} /> 同步成功
+        </div>
+
+        <div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '0.35rem' }}>本次同步</div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
+          }}>
+            <Row label="新增天数" value={`${sync?.synced_days ?? 0} 天`} />
+            <Row label="专注时长" value={`${sync?.total_minutes ?? 0} 分钟`} />
+            <Row label="会话" value={`${sync?.sessions ?? 0} 段`} />
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '0.35rem' }}>当前总览</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+            <Row label="今日" value={fmt(today)} />
+            <Row label="本周" value={fmt(week)} />
+            <Row label="累计" value={fmt(total)} />
+          </div>
+        </div>
+
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+          上次同步：{time}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="ui-btn ui-btn-sm ui-btn-primary" onClick={onClose}>知道了</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div style={{
+      padding: '0.5rem 0.6rem', borderRadius: '10px',
+      background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+      textAlign: 'center',
+    }}>
+      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>{label}</div>
+    </div>
   );
 }
 

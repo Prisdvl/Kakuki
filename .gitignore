@@ -69,3 +69,6 @@ docker-compose.yml
 !cloudflare/schema.sql
 .github/
 .gitee/
+
+# 本地粒子参考文件（不入库）
+frontend/src/data/paint-blob-particles-standalone.html
